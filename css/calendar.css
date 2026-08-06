@@ -1,0 +1,366 @@
+/* ==========================================================================
+   1. SECTION TITLE (The Standalone H1)
+   ========================================================================== */
+.events-header {
+    margin-bottom: 40px; /* Space between H1 and the entire calendar unit */
+    text-align: left;
+}
+
+.events-header h1 {
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-color);
+}
+
+/* This targets the underline under 'Upcoming Events' */
+.events-header .accent-underline {
+    margin: 8px 0 0 0; /* 8px top margin, 0 for left to keep it flush */
+    height: 4px;       /* Slightly thicker for a main header if you prefer */
+    width: 60px;       /* Slightly wider for the main H1 */
+    background: var(--accent-color);
+    border-radius: 2px;
+}
+
+/* ==========================================================================
+   2. CALENDAR HEADER (Navigation Bar)
+   ========================================================================== */
+.calendar-header-container {
+    background: var(--sidebar-bg);
+    padding: 1.5rem 1rem;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-bottom: none; /* Merges into the grid below */
+    
+    /* Rounded top corners only */
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.month-nav {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+}
+
+.month-title-wrap {
+    text-align: center;
+    min-width: 220px;
+}
+
+#current-month-display {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-color);
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+}
+
+.accent-underline {
+    height: 3px;
+    width: 40px;
+    background: var(--accent-color);
+    margin: 4px auto 0;
+    border-radius: 2px;
+}
+
+.nav-arrow {
+    background: var(--nav-hover);
+    color: var(--text-color);
+    border: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+}
+
+.nav-arrow:hover {
+    background: var(--accent-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure the calendar container can go wider than standard 'about' pages */
+#events .about-container {
+    max-width: 1400px; /* Or 100% if you want it full screen */
+    width: 100%;        /* Gives a little breathing room on the edges */
+}
+
+/* Adjust the main unit to fill that space */
+.calendar-main-unit {
+    width: 100%;
+}
+
+/* ==========================================================================
+   3. CALENDAR GRID WRAPPER
+   ========================================================================== */
+.calendar-wrapper {
+    width: 100%;
+    background: var(--sidebar-bg);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    
+    /* Square top to sit flush against the Nav Header */
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    
+    /* Rounded bottom corners only */
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    
+    overflow: hidden; 
+}
+
+.calendar-days-header, .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    width: 100%;
+}
+
+.calendar-days-header {
+    background: rgba(128, 128, 128, 0.1);
+    text-align: center;
+    font-weight: bold;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+}
+
+/* ==========================================================================
+   4. DESKTOP GRID CELLS & PILLS
+   ========================================================================== */
+.calendar-day {
+    min-height: 110px;
+    padding: 10px;
+    border-right: 1px solid rgba(128, 128, 128, 0.1);
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--bg-color);
+    transition: background 0.2s;
+}
+
+/* Force the Events section to use the full available width */
+#events.content-section {
+    width: 90%;
+    max-width: 1100px;
+}
+
+/* Ensure the main unit fills that space */
+.calendar-main-unit {
+    width: 100%;
+    margin: 0;
+}
+
+/* Cleanup borders on edges */
+.calendar-day:nth-child(7n) { border-right: none; }
+.calendar-day:nth-last-child(-n+7) { border-bottom: none; }
+
+.calendar-day.today { 
+    background: rgba(56, 189, 248, 0.15); 
+}
+
+.calendar-day.today .day-number {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+.day-number {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.day-name { display: none; }
+
+.pill-location { display: none; }
+
+/* Event Pills */
+.event-pill {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    margin: 2px 0;
+    border-radius: 4px;
+    color: white !important; 
+    display: block;
+    cursor: pointer;
+    border-left: 4px solid rgba(0,0,0,0.3);
+    transition: transform 0.15s ease, filter 0.15s;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.event-pill:hover {
+    transform: translateX(2px);
+    filter: brightness(1.1);
+}
+
+.event-pill strong {
+    font-weight: 700;
+    margin-right: 3px;
+}
+
+/* Category Colors */
+.cat-league { background-color: #059669 !important; }
+.cat-tournament { background-color: #dc2626 !important; }
+.cat-meeting { background-color: #2563eb !important; }
+.cat-special-event { background-color: #7c3aed !important; }
+
+.event-pill:not([class*='cat-']) {
+    background-color: var(--accent-color);
+}
+
+/* ==========================================================================
+   5. MOBILE VIEW & EMPTY STATES
+   ========================================================================== */
+@media (max-width: 768px) {
+    .calendar-days-header { display: none; }
+    .calendar-day.no-events,
+    .calendar-day.padding-day { display: none !important; }
+
+    .nav-arrow {
+        width: 44px;
+        height: 44px;
+    }
+
+    .pill-container .event-pill {
+        min-height: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        font-size: 0.8rem;
+        padding: 10px 12px;
+    }
+
+    .pill-time {
+        font-size: 0.75rem;
+        opacity: 0.85;
+    }
+
+    .pill-category {
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .pill-location {
+        display: block;
+        font-size: 0.85rem;
+        opacity: 0.8;
+        word-break: break-word;
+    }
+
+    /* --- FIXED NAVIGATION POSITIONING --- */
+    .calendar-header-container {
+        padding: 1.2rem 1rem;
+        justify-content: center; /* Ensures the nav group stays centered */
+    }
+
+    .month-nav { 
+        gap: 1.5rem; /* Reduced gap to bring arrows closer to the text */
+        justify-content: center;
+        width: auto; /* Prevents the nav from stretching to edges */
+        margin: 0 auto;
+    }
+
+    .month-title-wrap {
+        min-width: auto; /* Allows the title to be as narrow as the text */
+        flex: 0 1 auto;  /* Prevents the title from pushing arrows away */
+    }
+
+    #current-month-display { 
+        font-size: 1.2rem; 
+        white-space: nowrap;
+    }
+
+    .nav-arrow { 
+        width: 40px; 
+        height: 40px; 
+        flex-shrink: 0; /* Ensures buttons don't squish */
+    }
+
+    /* --- GRID TO LIST TRANSFORMATION --- */
+    .calendar-grid { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 0; 
+        background: transparent;
+        padding: 0.5rem 0;
+    }
+
+    .calendar-day {
+        flex-direction: row;
+        align-items: flex-start;
+        min-height: auto;
+        padding: 14px 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .calendar-day:last-child { border-bottom: none; }
+
+    .calendar-day.today .day-number {
+        color: var(--accent-color);
+    }
+
+    .day-number {
+        font-size: 1.4rem;
+        font-weight: 800;
+        min-width: 48px;
+        margin-right: 15px;
+        padding-right: 12px;
+        border-right: 3px solid var(--accent-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 1;
+        color: var(--accent-color);
+    }
+
+    .day-name {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.7;
+        margin-top: 2px;
+    }
+
+    .pill-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    /* --- Remove calendar card backer on mobile --- */
+    .calendar-header-container,
+    .calendar-wrapper {
+        background: transparent;
+        border: none;
+        border-radius: 0;
+    }
+
+    .calendar-header-container {
+        border-bottom: 1px solid var(--glass-border);
+        padding: 1rem 0;
+    }
+
+    .calendar-wrapper {
+        overflow: visible;
+    }
+}

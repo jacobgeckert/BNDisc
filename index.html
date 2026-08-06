@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>BNDisc</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css?v=100">
+    <link rel="stylesheet" href="css/calendar.css">
+    <link rel="stylesheet" href="css/aces.css">
+    <link rel="stylesheet" href="css/records.css">
+    <link rel="stylesheet" href="css/governance.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+
+    <button class="mobile-toggle" aria-label="Toggle Menu">
+        <i class="ph ph-list"></i>
+    </button>
+
+    <nav class="sidebar">
+        <img src="assets/mascot.png" id="fixed-mascot" class="scattered-mascot" alt="Mascot">
+        <div class="top-section">
+            <div class="logo">
+                <img src="assets/logo.png" alt="Logo" class="logo-img">
+            </div>
+            
+            <ul class="nav-links">
+                <li class="active"><a href="#events" data-link><i class="ph ph-calendar-check"></i> <span>Current Events</span></a></li>
+                <li><a href="#courses" data-link><i class="ph ph-map-trifold"></i> <span>Local Courses</span></a></li>
+                <li><a href="#league" data-link><i class="ph ph-users"></i> <span>League Central</span></a></li>
+                <li><a href="#ratings" data-link><i class="ph ph-star"></i> <span>Tags & Ratings</span></a></li>
+                <li><a href="#aces" data-link><i class="ph ph-trophy"></i> <span>Aces</span></a></li>
+                <li><a href="#records" data-link><i class="ph ph-medal"></i> <span>Records</span></a></li>
+                <li><a href="#governance" data-link><i class="ph ph-scales"></i> <span>Club Governance</span></a></li>
+                <li><a href="#about" data-link><i class="ph ph-info"></i> <span>About Us</span></a></li>
+                <li><a href="#admin" data-link><i class="ph ph-lock"></i> <span>Admin Panel</span></a></li>
+            </ul>
+        </div>
+
+    </nav>
+
+    <main class="content">
+        
+        <div id="upcoming-bg" class="upcoming-bg-overlay"></div>
+        <section id="events" class="content-section">
+            <div class="about-container">
+                <div class="about-header">
+                    <h1>Upcoming Events</h1>
+                    <div class="accent-underline"></div>
+                </div>
+
+                <div class="calendar-main-unit">
+                    <div class="calendar-header-container">
+                        <div class="month-nav">
+                            <button id="prev-month-btn" class="nav-arrow" title="Previous Month">
+                                <i class="ph ph-caret-left"></i>
+                            </button>
+                            
+                            <div class="month-title-wrap">
+                                <h2 id="current-month-display">Month Year</h2>
+                                <div class="accent-underline"></div>
+                            </div>
+
+                            <button id="next-month-btn" class="nav-arrow" title="Next Month">
+                                <i class="ph ph-caret-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="calendar-wrapper">
+                        <div class="calendar-days-header">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div id="calendar-grid" class="calendar-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="courses-bg" class="courses-bg-overlay"></div>
+        <section id="courses" class="content-section">
+            <div class="about-container">
+                <div class="about-header">
+                    <h1>Local Courses</h1>
+                    <div class="accent-underline"></div>
+                </div>
+
+                <div class="course-entry">
+                    <h2 class="course-title">Maxwell Park</h2>
+                    
+                    <div class="about-content">
+                        <p class="mission-statement">
+                            An open course with a few wooded holes, offering a great variety of both long and short distances.
+                        </p>
+                        <p>
+                            The layout features multiple pads on some holes and two permanent baskets on every hole, making it suitable for all skill levels.
+                        </p>
+                    </div>
+                    
+                    <div class="about-contact-grid">
+                        <a href="https://udisc.com/courses/maxwell-park-pLr6" target="_blank" class="contact-card">
+                            <i class="ph ph-browser"></i>
+                            <div class="contact-info">
+                                <span>Course Map</span>
+                                <strong>UDisc</strong>
+                            </div>
+                        </a>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=1850+Gregory+St+Normal+IL+61761" target="_blank" class="contact-card">
+                            <i class="ph ph-map-pin"></i>
+                            <div class="contact-info">
+                                <span>1850 Gregory St</span>
+                                <strong>Directions</strong>
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+                
+                <hr class="course-divider">
+
+                <div class="course-entry">
+                    <h2 class="course-title">P.J. Irvin</h2>
+                    
+                    <div class="about-content">
+                        <p class="mission-statement">
+                            A <strong>"Super 9"</strong> course with two tee pads and two baskets on every hole. 
+                            Uses mature trees and elevation changes to create many unique lines and shot shapes.
+                        </p>
+                        <p>
+                            Located in a multi-use park with a playground and a port-a-potty available. 
+                            Walk on the pavement at Te Voert, cross Morris St., and combine with Forrest Park for a full 18!
+                        </p>
+                    </div>
+                    
+                    <div class="about-contact-grid">
+                        <a href="https://udisc.com/courses/p-j-irvin-8qk2" target="_blank" class="contact-card">
+                            <i class="ph ph-browser"></i>
+                            <div class="contact-info">
+                                <span>Course Map</span>
+                                <strong>UDisc</strong>
+                            </div>
+                        </a>
+                        <a href="https://www.google.com/maps/search/?api=1&query=1601+McKay+Dr+Bloomington+IL+61701" target="_blank" class="contact-card">
+                            <i class="ph ph-map-pin"></i>
+                            <div class="contact-info">
+                                <span>1601 McKay Dr</span>
+                                <strong>Directions</strong>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="course-divider">
+
+                <div class="course-entry">
+                    <h2 class="course-title">Forrest Park</h2>
+                    
+                    <div class="about-content">
+                        <p class="mission-statement">
+                            Right across the street from P. J. Irvin, another <strong>"Super 9"</strong> course with two tee pads and two baskets on every hole.
+                        </p>
+                        <p>
+                            A great companion to P.J. Irvin. Combine both parks for a full 18-hole experience!
+                        </p>
+                    </div>
+
+                    <div class="about-contact-grid">
+                        <a href="https://udisc.com/courses/forrest-park-Lb2y" target="_blank" class="contact-card">
+                            <i class="ph ph-browser"></i>
+                            <div class="contact-info">
+                                <span>Course Map</span>
+                                <strong>UDisc</strong>
+                            </div>
+                        </a>
+                        <a href="https://www.google.com/maps/search/?api=1&query=1813+Springfield+Rd+Bloomington+IL+61701" target="_blank" class="contact-card">
+                            <i class="ph ph-map-pin"></i>
+                            <div class="contact-info">
+                                <span>1813 Springfield Rd</span>
+                                <strong>Directions</strong>
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+
+                <hr class="course-divider">
+
+                <div class="course-entry">
+                    <h2 class="course-title">Heartland Church Disc Golf Course</h2>
+                    
+                    <div class="about-content">
+                        <p class="mission-statement">
+                            Short and technical course located in North Normal. Begins with five open holes and moves into a much more difficult wooded section. 
+                        </p>
+                    </div>
+                    
+                    <div class="about-contact-grid">
+                        <a href="https://udisc.com/courses/heartland-church-disc-golf-course-UgOz" target="_blank" class="contact-card">
+                            <i class="ph ph-browser"></i>
+                            <div class="contact-info">
+                                <span>Course Map</span>
+                                <strong>UDisc</strong>
+                            </div>
+                        </a>
+                        <a href="https://www.google.com/maps/search/?api=1&query=1811+N+Linden+St+Normal+IL+61761" target="_blank" class="contact-card">
+                            <i class="ph ph-map-pin"></i>
+                            <div class="contact-info">
+                                <span>1811 N. Linden St</span>
+                                <strong>Directions</strong>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="course-divider">
+
+                <div class="course-entry">
+                    <h2 class="course-title">Flying Iron Disc Golf Course</h2>
+                    
+                    <div class="about-content">
+                        <p class="mission-statement">
+                        10-hole course with turf tee pads. Features include an elevated basket, a hazard sand trap, and an island green. Closed while school is in session.</p>
+                    </div>
+                    
+                    <div class="about-contact-grid">
+                        <a href="https://udisc.com/courses/flying-iron-disc-golf-course-BWnm" target="_blank" class="contact-card">
+                            <i class="ph ph-browser"></i>
+                            <div class="contact-info">
+                                <span>Course Map</span>
+                                <strong>UDisc</strong>
+                            </div>
+                        </a>
+                        <a href="https://www.google.com/maps/search/?api=1&query=3900+E+Raab+Rd+Normal+IL+61761" target="_blank" class="contact-card">
+                            <i class="ph ph-map-pin"></i>
+                            <div class="contact-info">
+                                <span>3900 E. Raab Rd</span>
+                                <strong>Directions</strong>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+
+            </div>
+        </section>
+
+        <div id="ratings-bg" class="ratings-bg-overlay"></div>
+            <section id="ratings" class="content-section">
+                <div class="about-container">
+                    <div class="about-header">
+                        <h1>Tags & Ratings</h1>
+                        <div class="accent-underline"></div>
+                    </div>
+
+                    <div class="course-entry">
+                        <div class="about-content">
+                            <h2>Bag Tags</h2>
+                            <div class="form-group" style="margin-top: 0.5rem;">
+                                <select id="bag-tag-year" style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color);"></select>
+                            </div>
+                            <div id="bag-tags-list" style="margin-top: 1rem;"></div>
+                        </div>
+                    </div>
+
+                    <div class="course-entry">
+                        <div class="about-content">
+                            <h2>Ratings</h2>
+                            <p class="mission-statement">
+                                During our league events, we keep track of player ratings using a system similar to the PDGA. 
+                            </p>
+                            
+                            <p>
+                                This rating system is primarily used to sort cards for scratch events and is occasionally utilized for handicap events. 
+                                With the recent inclusion of handicap features directly in UDisc, the BNDisc internal handicap is now used less frequently.
+                            </p>
+                        </div>
+
+                        <div class="about-contact-grid">
+                            <a href="https://docs.google.com/spreadsheets/d/1iC87kWr4spJBhu4vLJNQanl6KzZrI9BLjBH4ZZ9NljI/edit?pli=1&gid=1018585615#gid=1018585615" 
+                            target="_blank" 
+                            class="contact-card">
+                                <i class="ph ph-table"></i>
+                                <div class="contact-info">
+                                    <span>Live Ratings Spreadsheet</span>
+                                    <strong>View Club Ratings</strong>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        <div id="aces-bg" class="aces-bg-overlay"></div>
+        <section id="aces" class="content-section">
+            <div class="about-container">
+                <div class="about-header">
+                    <div class="header-text-group">
+                        <h1>Verified Aces</h1>
+                        <div class="accent-underline"></div>
+                        <div class="disclaimer-text">
+                            <i class="ph ph-info"></i> 
+                            Aces achieved during club events while ace pot is active.
+                        </div>
+                    </div>
+
+                    <div class="search-wrapper">
+                        <i class="ph ph-magnifying-glass search-icon"></i>
+                        <input type="text" id="ace-search" placeholder="Search player or course..." autocomplete="off">
+                    </div>
+                </div>
+
+                <div id="aces-list-container" class="about-content">
+                    <div class="loading-spinner">Loading aces...</div>
+                </div>
+            </div>
+        </section>
+
+        <div id="records-bg" class="records-bg-overlay"></div>
+        <section id="records" class="content-section">
+            <div class="about-container">
+                <div class="about-header">
+                    <div class="header-text-group">
+                        <h1>Course Records</h1>
+                        <div class="accent-underline"></div>
+                        <div class="disclaimer-text">
+                            <i class="ph ph-info"></i> 
+                            Course records must be achieved during official league events.
+                        </div>
+                    </div>
+
+                    <div class="division-toggle-container">
+                        <div class="filter-controls-row">
+                            <select id="course-filter" class="admin-select">
+                                <option value="all">All Courses</option>
+                            </select>
+
+                            <div class="division-toggle">
+                                <input type="radio" id="div-m" name="view-division" value="M" checked>
+                                <label for="div-m">Mixed</label>
+                                <input type="radio" id="div-w" name="view-division" value="W">
+                                <label for="div-w">Women</label>
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+
+                        <div class="search-wrapper">
+                            <i class="ph ph-magnifying-glass search-icon"></i>
+                            <input type="text" id="record-search" placeholder="Players name..." autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="records-list-container" class="about-content">
+                    <div class="loading-spinner">
+                        <i class="ph ph-circle-notch-bold"></i>
+                        <span>Loading Course History...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="governance" class="content-section">
+            <div class="about-container">
+                <div class="about-header">
+                    <div class="header-text-group">
+                        <h1>Club Governance</h1>
+                        <div class="accent-underline"></div>
+                        <div id="last-modified" class="disclaimer-text"></div>
+                    </div>
+                </div>
+
+                <div class="governance-subtitle-wrap" id="minutes-title-wrap">
+                    <h2 class="sub-section-title" id="minutes-title"><i class="fas fa-file-alt"></i> Latest Meeting Minutes</h2>
+                </div>
+                <div class="bylaws-paper-wrapper minutes-container">
+                    <div id="minutes-text-content" class="about-content">
+                        <p class="loading-text">Loading latest report...</p>
+                    </div>
+                </div>
+
+                <div class="governance-subtitle-wrap" id="treasury-title-wrap">
+                    <h2 class="sub-section-title" id="treasury-title"><i class="fas fa-chart-line"></i> Club Treasury Overview</h2>
+                </div>
+                <div class="bylaws-paper-wrapper finance-container">
+                    <div id="finance-text-content" class="about-content">
+                        <p class="loading-text">Loading financial data...</p>
+                    </div>
+                </div>
+
+                <div class="governance-subtitle-wrap">
+                    <h2 class="sub-section-title"><i class="fas fa-gavel"></i> Official Bylaws</h2>
+                </div>
+                <div class="bylaws-paper-wrapper bylaws-main-card">
+                    <div id="bylaws-text-content" class="about-content bylaws-text-body">
+                        <p class="loading-text">Loading Bylaws...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="about-bg" class="about-bg-overlay"></div>
+
+        <section id="about" class="content-section">
+            <div class="about-container">
+                <div class="about-header">
+                    <h1>About Us</h1>
+                    <div class="accent-underline"></div>
+                </div>
+
+                <div class="about-content">
+                    <p class="mission-statement">
+                        The <strong>BN Disc Golf Club</strong> strives to promote the sport of disc golf in the Bloomington Normal area. We work with the City Parks and Rec Departments to develop, maintain, and enhance disc golf courses in our community.
+                    </p>
+                    
+                    <p>
+                        We also run leagues, tournaments, educational programs, and fund raisers for various charities. We encourage more players to get involved with our club and organized disc golf activities that we run.
+                    </p>
+
+                    <p>
+                        We uphold high standards for all competitive disc golf events in accordance with PDGA policies and guidelines. We promote and coordinate the efforts of club members and volunteers to broaden the knowledge of disc golf in Central Illinois.
+                    </p>
+
+                    <blockquote class="about-highlight">
+                        "Most of all, we strive to help people have fun playing the sport we love!"
+                    </blockquote>
+                </div>
+
+                <div class="about-contact-grid">
+                    <a href="https://www.facebook.com/groups/bndisc" target="_blank" class="contact-card">
+                        <i class="ph ph-facebook-logo"></i>
+                        <div class="contact-info">
+                            <span>Join the Community</span>
+                            <strong>Facebook Group</strong>
+                        </div>
+                    </a>
+
+                    <a href="mailto:BNDisc@gmail.com" class="contact-card">
+                        <i class="ph ph-envelope"></i>
+                        <div class="contact-info">
+                            <span>Send us a Message</span>
+                            <strong>BNDisc@gmail.com</strong>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <div id="league-bg" class="league-bg-overlay"></div>
+        <section id="league" class="content-section">
+            <div class="about-container">
+                <div class="about-header" style="margin-bottom: 0.5rem;">
+                    <h1 id="league-title">League Central</h1>
+                    <div class="accent-underline"></div>
+                </div>
+
+                <div id="league-login" style="display: block;">
+                    <div class="admin-grid-wide">
+                        <div class="admin-card">
+                            <h3>League Admin Login</h3>
+                            <p>Sign in to access League Central.</p>
+                            <button id="league-login-btn" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                                <i class="ph ph-google-logo"></i> Sign in with Google
+                            </button>
+                            <div class="auth-divider">or</div>
+                            <form id="league-email-login-form" class="admin-form auth-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label for="league-email-input">Email</label>
+                                    <input type="email" id="league-email-input" required placeholder="email@example.com" autocomplete="username">
+                                </div>
+                                <div class="form-group">
+                                    <label for="league-password-input">Password</label>
+                                    <input type="password" id="league-password-input" required placeholder="Password" autocomplete="current-password">
+                                </div>
+                                <button type="submit" id="league-email-login-btn" class="btn-primary" style="width: 100%;">Sign In</button>
+                            </form>
+                            <p class="auth-link-prompt">
+                                <a href="#" id="league-first-time-link" class="auth-link">First time logging in? Set up your password</a>
+                            </p>
+
+                            <form id="league-setup-check-form" class="admin-form auth-form" style="display: none;" onsubmit="return false;">
+                                <p class="auth-form-title">Set Up Your Account</p>
+                                <div class="form-group">
+                                    <label for="league-setup-email-input">Email</label>
+                                    <input type="email" id="league-setup-email-input" required placeholder="email@example.com" autocomplete="username">
+                                </div>
+                                <button type="submit" id="league-setup-check-btn" class="btn-primary" style="width: 100%;">Continue</button>
+                                <p class="auth-link-prompt">
+                                    <a href="#" id="league-back-to-login-link" class="auth-link">Back to sign in</a>
+                                </p>
+                            </form>
+
+                            <form id="league-setup-password-form" class="admin-form auth-form" style="display: none;" onsubmit="return false;">
+                                <p class="auth-form-title">Create Your Password</p>
+                                <div class="form-group">
+                                    <label for="league-setup-password-input">Create Password</label>
+                                    <input type="password" id="league-setup-password-input" required placeholder="At least 6 characters" autocomplete="new-password" minlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <label for="league-setup-password-confirm-input">Confirm Password</label>
+                                    <input type="password" id="league-setup-password-confirm-input" required placeholder="Re-enter password" autocomplete="new-password" minlength="6">
+                                </div>
+                                <button type="submit" id="league-setup-password-btn" class="btn-primary" style="width: 100%;">Create Account</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="league-content" style="display: none;">
+                    <div class="admin-grid-wide" id="league-selector-card" style="display: none;">
+                        <div class="admin-card">
+                            <h3>Select League</h3>
+                            <p class="subtitle">You are assigned to multiple leagues. Choose which one you are running.</p>
+                            <form class="admin-form" onsubmit="return false;">
+                                <div class="form-row" style="align-items: center;">
+                                    <select id="league-type-select" required style="width: 100%;">
+                                        <option value="" disabled selected>Select a league...</option>
+                                    </select>
+                                    <button type="button" id="league-type-continue" class="btn-primary" style="width: 100%;">Continue</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="admin-grid-wide" id="league-checkin-card" style="display: none;">
+                        <div class="admin-card">
+                            <div id="league-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0;">
+                                <button type="button" id="league-tab-checkin" class="league-tab active" style="flex: 1; margin-top: 0; border-radius: 6px 6px 0 0;">Check In</button>
+                                <button type="button" id="league-tab-tags" class="league-tab" style="flex: 1; margin-top: 0; border-radius: 6px 6px 0 0;">Tags</button>
+                                <button type="button" id="league-tab-payouts" class="league-tab" style="flex: 1; margin-top: 0; border-radius: 6px 6px 0 0;">Finances</button>
+                            </div>
+
+                            <div id="league-checkin-panel">
+                                <p class="subtitle">Type a name and check in players. Names will autofill from the imported roster.</p>
+                                <form class="admin-form" onsubmit="return false;">
+                                    <div style="position: relative; width: 100%;">
+                                        <input type="text" id="league-checkin-input" placeholder="Start typing a name..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width: 100%;">
+                                        <div id="league-checkin-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                            <label for="league-checkin-ace" style="font-size: 0.8rem; opacity: 0.8;">Ace</label>
+                                            <select id="league-checkin-ace" style="width: 100%; height: 2.5rem; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); box-sizing: border-box;">
+                                                <option value="yes" selected>Yes</option>
+                                                <option value="no">No</option>
+                                            </select>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                            <label for="league-checkin-tag" style="font-size: 0.8rem; opacity: 0.8;">Tag #</label>
+                                            <input type="text" inputmode="numeric" pattern="[0-9]*" id="league-checkin-tag" placeholder="Tag #" autocomplete="off" style="width: 100%; height: 2.5rem; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); box-sizing: border-box;">
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                                        <button type="button" id="league-show-checked" class="btn-primary" style="flex: 1; margin-top: 0;">Check In</button>
+                                        <button type="button" id="league-complete-checkin" class="btn-primary" style="flex: 1; margin-top: 0;">Create Cards</button>
+                                    </div>
+                                </form>
+                                <div id="league-checkin-status" style="font-size: 0.9rem; margin-top: 1rem;"></div>
+                                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Checked In</h4>
+                                <div id="league-checkin-list" class="admin-event-list" style="max-height: 400px; overflow-y: auto;"></div>
+                                <div id="league-cards-container" style="display: none; margin-top: 1.5rem;"></div>
+                            </div>
+
+                            <div id="league-tags-panel" style="display: none;">
+                                <h4 style="margin: 0 0 0.5rem 0;">Tags & Scores</h4>
+                                <button type="button" id="league-assign-tags" class="btn-primary" style="width: 100%; margin-top: 0; margin-bottom: 1rem;">Assign Tags by Score</button>
+                                <div id="league-tag-wizard" style="display: none; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                                    <h5 id="league-tag-wizard-question" style="margin: 0 0 1rem 0;"></h5>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button type="button" id="league-tag-wizard-yes" class="btn-primary" style="flex: 1; margin-top: 0;">Yes</button>
+                                        <button type="button" id="league-tag-wizard-skip" class="btn-primary" style="flex: 1; margin-top: 0; background: #d32f2f; border-color: #d32f2f;">Skip</button>
+                                        <button type="button" id="league-tag-wizard-stop" class="btn-primary" style="flex: 1; margin-top: 0; color: var(--text-color); background: transparent; border: 1px solid var(--glass-border);">Stop</button>
+                                    </div>
+                                </div>
+                                <div id="league-tags-list" class="admin-event-list"></div>
+                            </div>
+
+                            <div id="league-payouts-panel" style="display: none;">
+                                <h4 style="margin: 0 0 0.5rem 0;">Round Finances ($)</h4>
+                                <form id="league-round-finances-form" class="admin-form" onsubmit="return false;" autocomplete="off">
+                                    <div class="form-row" style="display: grid !important; grid-template-columns: 70px minmax(0, 1fr) !important; align-items: center; gap: 0.5rem;">
+                                        <label for="league-round-cost">Pay-In</label>
+                                        <input type="number" id="league-round-cost" min="0" step="0.01" value="5.00" autocomplete="off" style="width: 100%;">
+                                        <label for="league-club-fees">Club Fees</label>
+                                        <input type="number" id="league-club-fees" min="0" step="0.01" value="0.50" autocomplete="off" style="width: 100%;">
+                                        <label for="league-ctp">CTP</label>
+                                        <input type="number" id="league-ctp" min="0" step="0.01" value="0.00" autocomplete="off" style="width: 100%;">
+                                        <label for="league-ace-cost">Ace Cost</label>
+                                        <input type="number" id="league-ace-cost" min="0" step="0.01" value="1.00" autocomplete="off" style="width: 100%;">
+                                    </div>
+                                </form>
+                                <div id="league-round-finances-static" style="display: none;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <tbody>
+                                            <tr>
+                                                <td style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border);">Pay-In</td>
+                                                <td style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border); text-align: right;">$5.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border);">Club Fees</td>
+                                                <td id="league-static-club-fees" style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border); text-align: right;">$0.50</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border);">CTP</td>
+                                                <td style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border); text-align: right;">
+                                                    <select id="league-static-ctp" style="width: 100%;">
+                                                        <option value="yes" selected>Yes ($0.50)</option>
+                                                        <option value="no">No ($0.00)</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border);">Ace Cost</td>
+                                                <td style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border); text-align: right;">$1.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border);">$ per Player</td>
+                                                <td id="league-static-per-player" style="padding: 0.5rem; border-bottom: 1px solid var(--glass-border); text-align: right;">$4.00</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <h5 style="margin: 1.5rem 0 0.5rem 0;">Payouts</h5>
+                                <p class="subtitle" id="league-payout-subtitle">Enter payout details to calculate prize distribution.</p>
+                                <form id="league-payout-form" class="admin-form" onsubmit="return false;">
+                                    <div class="form-row" style="display: grid !important; grid-template-columns: 70px minmax(0, 1fr) !important; align-items: center; gap: 0.5rem;">
+                                        <label for="league-payout-players"># Players</label>
+                                        <input type="number" id="league-payout-players" min="1" value="13" autocomplete="off" readonly style="width: 100%; opacity: 0.7; cursor: not-allowed;">
+                                        <label for="league-payout-per-player">$/Player</label>
+                                        <input type="number" id="league-payout-per-player" min="0" step="0.01" value="4.00" readonly style="width: 100%; opacity: 0.7; cursor: not-allowed;">
+                                        <label for="league-payout-pct">% Paid</label>
+                                        <input type="number" id="league-payout-pct" min="0" max="100" step="0.01" value="30.00" style="width: 100%;">
+                                    </div>
+                                    <button type="button" id="league-payout-calc" class="btn-primary" style="width: 100%; margin-top: 1rem;">Calculate Payouts</button>
+                                </form>
+                                <div id="league-payout-results" style="margin-top: 1rem;"></div>
+                                <div id="league-payout-summary" style="margin-top: 1rem;"></div>
+
+                                <h5 style="margin: 1.5rem 0 0.5rem 0;">Round Details</h5>
+                                <form class="admin-form" onsubmit="return false;" autocomplete="off">
+                                    <div class="form-row" style="display: grid !important; grid-template-columns: 70px minmax(0, 1fr) !important; align-items: center; gap: 0.5rem;">
+                                        <label for="league-round-date">Date</label>
+                                        <input type="date" id="league-round-date" style="width: 100%;">
+                                        <label for="league-round-location">Location</label>
+                                        <div style="position: relative; width: 100%;">
+                                            <input type="text" id="league-round-location" placeholder="Course" autocomplete="off" style="width: 100%;">
+                                            <div id="league-location-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                        </div>
+                                        <label for="league-round-layout">Layout</label>
+                                        <div style="position: relative; width: 100%;">
+                                            <input type="text" id="league-round-layout" placeholder="S2S" autocomplete="off" style="width: 100%;">
+                                            <div id="league-layout-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="league-finalize-round" class="btn-primary" style="width: 100%; margin-top: 1rem;">Finalize Round</button>
+                                    <button type="button" id="league-reset-round" class="btn-primary" style="width: 100%; margin-top: 1rem; background-color: #d32f2f; border-color: #d32f2f; color: #fff;">Reset Round</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="league-actions" style="display: none; margin-top: 1.5rem; margin-bottom: 1.5rem; gap: 0.5rem; flex-wrap: wrap; align-items: center; width: 100%;">
+                        <button id="league-switch-btn" type="button" class="btn-primary" style="margin-top: 0; flex: 1 1 0; min-width: 140px;">
+                            <i class="ph ph-arrows-left-right"></i> Switch
+                        </button>
+                        <button id="league-logout-btn" type="button" class="btn-primary" style="margin-top: 0; flex: 1 1 0; min-width: 140px; background: transparent; border: 1px solid var(--glass-border); color: var(--text-color);">
+                            <i class="ph ph-sign-out"></i> Log Out
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="admin" class="content-section">
+            <div id="admin-login" style="display: none;">
+                <div class="admin-grid-wide">
+                    <div class="admin-card">
+                        <h3>Admin Login</h3>
+                        <p>Sign in to access the Admin Dashboard.</p>
+                        <button id="admin-google-login-btn" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                            <i class="ph ph-google-logo"></i> Sign in with Google
+                        </button>
+                        <div class="auth-divider">or</div>
+                        <form id="admin-email-login-form" class="admin-form auth-form" onsubmit="return false;">
+                            <div class="form-group">
+                                <label for="admin-email-input">Email</label>
+                                <input type="email" id="admin-email-input" required placeholder="email@example.com" autocomplete="username">
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-password-input">Password</label>
+                                <input type="password" id="admin-password-input" required placeholder="Password" autocomplete="current-password">
+                            </div>
+                            <button type="submit" id="admin-email-login-btn" class="btn-primary" style="width: 100%;">Sign In</button>
+                        </form>
+                        <p class="auth-link-prompt">
+                            <a href="#" id="admin-first-time-link" class="auth-link">First time logging in? Set up your password</a>
+                        </p>
+
+                        <form id="admin-setup-check-form" class="admin-form auth-form" style="display: none;" onsubmit="return false;">
+                            <p class="auth-form-title">Set Up Your Account</p>
+                            <div class="form-group">
+                                <label for="admin-setup-email-input">Email</label>
+                                <input type="email" id="admin-setup-email-input" required placeholder="email@example.com" autocomplete="username">
+                            </div>
+                            <button type="submit" id="admin-setup-check-btn" class="btn-primary" style="width: 100%;">Continue</button>
+                            <p class="auth-link-prompt">
+                                <a href="#" id="admin-back-to-login-link" class="auth-link">Back to sign in</a>
+                            </p>
+                        </form>
+
+                        <form id="admin-setup-password-form" class="admin-form auth-form" style="display: none;" onsubmit="return false;">
+                            <p class="auth-form-title">Create Your Password</p>
+                            <div class="form-group">
+                                <label for="admin-setup-password-input">Create Password</label>
+                                <input type="password" id="admin-setup-password-input" required placeholder="At least 6 characters" autocomplete="new-password" minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-setup-password-confirm-input">Confirm Password</label>
+                                <input type="password" id="admin-setup-password-confirm-input" required placeholder="Re-enter password" autocomplete="new-password" minlength="6">
+                            </div>
+                            <button type="submit" id="admin-setup-password-btn" class="btn-primary" style="width: 100%;">Create Account</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div id="admin-content" style="display: none;">
+                <div class="admin-header about-header">
+                    <h1>Admin Dashboard</h1>
+                    <div class="accent-underline"></div>
+                </div>
+                <hr class="course-divider">
+                
+                <div class="admin-grid">
+                    <div class="admin-grid-wide">
+                        <div class="admin-card">
+                            <h3 id="event-form-heading">Add New Event</h3>
+                            <p id="event-form-editing-note" class="subtitle" style="display: none;">Editing an existing event. Change the fields below and save, or cancel to add a new event instead.</p>
+                            <form id="event-form" class="admin-form">
+                                
+                                <div class="form-row-triple">
+                                    <div class="form-group">
+                                        <label for="event-category">Event Type</label>
+                                        <select id="event-category" required>
+                                            <option value="" disabled selected>Select a type...</option>
+                                            <option value="League">League</option>
+                                            <option value="Tournament">Tournament</option>
+                                            <option value="Meeting">Meeting</option>
+                                            <option value="Special Event">Special Event</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="event-date">Date</label>
+                                        <input type="date" id="event-date" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="event-time">Time</label>
+                                        <input type="time" id="event-time" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="event-loc">Location</label>
+                                        <input type="text" id="event-loc" required placeholder="e.g., Maxwell Park">
+                                        
+                                        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                                            <button type="submit" id="submit-event" class="btn-primary" style="flex: 1;">
+                                                <span>Save Event</span>
+                                            </button>
+                                            <button type="button" id="cancel-edit-event" class="btn-primary" style="flex: 1; display: none; background: transparent; border: 1px solid var(--glass-border); color: var(--text-color);">
+                                                <span>Cancel</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="event-desc">Description</label>
+                                        <textarea id="event-desc" rows="5" required placeholder="Details..."></textarea>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="admin-grid-wide" style="margin-top: 2rem;">
+                        <div class="admin-card">
+                            <h3>Manage Events</h3>
+                            <p class="subtitle">Edit or delete an existing event.</p>
+                            <div class="admin-card">
+                                <div class="admin-carousel-header">
+                                    <button id="prev-month" class="btn-nav">
+                                        <i class="ph ph-caret-left"></i>
+                                    </button>
+                                    
+                                    <div class="current-view-info">
+                                        <h3 id="display-month-year">Month Year</h3>
+                                    </div>
+
+                                    <button id="next-month" class="btn-nav">
+                                        <i class="ph ph-caret-right"></i>
+                                    </button>
+                                </div>
+                                
+                                <div id="admin-event-list" class="admin-event-list">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-grid-wide">
+                        <div class="admin-card">
+                            <h3>Club Meeting Minutes</h3>
+                            <p class="subtitle">Record official board meeting notes below.</p>
+                            
+                            <form id="minutes-form" class="admin-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Date of Meeting</label>
+                                        <input type="date" id="minutes-date" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Call to Order (Start Time)</label>
+                                        <input type="time" id="minutes-start-time">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Location</label>
+                                        <input type="text" id="minutes-location" placeholder="e.g., Maxwell Park Pavilion">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Presiding Officer(s)</label>
+                                        <input type="text" id="minutes-presiding" placeholder="Names of president/VP leading the meeting">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Secretary</label>
+                                        <input type="text" id="minutes-secretary" placeholder="Name of secretary taking minutes">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Board in Attendance</label>
+                                        <input type="text" id="minutes-attendance" placeholder="Names of board members present">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Missing Board Members</label>
+                                        <input type="text" id="minutes-missing" placeholder="Names of absent members">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Guests</label>
+                                        <input type="text" id="minutes-guests" placeholder="Names of non-board attendees">
+                                    </div>
+                                </div>
+
+                                <hr class="course-divider">
+
+                                <div class="form-group">
+                                    <label>Sponsorship Opportunities</label>
+                                    <textarea id="minutes-sponsorship" rows="3"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Old Business</label>
+                                    <textarea id="minutes-old-business" rows="4"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>New Business</label>
+                                    <textarea id="minutes-new-business" rows="4"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Around the Room (Open Discussion)</label>
+                                    <textarea id="minutes-around-room" rows="3"></textarea>
+                                </div>
+
+                                <hr class="course-divider">
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Next Meeting (Date & Time)</label>
+                                        <input type="datetime-local" id="minutes-next-meeting">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Next Meeting Location</label>
+                                        <input type="text" id="minutes-next-location">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 2rem;">
+                                    <i class="fas fa-save"></i> Save Meeting Minutes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+<div class="admin-grid-wide">
+    <div class="admin-card financial-card">
+        <h3>Club Treasury Logger</h3>
+        <p class="subtitle">Record financial movement for the club general fund.</p>
+        
+        <form id="finance-form" class="admin-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Transaction Date</label>
+                    <input type="date" id="fin-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="fin-type" required>
+                        <option value="Deposit">Deposit (+)</option>
+                        <option value="Withdrawal">Withdrawal (-)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="fin-amount" step="0.01" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="fin-category" placeholder="e.g. Tags, Tournament, Maintenance">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Description / Memo</label>
+                <textarea id="fin-memo" rows="2" placeholder="Details about the transaction..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submit-finance" style="width: 100%;">
+                <i class="fas fa-file-invoice-dollar"></i> Log Transaction
+            </button>
+        </form>
+    </div>
+</div>
+
+                    <div class="admin-grid-wide" style="margin-top: 2rem;">
+                        <div class="admin-card">
+                            <h3>Record an Ace</h3>
+                            <form id="ace-form" class="admin-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="ace-player">Player Name</label>
+                                        <input type="text" id="ace-player" required placeholder="e.g., John Doe">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ace-course">Course</label>
+                                        <input type="text" id="ace-course" list="course-suggestions" required placeholder="Select or type course...">
+                                        <datalist id="course-suggestions">
+                                            <option value="P.J. Irvin">
+                                            <option value="Forrest">
+                                            <option value="Maxwell">
+                                            <option value="Heartland">
+                                            <option value="Flying Iron">
+                                        </datalist>
+                                    </div>
+                                </div>
+
+                                <div class="form-row-triple">
+                                    <div class="form-group">
+                                        <label for="ace-hole">Hole #</label>
+                                        <input type="number" id="ace-hole" required placeholder="1-18">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ace-disc">Disc Used</label>
+                                        <input type="text" id="ace-disc" required placeholder="e.g., Buzzz">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ace-dist">Distance (ft)</label>
+                                        <input type="number" id="ace-dist" required placeholder="e.g., 250">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="ace-pad">Pad (Optional)</label>
+                                        <input type="text" id="ace-pad" list="pad-suggestions" placeholder="Short, Long, Gold...">
+                                        <datalist id="pad-suggestions">
+                                            <option value="Short">
+                                            <option value="Long">
+                                            <option value="Silver">
+                                            <option value="Gold">
+                                        </datalist>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ace-basket">Basket (Optional)</label>
+                                        <input type="text" id="ace-basket" list="basket-suggestions" placeholder="Blue, Gold, Silver...">
+                                        <datalist id="basket-suggestions">
+                                            <option value="Blue">
+                                            <option value="Gold">
+                                            <option value="Silver">
+                                        </datalist>
+                                    </div>
+                                </div>
+
+                                <div class="form-row" style="align-items: flex-end;">
+                                    <div class="form-group">
+                                        <label for="ace-date">Date</label>
+                                        <input type="date" id="ace-date" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <button type="submit" id="submit-ace" class="btn-primary" style="width: 100%; height: 42px;">
+                                            <span>Record Ace</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="admin-card" style="margin-top: 2rem;">
+                        <h3>Update Course Records</h3>
+                        <form id="record-form" class="admin-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Park Name</label>
+                                    <input type="text" id="rec-park" list="course-suggestions" required placeholder="e.g., Maxwell">
+                                </div>
+                                <div class="form-group">
+                                    <label>Layout</label>
+                                    <input type="text" id="rec-layout" placeholder="e.g., Long to Blue" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row-quad">
+                                <div class="form-group">
+                                    <label>Course Par (Optional)</label>
+                                    <input type="number" id="rec-par" placeholder="Keep current">
+                                </div>
+                                <div class="form-group">
+                                    <label>Total Strokes</label>
+                                    <input type="number" id="rec-score" required placeholder="48">
+                                </div>
+                                <div class="form-group">
+                                    <label>Player</label>
+                                    <input type="text" id="rec-player" required placeholder="Player Name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Date</label>
+                                    <input type="date" id="rec-date" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Division</label>
+                                <div class="division-toggle-container admin-toggle">
+                                    <div class="division-toggle">
+                                        <input type="radio" id="admin-div-m" name="division" value="M" checked>
+                                        <label for="admin-div-m">Mixed</label>
+                                        
+                                        <input type="radio" id="admin-div-w" name="division" value="W">
+                                        <label for="admin-div-w">Women</label>
+                                        
+                                        <div class="toggle-slider"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="submit-record" class="btn-primary" style="margin-top: 1rem; width: 100%;">
+                                <span>Update Top 3 Records</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="admin-grid-wide" style="margin-top: 2rem;">
+                        <div class="admin-card">
+                            <h3>League Admins</h3>
+                            <form id="league-admin-form" class="admin-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="league-admin-year">Year</label>
+                                        <input type="text" inputmode="numeric" pattern="[0-9]*" id="league-admin-year" required placeholder="2026" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="league-admin-email">Email</label>
+                                        <input type="email" id="league-admin-email" required placeholder="email@example.com" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address (e.g., user@example.com)">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="league-admin-season">Season</label>
+                                        <select id="league-admin-season" required>
+                                            <option value="" disabled selected>Select season...</option>
+                                            <option value="Winter">Winter</option>
+                                            <option value="Spring">Spring</option>
+                                            <option value="Summer">Summer</option>
+                                            <option value="Fall">Fall</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="league-admin-type">League Type</label>
+                                        <select id="league-admin-type" required>
+                                            <option value="" disabled selected>Select league type...</option>
+                                            <option value="Doubles">Doubles</option>
+                                            <option value="Handicap">Handicap</option>
+                                            <option value="Scratch">Scratch</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" id="submit-league-admin" class="btn-primary" style="margin-top: 1rem;">
+                                    <span>Add League Admin</span>
+                                </button>
+                            </form>
+
+                            <div id="league-admin-list" class="admin-event-list" style="margin-top: 1.5rem;"></div>
+                        </div>
+                    </div>
+
+                    <div class="admin-grid-wide" style="margin-top: 2rem;">
+                        <div class="admin-card">
+                            <h3>League Program Transfer Roster</h3>
+                            <p class="subtitle">Pull the latest names from the Google Sheet.</p>
+                            <div id="league-roster-status" style="margin-top: 1rem; font-size: 0.9rem;"></div>
+                            <div id="league-roster-last-loaded" style="font-size: 0.8rem; opacity: 0.6;"></div>
+                            <div id="league-roster-list" class="admin-event-list" style="margin-top: 1rem; max-height: 400px; overflow-y: auto;"></div>
+                            <div class="admin-roster-actions">
+                                <button type="button" id="load-league-roster" class="btn-primary" style="margin-top: 1rem;">
+                                    <span>Load Roster</span>
+                                </button>
+                                <button type="button" id="import-league-roster" class="btn-primary" style="margin-top: 1rem;">
+                                    <span>Import Players to Firestore</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+        </section>
+    </main>
+
+    <div id="event-modal" class="event-modal" aria-hidden="true">
+        <div class="event-modal-backdrop"></div>
+        <div class="event-modal-card" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">
+            <button class="event-modal-close" aria-label="Close event details">&times;</button>
+            <h3 id="event-modal-title">Event</h3>
+            <p id="event-modal-time"></p>
+            <p id="event-modal-location"></p>
+            <p id="event-modal-description"></p>
+        </div>
+    </div>
+
+    <script type="module" src="js/theme.js?v=100"></script>
+    <script type="module" src="js/firebase-config.js?v=100"></script>
+    <script type="module" src="js/firestore.js?v=100"></script>
+    <script type="module" src="js/nav.js?v=100"></script>
+    <script type="module" src="js/loginAdmin.js?v=100"></script>
+    <script type="module" src="js/admin.js?v=100"></script>
+    <script type="module" src="js/currentEvents.js?v=100"></script>
+    <script type="module" src="js/aces.js?v=100"></script>
+    <script type="module" src="js/records.js?v=100"></script>
+    <script type="module" src="js/governance.js?v=100"></script>
+    <script type="module" src="js/bagTags.js?v=100"></script>
+</body>
+</html>

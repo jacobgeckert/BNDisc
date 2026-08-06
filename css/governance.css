@@ -1,0 +1,214 @@
+/* ==========================================================================
+   1. GOVERNANCE LAYOUT
+   ========================================================================== */
+/* Content sits directly on the section's glass background. */
+
+/* Desktop Governance Cards */
+.bylaws-paper-wrapper {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    margin-bottom: 2rem;
+}
+
+/* Specific Height Constraints */
+.minutes-container { max-height: 90vh; }
+.finance-container { max-height: 70vh; }
+.bylaws-main-card { max-height: 75vh; }
+
+/* Section Titles */
+.governance-subtitle-wrap {
+    margin: 2.5rem 0 1rem 0.5rem;
+}
+
+.sub-section-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sub-section-title i {
+    color: var(--accent-color);
+}
+
+#governance .about-header h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+}
+
+/* ==========================================================================
+   2. MEETING MINUTES (Report Style)
+   ========================================================================== */
+.minutes-report-content {
+    font-family: 'Georgia', serif;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+/* ==========================================================================
+   3. CLUB TREASURY (Financial Style)
+   ========================================================================== */
+.finance-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-box {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1.2rem;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    text-align: center;
+}
+
+.stat-box label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    margin-bottom: 8px;
+}
+
+.stat-box .amount {
+    font-size: 1.2rem;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.finance-ledger {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.finance-ledger th {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid var(--glass-border);
+    color: var(--accent-color);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.finance-ledger td {
+    padding: 12px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tag-badge {
+    background: var(--glass-border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.positive { color: #2ecc71; }
+.negative { color: #e74c3c; }
+
+/* ==========================================================================
+   4. BYLAWS (Legal Structure)
+   ========================================================================== */
+.bylaws-text-body {
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.article-heading {
+    color: var(--text-color);
+    text-transform: none;
+    letter-spacing: 0.5px;
+    margin: 1.5rem 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+.bylaws-row {
+    display: flex;
+    margin-bottom: 1rem;
+    gap: 1.2rem;
+}
+
+.row-label {
+    min-width: 35px;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.sub-point-standard {
+    padding-left: 1rem;
+    margin-top: 0.4rem;
+    border-left: 1px solid var(--glass-border);
+}
+
+.article-divider {
+    border: 0;
+    border-top: 1px solid var(--glass-border);
+    margin: 2.5rem 0;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .bylaws-paper-wrapper,
+    .minutes-container,
+    .finance-container,
+    .bylaws-main-card { background: transparent; border: none; border-radius: 0; padding: 0; box-shadow: none; backdrop-filter: none; max-height: none; overflow-y: visible; margin-bottom: 1rem; }
+    #minutes-title { cursor: pointer; user-select: none; position: relative; padding-right: 1.5rem; }
+    #minutes-title::after { content: '\002B'; position: absolute; right: 0; top: 0; color: var(--accent-color); font-weight: 800; }
+    #minutes-title.expanded::after { content: '\2212'; }
+    .bylaws-paper-wrapper.minutes-container { display: none; }
+    .bylaws-paper-wrapper.minutes-container.expanded { display: block; }
+    #treasury-title { cursor: pointer; user-select: none; position: relative; padding-right: 1.5rem; }
+    #treasury-title::after { content: '\002B'; position: absolute; right: 0; top: 0; color: var(--accent-color); font-weight: 800; }
+    #treasury-title.expanded::after { content: '\2212'; }
+    .bylaws-paper-wrapper.finance-container { display: none; }
+    .bylaws-paper-wrapper.finance-container.expanded { display: block; }
+    .finance-summary-grid { grid-template-columns: 1fr; }
+    .stat-box { cursor: pointer; user-select: none; }
+    .stat-box.active-stat { background: rgba(56, 189, 248, 0.1); border-color: var(--accent-color); }
+    .finance-ledger { display: none; margin-top: 1rem; }
+    .finance-ledger.expanded { display: table; }
+    .finance-ledger thead { display: none; }
+    .finance-ledger tr {
+        display: block;
+        margin-bottom: 0.8rem;
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .finance-ledger td {
+        display: block;
+        text-align: right;
+        padding: 10px 10px 10px 45%;
+        position: relative;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .finance-ledger td:last-child { border-bottom: none; }
+    .finance-ledger td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        font-weight: 700;
+        color: var(--accent-color);
+        text-align: left;
+    }
+    .article-heading { cursor: pointer; user-select: none; position: relative; padding-right: 1.5rem; }
+    .article-heading::after { content: '\002B'; position: absolute; right: 0; top: 0; color: var(--accent-color); font-weight: 800; }
+    .bylaws-article-block.expanded .article-heading::after { content: '\2212'; }
+    .bylaws-article-block .article-body { display: none; }
+    .bylaws-article-block.expanded .article-body { display: block; }
+}
