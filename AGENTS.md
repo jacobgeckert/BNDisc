@@ -30,3 +30,4 @@ If you see an alert like `"someone@example.com" is not an authorized
 account` during first-time setup even though the document clearly exists in
 the Firestore console, this is almost always the cause — check the browser
 console for a `permission-denied` error to confirm.
+
