@@ -18,6 +18,7 @@ export function initAdminForm() {
     initEventForm();
     initAceForm();
     initCourseRecordForm();
+    loadCourseSuggestions();
     initMinutesForm();
     initFinanceForm(); // New Treasury Management Logic
     updateManagementUI();
@@ -326,6 +327,58 @@ function initAceForm() {
             if (submitBtn) submitBtn.disabled = false;
         }
     };
+}
+
+async function loadCourseSuggestions() {
+    const courseList = document.getElementById('course-suggestions');
+    const layoutList = document.getElementById('record-layout-suggestions');
+    const recPark = document.getElementById('rec-park');
+    const recLayout = document.getElementById('rec-layout');
+    if (!courseList) return;
+
+    try {
+        const snapshot = await getDocs(collection(db, 'course_records'));
+        const parks = [];
+        const layoutsByPark = {};
+
+        snapshot.forEach(docSnap => {
+            const park = docSnap.id;
+            parks.push(park);
+            const data = docSnap.data() || {};
+            const layouts = data.layouts || {};
+            layoutsByPark[park.toLowerCase()] = Object.keys(layouts);
+        });
+
+        courseList.innerHTML = '';
+        parks.forEach(park => {
+            const option = document.createElement('option');
+            option.value = park;
+            courseList.appendChild(option);
+        });
+
+        function updateLayoutList() {
+            if (!layoutList || !recPark) return;
+            const park = (recPark.value || '').trim().toLowerCase();
+            const layouts = layoutsByPark[park] || [];
+            layoutList.innerHTML = '';
+            layouts.forEach(layout => {
+                const option = document.createElement('option');
+                option.value = layout;
+                layoutList.appendChild(option);
+            });
+        }
+
+        if (recPark) {
+            recPark.addEventListener('input', updateLayoutList);
+            recPark.addEventListener('change', updateLayoutList);
+        }
+        if (recLayout) {
+            recLayout.addEventListener('focus', updateLayoutList);
+        }
+        updateLayoutList();
+    } catch (error) {
+        console.error('Error loading course suggestions:', error);
+    }
 }
 
 /**
