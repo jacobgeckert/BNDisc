@@ -974,7 +974,13 @@ function startTagWizard() {
     const entries = taggedPlayers.map(name => ({ name, score: Number(scores[name]) }));
     const valid = entries.filter(e => !isNaN(e.score) && scores[e.name] !== undefined);
     const invalid = entries.filter(e => !valid.includes(e));
-    valid.sort((a, b) => a.score - b.score);
+    valid.sort((a, b) => {
+        const scoreDiff = a.score - b.score;
+        if (scoreDiff !== 0) return scoreDiff;
+        const tagA = Number(originalTags[a.name]) || Infinity;
+        const tagB = Number(originalTags[b.name]) || Infinity;
+        return tagA - tagB;
+    });
     const sortedNames = valid.map(e => e.name).concat(invalid.map(e => e.name));
 
     const tagValues = Object.values(originalTags).filter(Boolean);
