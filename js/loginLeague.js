@@ -7,7 +7,7 @@ import {
     getRedirectResult,
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isLeagueAdmin, checkLeagueAdminEligibility, getLocalRoster, getRoster } from './firestore.js?v=100';
 import { bindFirstTimeSetup } from './authSetup.js?v=100';
 
@@ -593,7 +593,31 @@ async function loadLeagueCheckin() {
     if (roundCostInput) roundCostInput.addEventListener('input', updatePayoutPerPlayer);
     if (clubFeesInput) clubFeesInput.addEventListener('input', updatePayoutPerPlayer);
     if (ctpInput) ctpInput.addEventListener('input', updatePayoutPerPlayer);
-    if (dateInput) dateInput.addEventListener('input', updateFinalizeButton);
+    if (dateInput) {
+        dateInput.addEventListener('input', updateFinalizeButton);
+        dateInput.addEventListener('change', async () => {
+            if (!locationInput || !layoutInput) return;
+            const date = dateInput.value;
+            if (!date) return;
+            const [year, month, day] = date.split('-');
+            const monthId = `${year}-${month}`;
+            try {
+                const docRef = doc(db, 'event_bundles', monthId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const events = docSnap.data().events || [];
+                    const match = events.find(e => String(e.day) === String(Number(day)));
+                    if (match) {
+                        locationInput.value = match.location || '';
+                        layoutInput.value = match.layout || '';
+                        updateFinalizeButton();
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not load calendar event for date:', error);
+            }
+        });
+    }
     if (locationInput) {
         locationInput.addEventListener('input', () => { updateFinalizeButton(); updateLocationSuggestions(); });
         locationInput.addEventListener('focus', updateLocationSuggestions);
