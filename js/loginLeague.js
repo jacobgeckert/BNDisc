@@ -753,20 +753,24 @@ function groupIntoCards(n) {
     if (n === 5) return [5];
 
     const groups = [];
-    const threes = Math.floor(n / 3);
-    const remainder = n % 3;
+    const fours = Math.floor(n / 4);
+    const remainder = n % 4;
 
     if (remainder === 0) {
-        for (let i = 0; i < threes; i++) groups.push(3);
+        for (let i = 0; i < fours; i++) groups.push(4);
     } else if (remainder === 1) {
-        // turn one 3 into a 4 (3 + 1)
-        for (let i = 0; i < threes - 1; i++) groups.push(3);
-        groups.push(4);
+        // e.g., 9, 13, 17: use (fours - 1) 4s and a 5
+        for (let i = 0; i < fours - 1; i++) groups.push(4);
+        groups.push(5);
+    } else if (remainder === 2) {
+        // e.g., 6, 10, 14: use (fours - 1) 4s and two 3s
+        for (let i = 0; i < fours - 1; i++) groups.push(4);
+        groups.push(3);
+        groups.push(3);
     } else {
-        // remainder === 2: turn two 3s into 4s (3 + 3 + 2 = 4 + 4)
-        for (let i = 0; i < threes - 2; i++) groups.push(3);
-        groups.push(4);
-        groups.push(4);
+        // remainder === 3: e.g., 7, 11, 15: use fours 4s and a 3
+        for (let i = 0; i < fours; i++) groups.push(4);
+        groups.push(3);
     }
 
     return groups;
