@@ -747,6 +747,7 @@ async function loadLeagueCheckin() {
         if (payoutResults) payoutResults.innerHTML = '';
     }
     updateScratchFinancesVisibility();
+    switchLeagueTab('round-info');
 }
 
 function groupIntoCards(n) {
