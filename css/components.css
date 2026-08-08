@@ -550,6 +550,19 @@ input:checked + .slider:before { transform: translateX(20px); }
     font-weight: 600;
 }
 
+@media (max-width: 768px) {
+    #league-tabs {
+        flex-wrap: wrap;
+    }
+
+    .league-tab {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.25rem;
+        white-space: normal;
+        word-break: break-word;
+    }
+}
+
 .btn-delete {
     background: #ef4444;
     color: white;
