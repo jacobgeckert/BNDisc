@@ -98,6 +98,13 @@ body {
     background-position: 50% center;
 }
 
+/* 7. Course Records (8.jpg) */
+.records-bg-overlay {
+    background: linear-gradient(var(--overlay-color), var(--overlay-color)), url('../assets/8.jpg');
+    background-size: 110% auto;
+    background-position: 50% center;
+}
+
 /* ==========================================================================
    MOBILE BACKGROUND FIXES
    ========================================================================== */
