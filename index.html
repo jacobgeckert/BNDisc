@@ -538,9 +538,35 @@
                     <div class="admin-grid-wide" id="league-checkin-card" style="display: none;">
                         <div class="admin-card">
                             <div id="league-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0;">
+                                <button type="button" id="league-tab-round-info" class="league-tab" style="flex: 1; margin-top: 0; border-radius: 6px 6px 0 0;">Round Info</button>
                                 <button type="button" id="league-tab-checkin" class="league-tab active" style="flex: 1; margin-top: 0; border-radius: 6px 6px 0 0;">Check In</button>
                                 <button type="button" id="league-tab-tags" class="league-tab" style="flex: 1; margin-top: 0; border-radius: 6px 6px 0 0;">Tags</button>
                                 <button type="button" id="league-tab-payouts" class="league-tab" style="flex: 1; margin-top: 0; border-radius: 6px 6px 0 0;">Finances</button>
+                            </div>
+
+                            <div id="league-round-info-panel" style="display: none;">
+                                <h4 style="margin: 0 0 0.5rem 0;">Round Info</h4>
+                                <form class="admin-form" onsubmit="return false;" autocomplete="off">
+                                    <div class="form-row" style="display: grid !important; grid-template-columns: 70px minmax(0, 1fr) !important; align-items: center; gap: 0.5rem;">
+                                        <label for="league-round-date">Date</label>
+                                        <input type="date" id="league-round-date" style="width: 100%;">
+                                        <label for="league-round-location">Location</label>
+                                        <div style="position: relative; width: 100%;">
+                                            <input type="text" id="league-round-location" placeholder="Course" autocomplete="off" style="width: 100%;">
+                                            <div id="league-location-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                        </div>
+                                        <label for="league-round-layout">Layout</label>
+                                        <div style="position: relative; width: 100%;">
+                                            <input type="text" id="league-round-layout" placeholder="S2S" autocomplete="off" style="width: 100%;">
+                                            <div id="league-layout-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="league-finalize-round" class="btn-primary" style="width: 100%; margin-top: 1rem;">Finalize Round</button>
+                                    <button type="button" id="league-reset-round" class="btn-primary" style="width: 100%; margin-top: 1rem; background-color: #d32f2f; border-color: #d32f2f; color: #fff;">Reset Round</button>
+                                </form>
+
+                                <h4 style="margin: 1.5rem 0 0.5rem 0;">Layout Records</h4>
+                                <div id="league-layout-records"></div>
                             </div>
 
                             <div id="league-checkin-panel">
@@ -649,25 +675,6 @@
                                 <div id="league-payout-results" style="margin-top: 1rem;"></div>
                                 <div id="league-payout-summary" style="margin-top: 1rem;"></div>
 
-                                <h5 style="margin: 1.5rem 0 0.5rem 0;">Round Details</h5>
-                                <form class="admin-form" onsubmit="return false;" autocomplete="off">
-                                    <div class="form-row" style="display: grid !important; grid-template-columns: 70px minmax(0, 1fr) !important; align-items: center; gap: 0.5rem;">
-                                        <label for="league-round-date">Date</label>
-                                        <input type="date" id="league-round-date" style="width: 100%;">
-                                        <label for="league-round-location">Location</label>
-                                        <div style="position: relative; width: 100%;">
-                                            <input type="text" id="league-round-location" placeholder="Course" autocomplete="off" style="width: 100%;">
-                                            <div id="league-location-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
-                                        </div>
-                                        <label for="league-round-layout">Layout</label>
-                                        <div style="position: relative; width: 100%;">
-                                            <input type="text" id="league-round-layout" placeholder="S2S" autocomplete="off" style="width: 100%;">
-                                            <div id="league-layout-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
-                                        </div>
-                                    </div>
-                                    <button type="button" id="league-finalize-round" class="btn-primary" style="width: 100%; margin-top: 1rem;">Finalize Round</button>
-                                    <button type="button" id="league-reset-round" class="btn-primary" style="width: 100%; margin-top: 1rem; background-color: #d32f2f; border-color: #d32f2f; color: #fff;">Reset Round</button>
-                                </form>
                             </div>
                         </div>
                     </div>

@@ -10,7 +10,7 @@ import {
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isLeagueAdmin, checkLeagueAdminEligibility, getLocalRoster, getRoster } from './firestore.js?v=100';
 import { bindFirstTimeSetup } from './authSetup.js?v=100';
-import { LOCATIONS, LAYOUT_SUGGESTIONS } from './courseData.js?v=100';
+import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
 
 const provider = new GoogleAuthProvider();
 let isChecking = false;
@@ -230,7 +230,7 @@ async function loadLeagueCheckin() {
                 locationInput.value = l;
                 locationSuggestions.style.display = 'none';
                 updateFinalizeButton();
-                // updateLayoutSuggestions();
+                renderLayoutRecords();
             };
             div.onmouseenter = () => div.style.background = 'var(--hover-bg, rgba(255,255,255,0.1))';
             div.onmouseleave = () => div.style.background = '';
@@ -259,6 +259,7 @@ async function loadLeagueCheckin() {
                 layoutInput.value = l;
                 layoutSuggestions.style.display = 'none';
                 updateFinalizeButton();
+                renderLayoutRecords();
             };
             div.onmouseenter = () => div.style.background = 'var(--hover-bg, rgba(255,255,255,0.1))';
             div.onmouseleave = () => div.style.background = '';
@@ -534,10 +535,12 @@ async function loadLeagueCheckin() {
 
     const showCheckedBtn = document.getElementById('league-show-checked');
     const tabTags = document.getElementById('league-tab-tags');
+    const tabRoundInfo = document.getElementById('league-tab-round-info');
     const assignTagsBtn = document.getElementById('league-assign-tags');
     const wizardYesBtn = document.getElementById('league-tag-wizard-yes');
     const wizardSkipBtn = document.getElementById('league-tag-wizard-skip');
     const wizardStopBtn = document.getElementById('league-tag-wizard-stop');
+    if (tabRoundInfo) tabRoundInfo.onclick = () => switchLeagueTab('round-info');
     if (tabCheckin) tabCheckin.onclick = () => switchLeagueTab('checkin');
     if (tabTags) tabTags.onclick = () => switchLeagueTab('tags');
     if (tabPayouts) tabPayouts.onclick = () => switchLeagueTab('payouts');
@@ -584,6 +587,7 @@ async function loadLeagueCheckin() {
                         locationInput.value = match.location || '';
                         layoutInput.value = match.layout || '';
                         updateFinalizeButton();
+                        renderLayoutRecords();
                     }
                 }
             } catch (error) {
@@ -593,6 +597,7 @@ async function loadLeagueCheckin() {
     }
     if (locationInput) {
         locationInput.addEventListener('input', () => { updateFinalizeButton(); updateLocationSuggestions(); });
+        locationInput.addEventListener('change', renderLayoutRecords);
         locationInput.addEventListener('focus', updateLocationSuggestions);
         locationInput.addEventListener('blur', () => {
             setTimeout(() => { if (locationSuggestions) locationSuggestions.style.display = 'none'; }, 150);
@@ -600,6 +605,7 @@ async function loadLeagueCheckin() {
     }
     if (layoutInput) {
         layoutInput.addEventListener('input', () => { updateFinalizeButton(); updateLayoutSuggestions(); });
+        layoutInput.addEventListener('change', renderLayoutRecords);
         layoutInput.addEventListener('focus', updateLayoutSuggestions);
         layoutInput.addEventListener('blur', () => {
             setTimeout(() => { if (layoutSuggestions) layoutSuggestions.style.display = 'none'; }, 150);
@@ -1024,38 +1030,121 @@ function tagWizardStop() {
     renderTags();
 }
 
+async function renderLayoutRecords() {
+    const container = document.getElementById('league-layout-records');
+    if (!container) return;
+    const locationInput = document.getElementById('league-round-location');
+    const layoutInput = document.getElementById('league-round-layout');
+    const location = (locationInput?.value || '').trim();
+    const layout = (layoutInput?.value || '').trim();
+
+    if (!location || !layout) {
+        container.innerHTML = '<p class="subtitle" style="opacity: 0.6;">Select a location and layout to see records.</p>';
+        return;
+    }
+
+    const storageName = getCourseStorageName(location);
+    const displayName = getCourseDisplayName(storageName);
+
+    try {
+        const docRef = doc(db, 'course_records', storageName);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+            container.innerHTML = `<p class="subtitle" style="opacity: 0.6;">No records found for ${displayName}.</p>`;
+            return;
+        }
+
+        const data = docSnap.data() || {};
+        const layouts = data.layouts || {};
+        const layoutKey = Object.keys(layouts).find(k => k.toLowerCase().trim() === layout.toLowerCase());
+        if (!layoutKey) {
+            container.innerHTML = `<p class="subtitle" style="opacity: 0.6;">No records found for the ${layout} layout.</p>`;
+            return;
+        }
+
+        const layoutData = layouts[layoutKey];
+        const par = layoutData.par || null;
+
+        const makeList = (scores) => {
+            if (!scores || scores.length === 0) {
+                return '<p class="subtitle" style="opacity: 0.6;">No records yet.</p>';
+            }
+            const sorted = [...scores].sort((a, b) => a.score - b.score || new Date(a.date) - new Date(b.date));
+            const top3 = sorted.slice(0, 3);
+            return `<ol style="margin: 0; padding-left: 1.2rem;">${top3.map((rec) => {
+                const toPar = par !== null ? rec.score - par : null;
+                const toParText = toPar !== null ? ` (${toPar > 0 ? '+' : ''}${toPar === 0 ? 'E' : toPar})` : '';
+                const date = rec.date ? new Date(rec.date).toLocaleDateString() : '';
+                return `<li style="margin-bottom: 0.35rem;">${rec.player} — <strong>${rec.score}</strong>${toParText}${date ? ` <span style="opacity: 0.6; font-size: 0.8rem;">${date}</span>` : ''}</li>`;
+            }).join('')}</ol>`;
+        };
+
+        const mixedScores = layoutData.scoresM || [];
+        const womenScores = layoutData.scoresW || [];
+
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem;">
+                    <h5 style="margin: 0 0 0.5rem 0;">Mixed</h5>
+                    ${makeList(mixedScores)}
+                </div>
+                <div style="background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem;">
+                    <h5 style="margin: 0 0 0.5rem 0;">Women's</h5>
+                    ${makeList(womenScores)}
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error loading layout records:', error);
+        container.innerHTML = '<p class="subtitle" style="opacity: 0.6;">Error loading records.</p>';
+    }
+}
+
 function switchLeagueTab(tab) {
     if (tab === 'tags' && selectedLeague?.leagueType?.toLowerCase() === 'doubles') return;
+    const roundInfoPanel = document.getElementById('league-round-info-panel');
     const checkinPanel = document.getElementById('league-checkin-panel');
     const tagsPanel = document.getElementById('league-tags-panel');
     const payoutsPanel = document.getElementById('league-payouts-panel');
+    const tabRoundInfo = document.getElementById('league-tab-round-info');
     const tabCheckin = document.getElementById('league-tab-checkin');
     const tabTags = document.getElementById('league-tab-tags');
     const tabPayouts = document.getElementById('league-tab-payouts');
     const playersInput = document.getElementById('league-payout-players');
 
-    if (tab === 'checkin') {
+    const setActive = (active) => {
+        [tabRoundInfo, tabCheckin, tabTags, tabPayouts].forEach(t => {
+            if (t) t.classList.remove('active');
+        });
+        if (active) active.classList.add('active');
+    };
+
+    if (tab === 'round-info') {
+        if (roundInfoPanel) roundInfoPanel.style.display = 'block';
+        if (checkinPanel) checkinPanel.style.display = 'none';
+        if (tagsPanel) tagsPanel.style.display = 'none';
+        if (payoutsPanel) payoutsPanel.style.display = 'none';
+        setActive(tabRoundInfo);
+        renderLayoutRecords();
+    } else if (tab === 'checkin') {
+        if (roundInfoPanel) roundInfoPanel.style.display = 'none';
         if (checkinPanel) checkinPanel.style.display = 'block';
         if (tagsPanel) tagsPanel.style.display = 'none';
         if (payoutsPanel) payoutsPanel.style.display = 'none';
-        if (tabCheckin) tabCheckin.classList.add('active');
-        if (tabTags) tabTags.classList.remove('active');
-        if (tabPayouts) tabPayouts.classList.remove('active');
+        setActive(tabCheckin);
     } else if (tab === 'tags') {
+        if (roundInfoPanel) roundInfoPanel.style.display = 'none';
         if (checkinPanel) checkinPanel.style.display = 'none';
         if (tagsPanel) tagsPanel.style.display = 'block';
         if (payoutsPanel) payoutsPanel.style.display = 'none';
-        if (tabCheckin) tabCheckin.classList.remove('active');
-        if (tabTags) tabTags.classList.add('active');
-        if (tabPayouts) tabPayouts.classList.remove('active');
+        setActive(tabTags);
         renderTags();
-    } else {
+    } else if (tab === 'payouts') {
+        if (roundInfoPanel) roundInfoPanel.style.display = 'none';
         if (checkinPanel) checkinPanel.style.display = 'none';
         if (tagsPanel) tagsPanel.style.display = 'none';
         if (payoutsPanel) payoutsPanel.style.display = 'block';
-        if (tabCheckin) tabCheckin.classList.remove('active');
-        if (tabTags) tabTags.classList.remove('active');
-        if (tabPayouts) tabPayouts.classList.add('active');
+        setActive(tabPayouts);
         if (playersInput) playersInput.value = String(getCheckins().length);
         renderRoundSummary();
     }
