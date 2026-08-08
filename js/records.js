@@ -1,4 +1,5 @@
 import { db } from './firebase-config.js?v=100';
+import { getCourseDisplayName } from './courseData.js?v=100';
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /** --- STATE & CACHE --- **/
@@ -100,7 +101,7 @@ function populateCourseDropdown(records) {
     parkNames.forEach(name => {
         const option = document.createElement('option');
         option.value = name;
-        option.textContent = name;
+        option.textContent = getCourseDisplayName(name);
         filter.appendChild(option);
     });
 }
@@ -181,7 +182,7 @@ const layoutsHtml = Object.entries(park.layouts).map(([layoutName, layoutData]) 
 
         if (layoutsHtml.trim() !== '') {
             parkDiv.innerHTML = `
-                <h3 class="course-group-title">${park.parkName}</h3>
+                <h3 class="course-group-title">${getCourseDisplayName(park.parkName)}</h3>
                 <div class="layouts-grid">${layoutsHtml}</div>
             `;
             container.appendChild(parkDiv);

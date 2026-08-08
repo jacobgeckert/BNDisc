@@ -7,6 +7,22 @@ export const LOCATIONS = [
     'Forsyth', 'LeRoy', 'Eureka', 'Goodfield', 'Kennel Lake', 'Roanoke', 'Sunset Hills'
 ];
 
+export const COURSE_NAME_OVERRIDES = {
+    'PJ Forrest Combo': 'P.J./Forrest',
+    'NCHS': 'Flying Iron (NCHS)'
+};
+
+export const getCourseDisplayName = (name) => COURSE_NAME_OVERRIDES[name] || name;
+
+export const getCourseStorageName = (name) => {
+    if (!name) return name;
+    const normalized = String(name).toLowerCase().trim();
+    for (const [storage, display] of Object.entries(COURSE_NAME_OVERRIDES)) {
+        if (storage.toLowerCase() === normalized || display.toLowerCase() === normalized) return storage;
+    }
+    return name;
+};
+
 export const LAYOUT_SUGGESTIONS = {
     'maxwell': ['Short to Blue', 'Short to Gold', 'Long to Blue', 'Long to Gold'],
     'p.j./forrest': ['S2S', 'S2G', 'G2S', 'G2G'],

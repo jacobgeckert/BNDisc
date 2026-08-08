@@ -4,7 +4,7 @@ import {
     collection, addDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin, getRoster, saveLocalRoster } from './firestore.js?v=100';
-import { LOCATIONS, LAYOUT_SUGGESTIONS } from './courseData.js?v=100';
+import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
 
 // State and Cache
 let viewDate = new Date(); 
@@ -384,7 +384,9 @@ function initAceForm() {
     form.onsubmit = async (e) => {
         e.preventDefault();
         const submitBtn = document.getElementById('submit-ace');
-        const courseName = document.getElementById('ace-course').value;
+        const rawCourse = document.getElementById('ace-course').value;
+        const courseName = getCourseStorageName(rawCourse);
+        const courseDisplay = getCourseDisplayName(courseName);
 
         const aceData = {
             playerName: document.getElementById('ace-player').value,
@@ -401,8 +403,8 @@ function initAceForm() {
             if (submitBtn) submitBtn.disabled = true;
             const docRef = doc(db, "ace_bundles", courseName);
             await setDoc(docRef, { aces: arrayUnion(aceData) }, { merge: true });
-            
-            alert(`Ace recorded for ${courseName}!`);
+
+            alert(`Ace recorded for ${courseDisplay}!`);
             form.reset();
         } catch (error) {
             console.error(error);
@@ -415,49 +417,62 @@ function initAceForm() {
 
 async function loadCourseSuggestions() {
     const courseList = document.getElementById('course-suggestions');
-    const layoutList = document.getElementById('record-layout-suggestions');
     const recPark = document.getElementById('rec-park');
     const recLayout = document.getElementById('rec-layout');
     if (!courseList) return;
 
     try {
         const snapshot = await getDocs(collection(db, 'course_records'));
-        const parks = [];
+        const suggestedParks = new Set();
         const layoutsByPark = {};
 
+        const defaultCourses = ['P.J. Irvin', 'Forrest', 'Maxwell', 'Heartland', 'Flying Iron (NCHS)'];
+        defaultCourses.forEach(park => {
+            suggestedParks.add(park);
+            const storageKey = getCourseStorageName(park).toLowerCase();
+            if (LAYOUT_SUGGESTIONS[storageKey]) {
+                layoutsByPark[park.toLowerCase()] = [...LAYOUT_SUGGESTIONS[storageKey]];
+            }
+        });
+
         snapshot.forEach(docSnap => {
-            const park = docSnap.id;
-            parks.push(park);
+            const storageName = docSnap.id;
+            const displayName = getCourseDisplayName(storageName);
+            if (displayName.toLowerCase().includes('old design')) return;
+            suggestedParks.add(displayName);
             const data = docSnap.data() || {};
-            const layouts = data.layouts || {};
-            layoutsByPark[park.toLowerCase()] = Object.keys(layouts);
+            const layouts = Object.keys(data.layouts || {});
+            const key = displayName.toLowerCase();
+            const current = layoutsByPark[key] || [];
+            layoutsByPark[key] = [...new Set([...current, ...layouts])];
         });
 
         courseList.innerHTML = '';
-        parks.forEach(park => {
+        suggestedParks.forEach(park => {
             const option = document.createElement('option');
             option.value = park;
             courseList.appendChild(option);
         });
 
         function updateLayoutList() {
-            if (!layoutList || !recPark) return;
-            const park = (recPark.value || '').trim().toLowerCase();
-            const layouts = layoutsByPark[park] || [];
-            layoutList.innerHTML = '';
+            if (!recLayout || !recPark) return;
+            const rawPark = recPark.value || '';
+            const park = rawPark.trim().toLowerCase();
+            const storageName = getCourseStorageName(rawPark);
+            const displayName = getCourseDisplayName(storageName).toLowerCase();
+            const layouts = layoutsByPark[park] || layoutsByPark[displayName] || [];
+            recLayout.innerHTML = '<option value="" disabled selected>Select a layout...</option>';
             layouts.forEach(layout => {
                 const option = document.createElement('option');
                 option.value = layout;
-                layoutList.appendChild(option);
+                option.textContent = layout;
+                recLayout.appendChild(option);
             });
         }
 
         if (recPark) {
             recPark.addEventListener('input', updateLayoutList);
             recPark.addEventListener('change', updateLayoutList);
-        }
-        if (recLayout) {
-            recLayout.addEventListener('focus', updateLayoutList);
         }
         updateLayoutList();
     } catch (error) {
@@ -476,7 +491,9 @@ function initCourseRecordForm() {
         e.preventDefault();
         const submitBtn = document.getElementById('submit-record');
         
-        const park = document.getElementById('rec-park').value;
+        const rawPark = document.getElementById('rec-park').value;
+        const park = getCourseStorageName(rawPark);
+        const parkDisplay = getCourseDisplayName(park);
         const layout = document.getElementById('rec-layout').value;
         const division = document.querySelector('input[name="division"]:checked').value; 
         const scoreKey = division === 'W' ? 'scoresW' : 'scoresM';
@@ -509,7 +526,7 @@ function initCourseRecordForm() {
             layouts[layout][scoreKey] = scores.slice(0, 3);
 
             await setDoc(docRef, { layouts }, { merge: true });
-            alert(`Record added for ${park}!`);
+            alert(`Record added for ${parkDisplay}!`);
             form.reset();
         } catch (error) {
             console.error("Record Update Error:", error);

@@ -1,4 +1,5 @@
 import { db } from './firebase-config.js?v=100';
+import { getCourseDisplayName } from './courseData.js?v=100';
 import { collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Local cache to prevent re-fetching during the same session
@@ -76,13 +77,15 @@ function renderAces(data) {
     let hasAnyResults = false;
 
     // Sort course groups alphabetically
-    const sortedGroups = [...data].sort((a, b) => a.courseName.localeCompare(b.courseName));
+    const sortedGroups = [...data].sort((a, b) => getCourseDisplayName(a.courseName).localeCompare(getCourseDisplayName(b.courseName)));
 
     sortedGroups.forEach(group => {
+        const courseName = getCourseDisplayName(group.courseName);
+
         // Filter individual aces within the course by player name OR course name
         const filteredAces = group.aces.filter(ace => {
             const matchesPlayer = ace.playerName.toLowerCase().includes(aceSearchString);
-            const matchesCourse = group.courseName.toLowerCase().includes(aceSearchString);
+            const matchesCourse = courseName.toLowerCase().includes(aceSearchString);
             return matchesPlayer || matchesCourse;
         });
 
@@ -98,7 +101,7 @@ function renderAces(data) {
         const sortedAces = filteredAces.sort((a, b) => new Date(b.date) - new Date(a.date));
 
 courseDiv.innerHTML = `
-        <h3 class="course-group-title">${group.courseName}</h3>
+        <h3 class="course-group-title">${courseName}</h3>
         <div class="ace-grid">
             ${sortedAces.map(ace => {
                 // Restore the "Silver to Silver" or "Long to Short" logic

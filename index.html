@@ -979,13 +979,13 @@
                                     </div>
                                     <div class="form-group">
                                         <label for="ace-course">Course</label>
-                                        <input type="text" id="ace-course" list="course-suggestions" required placeholder="Select or type course...">
+                                        <input type="text" id="ace-course" list="course-suggestions" required autocomplete="off" placeholder="Select or type course...">
                                         <datalist id="course-suggestions">
                                             <option value="P.J. Irvin">
                                             <option value="Forrest">
                                             <option value="Maxwell">
                                             <option value="Heartland">
-                                            <option value="Flying Iron">
+                                            <option value="Flying Iron (NCHS)">
                                         </datalist>
                                     </div>
                                 </div>
@@ -1049,12 +1049,13 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Park Name</label>
-                                    <input type="text" id="rec-park" list="course-suggestions" required placeholder="e.g., Maxwell">
+                                    <input type="text" id="rec-park" list="course-suggestions" required autocomplete="off" placeholder="e.g., Maxwell">
                                 </div>
                                 <div class="form-group">
                                     <label>Layout</label>
-                                    <input type="text" id="rec-layout" list="record-layout-suggestions" placeholder="e.g., Long to Blue" required>
-                                    <datalist id="record-layout-suggestions"></datalist>
+                                    <select id="rec-layout" required>
+                                        <option value="" disabled selected>Select a layout...</option>
+                                    </select>
                                 </div>
                             </div>
 
