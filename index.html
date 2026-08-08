@@ -71,6 +71,15 @@
                                 <i class="ph ph-caret-right"></i>
                             </button>
                         </div>
+
+                        <div class="calendar-legend">
+                            <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #059669;"></span>Doubles League</div>
+                            <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #d97706;"></span>Handicap League</div>
+                            <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #0891b2;"></span>Scratch League</div>
+                            <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #dc2626;"></span>Tournament</div>
+                            <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #2563eb;"></span>Meeting</div>
+                            <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #7c3aed;"></span>Special Event</div>
+                        </div>
                     </div>
 
                     <div class="calendar-wrapper">
@@ -766,8 +775,11 @@
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="event-loc">Location</label>
-                                        <input type="text" id="event-loc" required placeholder="e.g., Maxwell Park">
-                                        
+                                        <div style="position: relative; width: 100%;">
+                                            <input type="text" id="event-loc" required autocomplete="off" placeholder="e.g., Maxwell Park">
+                                            <div id="event-location-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                        </div>
+
                                         <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                                             <button type="submit" id="submit-event" class="btn-primary" style="flex: 1;">
                                                 <span>Save Event</span>
@@ -778,8 +790,18 @@
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="event-desc">Description</label>
-                                        <textarea id="event-desc" rows="5" required placeholder="Details..."></textarea>
+                                        <label for="event-league-type">League Type</label>
+                                        <select id="event-league-type">
+                                            <option value="" selected>Select league type...</option>
+                                            <option value="Doubles">Doubles</option>
+                                            <option value="Handicap">Handicap</option>
+                                            <option value="Scratch">Scratch</option>
+                                        </select>
+                                        <label for="event-layout" style="margin-top: 1rem;">Layout</label>
+                                        <div style="position: relative; width: 100%;">
+                                            <input type="text" id="event-layout" autocomplete="off" placeholder="e.g., Blue Layout">
+                                            <div id="event-layout-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -1149,7 +1171,8 @@
             <h3 id="event-modal-title">Event</h3>
             <p id="event-modal-time"></p>
             <p id="event-modal-location"></p>
-            <p id="event-modal-description"></p>
+            <p id="event-modal-layout"></p>
+            <p id="event-modal-league-type"></p>
         </div>
     </div>
 

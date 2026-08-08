@@ -94,7 +94,11 @@ export async function loadCurrentEvents() {
         dayEvents.forEach(event => {
             const pill = document.createElement('div');
             const categoryClass = `cat-${event.category.toLowerCase().replace(/\s+/g, '-')}`;
-            pill.className = `event-pill ${categoryClass}`;
+            let pillClasses = `event-pill ${categoryClass}`;
+            if (event.category.toLowerCase() === 'league' && event.leagueType) {
+                pillClasses += ` type-${event.leagueType.toLowerCase().replace(/\s+/g, '-')}`;
+            }
+            pill.className = pillClasses;
 
             const timeSpan = document.createElement('strong');
             timeSpan.className = 'pill-time';
@@ -143,14 +147,16 @@ function showEventModal(event) {
     const title = document.getElementById('event-modal-title');
     const time = document.getElementById('event-modal-time');
     const location = document.getElementById('event-modal-location');
-    const description = document.getElementById('event-modal-description');
+    const layout = document.getElementById('event-modal-layout');
+    const leagueType = document.getElementById('event-modal-league-type');
 
     if (!modal || !title) return;
 
     title.textContent = event.category;
     time.textContent = `Time: ${formatTime12Hour(event.time)}`;
     location.textContent = `Location: ${event.location || 'TBD'}`;
-    description.textContent = event.description || '';
+    if (layout) layout.textContent = event.layout ? `Layout: ${event.layout}` : '';
+    if (leagueType) leagueType.textContent = event.leagueType ? `League Type: ${event.leagueType}` : '';
 
     modal.classList.add('active');
     modal.setAttribute('aria-hidden', 'false');

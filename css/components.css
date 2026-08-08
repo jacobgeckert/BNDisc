@@ -497,6 +497,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     background: var(--bg-color);
     border-radius: 8px;
     border: 1px solid rgba(128, 128, 128, 0.2);
+    flex-shrink: 0;
 }
 
 .admin-event-info {

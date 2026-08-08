@@ -4,6 +4,7 @@ import {
     collection, addDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin, getRoster, saveLocalRoster } from './firestore.js?v=100';
+import { LOCATIONS, LAYOUT_SUGGESTIONS } from './courseData.js?v=100';
 
 // State and Cache
 let viewDate = new Date(); 
@@ -178,6 +179,8 @@ function initEventForm() {
     const form = document.getElementById('event-form');
     if (!form) return;
 
+    initEventLayoutSuggestions();
+
     const cancelBtn = document.getElementById('cancel-edit-event');
     if (cancelBtn) {
         cancelBtn.onclick = () => cancelEditEvent();
@@ -200,7 +203,8 @@ function initEventForm() {
                 day: parseInt(day),
                 time: document.getElementById('event-time').value,
                 location: document.getElementById('event-loc').value,
-                description: document.getElementById('event-desc').value,
+                leagueType: document.getElementById('event-league-type').value,
+                layout: document.getElementById('event-layout').value,
                 createdAt: editingEvent ? editingEvent.event.createdAt : new Date().toISOString()
             };
 
@@ -237,6 +241,85 @@ function initEventForm() {
 }
 
 /**
+ * Wires up the same location/layout suggestion dropdowns used on the league
+ * dashboard's "Finalize Round" form so admins get course/layout autocomplete
+ * when adding or editing calendar events.
+ */
+function initEventLayoutSuggestions() {
+    const locationInput = document.getElementById('event-loc');
+    const layoutInput = document.getElementById('event-layout');
+    const locationSuggestions = document.getElementById('event-location-suggestions');
+    const layoutSuggestions = document.getElementById('event-layout-suggestions');
+
+    function updateLocationSuggestions() {
+        if (!locationSuggestions || !locationInput) return;
+        const term = locationInput.value.toLowerCase();
+        const matches = LOCATIONS.filter(l => l.toLowerCase().includes(term));
+        locationSuggestions.innerHTML = '';
+        if (matches.length === 0) {
+            locationSuggestions.style.display = 'none';
+            return;
+        }
+        matches.forEach(l => {
+            const div = document.createElement('div');
+            div.textContent = l;
+            div.style.cssText = 'padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--glass-border);';
+            div.onmousedown = (e) => {
+                e.preventDefault();
+                locationInput.value = l;
+                locationSuggestions.style.display = 'none';
+            };
+            div.onmouseenter = () => div.style.background = 'var(--hover-bg, rgba(255,255,255,0.1))';
+            div.onmouseleave = () => div.style.background = '';
+            locationSuggestions.appendChild(div);
+        });
+        locationSuggestions.style.display = 'block';
+    }
+
+    function updateLayoutSuggestions() {
+        if (!layoutSuggestions || !layoutInput) return;
+        const loc = (locationInput?.value || '').toLowerCase().trim();
+        const term = layoutInput.value.toLowerCase();
+        const options = LAYOUT_SUGGESTIONS[loc] || [];
+        const matches = options.filter(o => o.toLowerCase().includes(term));
+        layoutSuggestions.innerHTML = '';
+        if (matches.length === 0) {
+            layoutSuggestions.style.display = 'none';
+            return;
+        }
+        matches.forEach(l => {
+            const div = document.createElement('div');
+            div.textContent = l;
+            div.style.cssText = 'padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--glass-border);';
+            div.onmousedown = (e) => {
+                e.preventDefault();
+                layoutInput.value = l;
+                layoutSuggestions.style.display = 'none';
+            };
+            div.onmouseenter = () => div.style.background = 'var(--hover-bg, rgba(255,255,255,0.1))';
+            div.onmouseleave = () => div.style.background = '';
+            layoutSuggestions.appendChild(div);
+        });
+        layoutSuggestions.style.display = 'block';
+    }
+
+    if (locationInput) {
+        locationInput.addEventListener('input', updateLocationSuggestions);
+        locationInput.addEventListener('focus', updateLocationSuggestions);
+        locationInput.addEventListener('blur', () => {
+            setTimeout(() => { if (locationSuggestions) locationSuggestions.style.display = 'none'; }, 150);
+        });
+    }
+    if (layoutInput) {
+        layoutInput.addEventListener('input', updateLayoutSuggestions);
+        layoutInput.addEventListener('focus', updateLayoutSuggestions);
+        layoutInput.addEventListener('blur', () => {
+            setTimeout(() => { if (layoutSuggestions) layoutSuggestions.style.display = 'none'; }, 150);
+        });
+    }
+}
+
+/**
  * Populates the "Add New Event" form with an existing event's data so it can
  * be edited in place, and puts the form into "edit mode" (see initEventForm).
  */
@@ -248,7 +331,8 @@ function startEditEvent(monthId, event) {
     document.getElementById('event-date').value = `${year}-${month}-${String(event.day).padStart(2, '0')}`;
     document.getElementById('event-time').value = event.time;
     document.getElementById('event-loc').value = event.location;
-    document.getElementById('event-desc').value = event.description;
+    document.getElementById('event-league-type').value = event.leagueType || '';
+    document.getElementById('event-layout').value = event.layout || '';
 
     const heading = document.getElementById('event-form-heading');
     if (heading) heading.textContent = 'Edit Event';
@@ -483,10 +567,17 @@ function renderEventList(monthId, events) {
     [...events].sort((a, b) => a.day - b.day).forEach(event => {
         const item = document.createElement('div');
         item.className = 'admin-event-item';
+        const details = [
+            event.time,
+            event.location,
+            event.layout,
+            event.leagueType
+        ].filter(Boolean).join(' • ');
+
         item.innerHTML = `
             <div class="admin-event-info">
                 <strong>${shortMonth} ${event.day}: ${event.category}</strong>
-                <span>${event.time} @ ${event.location}</span>
+                <span>${details}</span>
             </div>
         `;
 
