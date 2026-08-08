@@ -522,7 +522,7 @@ function initCourseRecordForm() {
 
             let scores = layouts[layout][scoreKey] || [];
             scores.push(newEntry);
-            scores.sort((a, b) => a.score - b.score);
+            scores.sort((a, b) => a.score - b.score || new Date(a.date) - new Date(b.date));
             layouts[layout][scoreKey] = scores.slice(0, 3);
 
             await setDoc(docRef, { layouts }, { merge: true });

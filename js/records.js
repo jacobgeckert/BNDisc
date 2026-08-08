@@ -130,9 +130,10 @@ function renderRecords(data) {
 const layoutsHtml = Object.entries(park.layouts).map(([layoutName, layoutData]) => {
             const par = layoutData.par || null;
             const allScores = layoutData[scoreKey] || []; // Keep the full list for ranking
+            const rankedScores = [...allScores].sort((a, b) => a.score - b.score || new Date(a.date) - new Date(b.date));
 
             // 1. Filter the scores for the search, but keep track of original rank
-            const filteredScores = allScores
+            const filteredScores = rankedScores
                 .map((rec, index) => ({ ...rec, originalRank: index + 1 })) // Attach rank here
                 .filter(rec => {
                     if (!searchString) return true;
