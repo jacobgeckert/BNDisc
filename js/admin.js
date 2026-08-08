@@ -136,6 +136,7 @@ function initMinutesForm() {
             oldBusiness: document.getElementById('minutes-old-business').value,
             newBusiness: document.getElementById('minutes-new-business').value,
             aroundRoom: document.getElementById('minutes-around-room').value,
+            courseMaintenance: document.getElementById('minutes-course-maintenance').value,
             nextMeeting: document.getElementById('minutes-next-meeting').value,
             nextLocation: document.getElementById('minutes-next-location').value,
             submittedAt: new Date().toISOString() 

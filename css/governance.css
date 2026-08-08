@@ -54,6 +54,15 @@
     line-height: 1.6;
 }
 
+.minutes-report-content .minutes-list {
+    margin: 0.5rem 0 0.5rem 1.25rem;
+    padding-left: 1rem;
+}
+
+.minutes-report-content .minutes-list li {
+    margin-bottom: 0.35rem;
+}
+
 /* ==========================================================================
    3. CLUB TREASURY (Financial Style)
    ========================================================================== */

@@ -125,6 +125,31 @@ async function renderFinanceOverview() {
     }
 }
 
+function escapeHtml(str) {
+    if (typeof str !== 'string') return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function parseMinutesList(text) {
+    if (!text) return [];
+    return text
+        .replace(/^\s*[•\-]\s*/gm, '')
+        .split(/[\n\r]+|[•\-]\s+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+}
+
+function formatMinutesList(text, fallback) {
+    const items = parseMinutesList(text);
+    if (items.length === 0) return `<p>${fallback}</p>`;
+    return `<ul class="minutes-list">${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+}
+
 /**
  * 2. RENDER LATEST MINUTES (Updated with formatting)
  */
@@ -163,12 +188,13 @@ async function renderLatestMinutes() {
                         <div class="report-body">
                             <div class="report-topic">
                                 <strong>Sponsorship & Opportunities</strong>
-                                <p>${latest.sponsorship || 'No updates.'}</p>
+                                ${formatMinutesList(latest.sponsorship, 'No updates.')}
                                 <br>
                             </div>
-                            <div class="report-topic"><strong>Old Business</strong><p>${latest.oldBusiness || 'None.'}</p></div>
-                            <div class="report-topic"><strong>New Business</strong><p>${latest.newBusiness || 'None.'}</p></div>
-                            <div class="report-topic"><strong>Around the Room</strong><p>${latest.aroundRoom || 'No additional discussion.'}</p></div>
+                            <div class="report-topic"><strong>Old Business</strong>${formatMinutesList(latest.oldBusiness, 'None.')}</div>
+                            <div class="report-topic"><strong>New Business</strong>${formatMinutesList(latest.newBusiness, 'None.')}</div>
+                            <div class="report-topic"><strong>Around the Room</strong>${formatMinutesList(latest.aroundRoom, 'No additional discussion.')}</div>
+                            <div class="report-topic"><strong>Course Maintenance Opportunities</strong>${formatMinutesList(latest.courseMaintenance, 'No updates.')}</div>
                         </div>
 
                         <div class="report-footer">
