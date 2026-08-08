@@ -41,14 +41,14 @@
 }
 
 .month-nav {
-    display: flex;
+    display: grid;
+    grid-template-columns: 42px 280px 42px;
     align-items: center;
-    gap: 2.5rem;
+    gap: 1.25rem;
 }
 
 .month-title-wrap {
     text-align: center;
-    min-width: 220px;
 }
 
 #current-month-display {
@@ -58,6 +58,7 @@
     color: var(--text-color);
     letter-spacing: -0.5px;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .accent-underline {
@@ -309,7 +310,8 @@
         align-self: center;
     }
 
-    .month-nav { 
+    .month-nav {
+        display: flex;
         gap: 1.5rem; /* Reduced gap to bring arrows closer to the text */
         justify-content: center;
         width: auto; /* Prevents the nav from stretching to edges */
