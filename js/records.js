@@ -53,9 +53,11 @@ export async function loadCourseRecords() {
  * 2. Event Listeners for Filters
  */
 function initFilters() {
-    // Division Toggle (Mixed vs Women)
+    // Division Toggle (Mixed vs Women) — reset to Mixed on load
+    currentDivision = 'M';
     const toggles = document.querySelectorAll('input[name="view-division"]');
     toggles.forEach(radio => {
+        radio.checked = (radio.value === 'M');
         radio.removeEventListener('change', handleDivisionChange);
         radio.addEventListener('change', handleDivisionChange);
     });
