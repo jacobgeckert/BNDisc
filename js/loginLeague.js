@@ -1532,7 +1532,8 @@ async function finalizeRound() {
     }
 
     try {
-        await setDoc(doc(db, 'leagues', docId), { [weekField]: roundData }, { merge: true });
+        const director = auth.currentUser?.email || 'Unknown';
+        await setDoc(doc(db, 'leagues', docId), { [weekField]: roundData, director }, { merge: true });
 
         const year = String(selectedLeague.year);
         if (Object.keys(tagsData).length > 0) {

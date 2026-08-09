@@ -4,7 +4,7 @@
 import { auth } from './firebase-config.js?v=100';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { checkAdminAccess } from './loginAdmin.js?v=100';
-import { checkLeagueAccess } from './loginLeague.js?v=100';
+import { checkLeagueAccess } from './loginLeague.js?v=108';
 import { loadCurrentEvents } from './currentEvents.js?v=100'; 
 import { initAdminForm } from './admin.js?v=100'; // Ensure this is imported
 

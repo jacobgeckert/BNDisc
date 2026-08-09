@@ -127,6 +127,9 @@ async function loadExpectedLeagueTotals() {
             const year = docSnap.id.substring(0, 4);
             if (year !== currentYear) return;
 
+            const firstWeek = weeks[0];
+            const director = data.director || (firstWeek ? data[firstWeek]?.director : '') || '—';
+
             const totals = weeks.reduce((acc, key) => {
                 const summary = data[key]?.summary || {};
                 acc.clubFees += Number(summary.totalClubFees) || 0;
@@ -136,6 +139,7 @@ async function loadExpectedLeagueTotals() {
 
             rows.push({
                 id: docSnap.id,
+                director,
                 rounds: weeks.length,
                 clubFees: totals.clubFees,
                 acePot: totals.acePot
@@ -158,6 +162,7 @@ async function loadExpectedLeagueTotals() {
                     <thead>
                         <tr style="border-bottom: 1px solid var(--glass-border);">
                             <th style="text-align: left; padding: 0.5rem;">League</th>
+                            <th style="text-align: left; padding: 0.5rem;">Director</th>
                             <th style="text-align: center; padding: 0.5rem;">Rounds</th>
                             <th style="text-align: right; padding: 0.5rem;">Club Fees</th>
                             <th style="text-align: right; padding: 0.5rem;">Ace Pot</th>
@@ -167,6 +172,7 @@ async function loadExpectedLeagueTotals() {
                         ${rows.map(r => `
                             <tr>
                                 <td style="padding: 0.5rem;">${formatLeagueName(r.id)}</td>
+                                <td style="padding: 0.5rem;">${r.director}</td>
                                 <td style="text-align: center; padding: 0.5rem;">${r.rounds}</td>
                                 <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.clubFees)}</td>
                                 <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.acePot)}</td>
