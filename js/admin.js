@@ -129,16 +129,16 @@ async function loadExpectedLeagueTotals() {
 
             const totals = weeks.reduce((acc, key) => {
                 const summary = data[key]?.summary || {};
-                acc.gross += Number(summary.totalCollected) || 0;
                 acc.clubFees += Number(summary.totalClubFees) || 0;
+                acc.acePot += Number(summary.totalAcePot) || 0;
                 return acc;
-            }, { gross: 0, clubFees: 0 });
+            }, { clubFees: 0, acePot: 0 });
 
             rows.push({
                 id: docSnap.id,
                 rounds: weeks.length,
-                gross: totals.gross,
-                clubFees: totals.clubFees
+                clubFees: totals.clubFees,
+                acePot: totals.acePot
             });
         });
 
@@ -156,8 +156,8 @@ async function loadExpectedLeagueTotals() {
                         <tr style="border-bottom: 1px solid var(--glass-border);">
                             <th style="text-align: left; padding: 0.5rem;">League</th>
                             <th style="text-align: center; padding: 0.5rem;">Rounds</th>
-                            <th style="text-align: right; padding: 0.5rem;">Expected Submitted</th>
                             <th style="text-align: right; padding: 0.5rem;">Club Fees</th>
+                            <th style="text-align: right; padding: 0.5rem;">Ace Pot</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -165,8 +165,8 @@ async function loadExpectedLeagueTotals() {
                             <tr>
                                 <td style="padding: 0.5rem;">${r.id}</td>
                                 <td style="text-align: center; padding: 0.5rem;">${r.rounds}</td>
-                                <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.gross)}</td>
                                 <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.clubFees)}</td>
+                                <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.acePot)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
