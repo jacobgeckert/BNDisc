@@ -191,10 +191,10 @@ async function renderLatestMinutes() {
                                 ${formatMinutesList(latest.sponsorship, 'No updates.')}
                                 <br>
                             </div>
+                            <div class="report-topic"><strong>Course Maintenance Opportunities</strong>${formatMinutesList(latest.courseMaintenance, 'No updates.')}</div>
                             <div class="report-topic"><strong>Old Business</strong>${formatMinutesList(latest.oldBusiness, 'None.')}</div>
                             <div class="report-topic"><strong>New Business</strong>${formatMinutesList(latest.newBusiness, 'None.')}</div>
                             <div class="report-topic"><strong>Around the Room</strong>${formatMinutesList(latest.aroundRoom, 'No additional discussion.')}</div>
-                            <div class="report-topic"><strong>Course Maintenance Opportunities</strong>${formatMinutesList(latest.courseMaintenance, 'No updates.')}</div>
                         </div>
 
                         <div class="report-footer">
