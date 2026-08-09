@@ -45,7 +45,6 @@ function initCollapsibleSections() {
         heading.classList.add('admin-section-heading');
 
         heading.addEventListener('click', () => {
-            if (window.innerWidth > 768) return;
             section.classList.toggle('expanded');
         });
     });

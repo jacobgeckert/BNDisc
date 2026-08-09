@@ -1064,3 +1064,40 @@ COURSE LISTING (Reusing about us layout with minor tweaks)
         gap: 0.5rem !important;
     }
 }
+
+/* ==========================================================================
+   ADMIN COLLAPSIBLE SECTIONS (DESKTOP)
+   ========================================================================== */
+#admin-content .admin-section-heading {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 1.75rem;
+}
+
+#admin-content .admin-section-heading::after {
+    content: '\002B';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent-color);
+    font-weight: 800;
+    font-size: 1.2rem;
+}
+
+#admin-content .admin-card.expanded > .admin-section-heading::after {
+    content: '\2212';
+}
+
+#admin-content .admin-card > .admin-section-heading ~ * {
+    display: none !important;
+}
+
+#admin-content .admin-card.expanded > .admin-section-heading ~ * {
+    display: block !important;
+}
+
+#admin-content .admin-card.expanded > .admin-roster-actions {
+    display: flex !important;
+}
