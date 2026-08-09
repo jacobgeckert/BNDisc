@@ -148,6 +148,9 @@ async function loadExpectedLeagueTotals() {
         }
 
         const formatMoney = n => `$${n.toFixed(2)}`;
+        const formatLeagueName = id => id
+            .replace(/(\d{4})([A-Z])/g, '$1 $2')
+            .replace(/([a-z])([A-Z])/g, '$1 $2');
         container.innerHTML = `
             <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
                 <h4 style="margin: 0 0 0.5rem 0;">Expected League Submissions</h4>
@@ -163,7 +166,7 @@ async function loadExpectedLeagueTotals() {
                     <tbody>
                         ${rows.map(r => `
                             <tr>
-                                <td style="padding: 0.5rem;">${r.id}</td>
+                                <td style="padding: 0.5rem;">${formatLeagueName(r.id)}</td>
                                 <td style="text-align: center; padding: 0.5rem;">${r.rounds}</td>
                                 <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.clubFees)}</td>
                                 <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.acePot)}</td>
