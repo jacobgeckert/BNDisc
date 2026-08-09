@@ -117,7 +117,7 @@ async function loadExpectedLeagueTotals() {
 
     try {
         const snapshot = await getDocs(collection(db, 'leagues'));
-        const rows = [];
+        const leagues = [];
 
         snapshot.forEach(docSnap => {
             const data = docSnap.data() || {};
@@ -127,26 +127,34 @@ async function loadExpectedLeagueTotals() {
             const year = docSnap.id.substring(0, 4);
             if (year !== currentYear) return;
 
-            const firstWeek = weeks[0];
-            const director = data.director || (firstWeek ? data[firstWeek]?.director : '') || '—';
+            const director = data.director || '—';
 
-            const totals = weeks.reduce((acc, key) => {
-                const summary = data[key]?.summary || {};
-                acc.clubFees += Number(summary.totalClubFees) || 0;
-                acc.acePot += Number(summary.totalAcePot) || 0;
+            const rounds = weeks.map(key => {
+                const round = data[key] || {};
+                const summary = round.summary || {};
+                return {
+                    date: round.date || key.replace('week_', ''),
+                    clubFees: Number(summary.totalClubFees) || 0,
+                    acePot: Number(summary.totalAcePot) || 0
+                };
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const totals = rounds.reduce((acc, r) => {
+                acc.clubFees += r.clubFees;
+                acc.acePot += r.acePot;
                 return acc;
             }, { clubFees: 0, acePot: 0 });
 
-            rows.push({
+            leagues.push({
                 id: docSnap.id,
                 director,
-                rounds: weeks.length,
+                rounds,
                 clubFees: totals.clubFees,
                 acePot: totals.acePot
             });
         });
 
-        if (rows.length === 0) {
+        if (leagues.length === 0) {
             container.innerHTML = '<p class="subtitle" style="margin-top: 1rem; opacity: 0.7;">No finalized league rounds found for this year.</p>';
             return;
         }
@@ -155,31 +163,44 @@ async function loadExpectedLeagueTotals() {
         const formatLeagueName = id => id
             .replace(/(\d{4})([A-Z])/g, '$1 $2')
             .replace(/([a-z])([A-Z])/g, '$1 $2');
+        const formatDate = str => {
+            if (!str) return '—';
+            const d = new Date(str);
+            return isNaN(d) ? str : d.toLocaleDateString('en-US');
+        };
         container.innerHTML = `
             <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
                 <h4 style="margin: 0 0 0.5rem 0;">Expected League Submissions</h4>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--glass-border);">
-                            <th style="text-align: left; padding: 0.5rem;">League</th>
-                            <th style="text-align: left; padding: 0.5rem;">Director</th>
-                            <th style="text-align: center; padding: 0.5rem;">Rounds</th>
-                            <th style="text-align: right; padding: 0.5rem;">Club Fees</th>
-                            <th style="text-align: right; padding: 0.5rem;">Ace Pot</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rows.map(r => `
-                            <tr>
-                                <td style="padding: 0.5rem;">${formatLeagueName(r.id)}</td>
-                                <td style="padding: 0.5rem;">${r.director}</td>
-                                <td style="text-align: center; padding: 0.5rem;">${r.rounds}</td>
-                                <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.clubFees)}</td>
-                                <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.acePot)}</td>
+                ${leagues.map(l => `
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <th colspan="3" style="text-align: left; padding: 0.5rem;">
+                                    ${formatLeagueName(l.id)} — ${l.director}
+                                </th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <th style="text-align: left; padding: 0.5rem;">Date</th>
+                                <th style="text-align: right; padding: 0.5rem;">Club Fees</th>
+                                <th style="text-align: right; padding: 0.5rem;">Ace Pot</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${l.rounds.map(r => `
+                                <tr>
+                                    <td style="padding: 0.5rem;">${formatDate(r.date)}</td>
+                                    <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.clubFees)}</td>
+                                    <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.acePot)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr style="border-top: 1px solid var(--glass-border); font-weight: bold;">
+                                <td style="padding: 0.5rem;">Total</td>
+                                <td style="text-align: right; padding: 0.5rem;">${formatMoney(l.clubFees)}</td>
+                                <td style="text-align: right; padding: 0.5rem;">${formatMoney(l.acePot)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `).join('')}
             </div>
         `;
     } catch (error) {
