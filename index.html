@@ -10,11 +10,11 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css?v=109">
-    <link rel="stylesheet" href="css/calendar.css?v=109">
+    <link rel="stylesheet" href="css/components.css?v=110">
+    <link rel="stylesheet" href="css/calendar.css?v=110">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
-    <link rel="stylesheet" href="css/governance.css?v=109">
+    <link rel="stylesheet" href="css/governance.css?v=110">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
@@ -968,7 +968,13 @@
                 </div>
                 <div class="form-group">
                     <label>Category</label>
-                    <input type="text" id="fin-category" placeholder="e.g. Tags, Tournament, Maintenance">
+                    <select id="fin-category">
+                        <option value="Ace">Ace</option>
+                        <option value="Club Dues">Club Dues</option>
+                        <option value="League Fees">League Fees</option>
+                        <option value="Maintenance Fees">Maintenance Fees</option>
+                        <option value="Misc">Misc</option>
+                    </select>
                 </div>
             </div>
 
@@ -1195,16 +1201,16 @@
         </div>
     </div>
 
-    <script type="module" src="js/theme.js?v=109"></script>
-    <script type="module" src="js/firebase-config.js?v=109"></script>
-    <script type="module" src="js/firestore.js?v=109"></script>
-    <script type="module" src="js/nav.js?v=109"></script>
-    <script type="module" src="js/loginAdmin.js?v=109"></script>
-    <script type="module" src="js/admin.js?v=109"></script>
-    <script type="module" src="js/currentEvents.js?v=109"></script>
-    <script type="module" src="js/aces.js?v=109"></script>
-    <script type="module" src="js/records.js?v=109"></script>
-    <script type="module" src="js/governance.js?v=109"></script>
-    <script type="module" src="js/bagTags.js?v=109"></script>
+    <script type="module" src="js/theme.js?v=110"></script>
+    <script type="module" src="js/firebase-config.js?v=110"></script>
+    <script type="module" src="js/firestore.js?v=110"></script>
+    <script type="module" src="js/nav.js?v=110"></script>
+    <script type="module" src="js/loginAdmin.js?v=110"></script>
+    <script type="module" src="js/admin.js?v=110"></script>
+    <script type="module" src="js/currentEvents.js?v=110"></script>
+    <script type="module" src="js/aces.js?v=110"></script>
+    <script type="module" src="js/records.js?v=110"></script>
+    <script type="module" src="js/governance.js?v=110"></script>
+    <script type="module" src="js/bagTags.js?v=110"></script>
 </body>
 </html>
