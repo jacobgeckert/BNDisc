@@ -103,6 +103,80 @@ function initFinanceForm() {
             }
         }
     };
+    loadExpectedLeagueTotals();
+}
+
+/**
+ * X. LEAGUE EXPECTED TOTALS
+ */
+async function loadExpectedLeagueTotals() {
+    const container = document.getElementById('league-expected-totals');
+    if (!container) return;
+
+    const currentYear = new Date().getFullYear().toString();
+
+    try {
+        const snapshot = await getDocs(collection(db, 'leagues'));
+        const rows = [];
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data() || {};
+            const weeks = Object.keys(data).filter(k => k.startsWith('week_'));
+            if (weeks.length === 0) return;
+
+            const year = docSnap.id.substring(0, 4);
+            if (year !== currentYear) return;
+
+            const totals = weeks.reduce((acc, key) => {
+                const summary = data[key]?.summary || {};
+                acc.gross += Number(summary.totalCollected) || 0;
+                acc.clubFees += Number(summary.totalClubFees) || 0;
+                return acc;
+            }, { gross: 0, clubFees: 0 });
+
+            rows.push({
+                id: docSnap.id,
+                rounds: weeks.length,
+                gross: totals.gross,
+                clubFees: totals.clubFees
+            });
+        });
+
+        if (rows.length === 0) {
+            container.innerHTML = '<p class="subtitle" style="margin-top: 1rem; opacity: 0.7;">No finalized league rounds found for this year.</p>';
+            return;
+        }
+
+        const formatMoney = n => `$${n.toFixed(2)}`;
+        container.innerHTML = `
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+                <h4 style="margin: 0 0 0.5rem 0;">Expected League Submissions</h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--glass-border);">
+                            <th style="text-align: left; padding: 0.5rem;">League</th>
+                            <th style="text-align: center; padding: 0.5rem;">Rounds</th>
+                            <th style="text-align: right; padding: 0.5rem;">Expected Submitted</th>
+                            <th style="text-align: right; padding: 0.5rem;">Club Fees</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(r => `
+                            <tr>
+                                <td style="padding: 0.5rem;">${r.id}</td>
+                                <td style="text-align: center; padding: 0.5rem;">${r.rounds}</td>
+                                <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.gross)}</td>
+                                <td style="text-align: right; padding: 0.5rem;">${formatMoney(r.clubFees)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error loading expected league totals:', error);
+        container.innerHTML = '<p class="subtitle" style="margin-top: 1rem; opacity: 0.7;">Error loading league totals.</p>';
+    }
 }
 
 /**
