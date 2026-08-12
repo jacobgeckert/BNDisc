@@ -28,6 +28,7 @@ const TAGS_ASSIGNED_KEY = 'bndisc_tags_assigned';
 
 let tagsAssigned = false;
 let userLeagues = [];
+let isFinalizing = false;
 
 function getTagsAssigned() {
     try { return localStorage.getItem(TAGS_ASSIGNED_KEY) === 'true'; } catch (e) { return false; }
@@ -550,7 +551,17 @@ async function loadLeagueCheckin() {
     if (wizardStopBtn) wizardStopBtn.onclick = tagWizardStop;
     if (completeBtn) completeBtn.onclick = completeCheckIn;
     if (payoutCalc) payoutCalc.onclick = calculatePayouts;
-    if (finalizeBtn) finalizeBtn.onclick = finalizeRound;
+    if (finalizeBtn) finalizeBtn.onclick = async () => {
+        if (isFinalizing) return;
+        isFinalizing = true;
+        finalizeBtn.disabled = true;
+        try {
+            await finalizeRound();
+        } finally {
+            isFinalizing = false;
+            finalizeBtn.disabled = false;
+        }
+    };
     if (resetBtn) resetBtn.onclick = () => {
         if (confirm('This will remove all checked in players and reset finances. Continue?')) {
             resetRound();
