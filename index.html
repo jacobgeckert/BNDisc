@@ -10,11 +10,11 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css?v=111">
-    <link rel="stylesheet" href="css/calendar.css?v=111">
+    <link rel="stylesheet" href="css/components.css?v=112">
+    <link rel="stylesheet" href="css/calendar.css?v=112">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
-    <link rel="stylesheet" href="css/governance.css?v=111">
+    <link rel="stylesheet" href="css/governance.css?v=112">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
@@ -843,6 +843,63 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="admin-grid-wide" style="margin-top: 2rem;">
+                        <div class="admin-card">
+                            <h3>League Randomizer</h3>
+                            <p class="subtitle">Generate a season of league events by randomly selecting courses and layouts.</p>
+
+                            <form id="league-randomizer-form" class="admin-form">
+                                <div class="form-row-triple">
+                                    <div class="form-group">
+                                        <label for="lr-start-date">Start Date</label>
+                                        <input type="date" id="lr-start-date" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="lr-end-date">End Date</label>
+                                        <input type="date" id="lr-end-date" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="lr-day-of-week">Day of Week</label>
+                                        <select id="lr-day-of-week" required>
+                                            <option value="0">Sunday</option>
+                                            <option value="1">Monday</option>
+                                            <option value="2">Tuesday</option>
+                                            <option value="3">Wednesday</option>
+                                            <option value="4">Thursday</option>
+                                            <option value="5">Friday</option>
+                                            <option value="6">Saturday</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-row-triple">
+                                    <div class="form-group">
+                                        <label for="lr-checkin-time">Check In Time</label>
+                                        <input type="time" id="lr-checkin-time" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="lr-teeoff-time">Tee Off Time</label>
+                                        <input type="time" id="lr-teeoff-time" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="lr-league-type">League Type</label>
+                                        <select id="lr-league-type" required>
+                                            <option value="Doubles">Doubles</option>
+                                            <option value="Handicap">Handicap</option>
+                                            <option value="Scratch">Scratch</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn-primary" id="lr-generate-btn" style="width: 100%; margin-top: 1rem;">
+                                    Generate League Schedule
+                                </button>
+                            </form>
+
+                            <div id="lr-results" style="margin-top: 1rem;"></div>
+                        </div>
+                    </div>
                     
                     <div class="admin-grid-wide">
                         <div class="admin-card">
@@ -1201,16 +1258,16 @@
         </div>
     </div>
 
-    <script type="module" src="js/theme.js?v=111"></script>
-    <script type="module" src="js/firebase-config.js?v=111"></script>
-    <script type="module" src="js/firestore.js?v=111"></script>
-    <script type="module" src="js/nav.js?v=111"></script>
-    <script type="module" src="js/loginAdmin.js?v=111"></script>
-    <script type="module" src="js/admin.js?v=111"></script>
-    <script type="module" src="js/currentEvents.js?v=111"></script>
-    <script type="module" src="js/aces.js?v=111"></script>
-    <script type="module" src="js/records.js?v=111"></script>
-    <script type="module" src="js/governance.js?v=111"></script>
-    <script type="module" src="js/bagTags.js?v=111"></script>
+    <script type="module" src="js/theme.js?v=112"></script>
+    <script type="module" src="js/firebase-config.js?v=112"></script>
+    <script type="module" src="js/firestore.js?v=112"></script>
+    <script type="module" src="js/nav.js?v=112"></script>
+    <script type="module" src="js/loginAdmin.js?v=112"></script>
+    <script type="module" src="js/admin.js?v=112"></script>
+    <script type="module" src="js/currentEvents.js?v=112"></script>
+    <script type="module" src="js/aces.js?v=112"></script>
+    <script type="module" src="js/records.js?v=112"></script>
+    <script type="module" src="js/governance.js?v=112"></script>
+    <script type="module" src="js/bagTags.js?v=112"></script>
 </body>
 </html>

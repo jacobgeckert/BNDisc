@@ -22,6 +22,7 @@ export function initAdminForm() {
     loadCourseSuggestions();
     initMinutesForm();
     initFinanceForm(); // New Treasury Management Logic
+    initLeagueRandomizer();
     updateManagementUI();
     initLeagueAdminManager();
     initLeagueRoster();
@@ -729,6 +730,132 @@ function renderEventList(monthId, events) {
         item.appendChild(actions);
         listContainer.appendChild(item);
     });
+}
+
+/**
+ * League Randomizer
+ * Generate a schedule of league events across a date range by randomly
+ * selecting a course and layout for each matching day of the week.
+ */
+function initLeagueRandomizer() {
+    const form = document.getElementById('league-randomizer-form');
+    if (!form) return;
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('lr-generate-btn');
+        const results = document.getElementById('lr-results');
+
+        const startDate = document.getElementById('lr-start-date').value;
+        const endDate = document.getElementById('lr-end-date').value;
+        const dayOfWeek = parseInt(document.getElementById('lr-day-of-week').value, 10);
+        const checkInTime = document.getElementById('lr-checkin-time').value;
+        const teeOffTime = document.getElementById('lr-teeoff-time').value;
+        const leagueType = document.getElementById('lr-league-type').value;
+
+        if (!startDate || !endDate) {
+            alert('Please select a start and end date.');
+            return;
+        }
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Start date must be before end date.');
+            return;
+        }
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+        }
+
+        const eventsByMonth = {};
+        const generated = [];
+        const current = new Date(startDate);
+        const end = new Date(endDate);
+
+        while (current <= end) {
+            if (current.getDay() === dayOfWeek) {
+                const location = getRandomLocation();
+                const layout = getRandomLayout(location);
+                const dateStr = current.toISOString().split('T')[0];
+                const [year, month, day] = dateStr.split('-');
+                const monthId = `${year}-${month}`;
+
+                const event = {
+                    category: 'League',
+                    day: parseInt(day, 10),
+                    time: checkInTime,
+                    teeOffTime,
+                    location,
+                    leagueType,
+                    layout,
+                    createdAt: new Date().toISOString()
+                };
+
+                eventsByMonth[monthId] = eventsByMonth[monthId] || [];
+                eventsByMonth[monthId].push(event);
+                generated.push({ date: dateStr, location, layout });
+            }
+            current.setDate(current.getDate() + 1);
+        }
+
+        try {
+            for (const [monthId, events] of Object.entries(eventsByMonth)) {
+                await setDoc(doc(db, 'event_bundles', monthId), { events: arrayUnion(...events) }, { merge: true });
+                delete eventCache[monthId];
+            }
+
+            alert(`Generated ${generated.length} league events.`);
+            updateManagementUI();
+            renderRandomizerResults(generated, results);
+        } catch (error) {
+            console.error('League randomizer error:', error);
+            alert('Error generating league events.');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Generate League Schedule';
+            }
+        }
+    };
+}
+
+function getRandomLocation() {
+    return LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+}
+
+function getRandomLayout(location) {
+    const options = LAYOUT_SUGGESTIONS[(location || '').toLowerCase().trim()];
+    if (!options || options.length === 0) return 'Main';
+    return options[Math.floor(Math.random() * options.length)];
+}
+
+function renderRandomizerResults(generated, container) {
+    if (!container) return;
+    if (generated.length === 0) {
+        container.innerHTML = '<p class="subtitle" style="opacity: 0.7;">No events generated for the selected range.</p>';
+        return;
+    }
+
+    const rows = generated.map(e => `
+        <tr>
+            <td style="padding: 0.25rem 0.5rem;">${e.date}</td>
+            <td style="padding: 0.25rem 0.5rem;">${e.location}</td>
+            <td style="padding: 0.25rem 0.5rem;">${e.layout}</td>
+        </tr>
+    `).join('');
+
+    container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--glass-border);">
+                    <th style="text-align: left; padding: 0.25rem 0.5rem;">Date</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem;">Course</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem;">Layout</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
 }
 
 /**
