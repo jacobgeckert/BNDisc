@@ -316,11 +316,13 @@ input:checked + .slider:before { transform: translateX(20px); }
         width: 100%;
         min-width: unset;
         flex: 0 0 auto;
+        order: 2;
     }
 
     .schedule-back-btn {
-        align-self: flex-start;
-        margin-bottom: 0.5rem;
+        align-self: center;
+        order: 1;
+        margin-bottom: 0;
     }
 }
 
