@@ -279,6 +279,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         width: 100%;
         max-width: none;
         margin: 0;
+        padding: 0 !important;
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -288,7 +289,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         background: transparent;
         border: none;
         box-shadow: none;
-        padding: 0;
+        padding: 0 !important;
         border-radius: 0;
         position: static;
         overflow: hidden;
