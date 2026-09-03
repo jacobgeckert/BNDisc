@@ -10,11 +10,11 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css?v=130">
-    <link rel="stylesheet" href="css/calendar.css?v=130">
+    <link rel="stylesheet" href="css/components.css?v=131">
+    <link rel="stylesheet" href="css/calendar.css?v=131">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
-    <link rel="stylesheet" href="css/governance.css?v=130">
+    <link rel="stylesheet" href="css/governance.css?v=131">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
@@ -95,17 +95,19 @@
                 </div>
 
                 <div class="admin-grid-wide" id="events-schedule-view" style="display: none;">
-                    <div class="admin-card" style="position: relative;">
-                        <button type="button" id="events-schedule-back-btn" class="schedule-back-btn">Calendar</button>
-                        <h3 id="league-schedule-title">League Schedule</h3>
-                        <p class="subtitle">Select a league to view its schedule.</p>
-                        <div class="form-group" style="margin-top: 0.5rem;">
-                            <label for="league-schedule-select">League</label>
-                            <select id="league-schedule-select" style="width: 100%;">
-                                <option value="" disabled selected>Select a league schedule...</option>
-                            </select>
+                    <div class="admin-card">
+                        <div class="schedule-header">
+                            <h3 id="league-schedule-title">League Schedule</h3>
+                            <div class="schedule-controls">
+                                <select id="league-schedule-select" aria-label="Select a league schedule">
+                                    <option value="" disabled selected>Select a league schedule...</option>
+                                </select>
+                                <button type="button" id="events-schedule-back-btn" class="schedule-back-btn">Calendar</button>
+                            </div>
                         </div>
-                        <div id="league-schedule-table" style="margin-top: 1rem;"></div>
+                        <div class="schedule-body">
+                            <div id="league-schedule-table"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1287,16 +1289,16 @@
         </div>
     </div>
 
-    <script type="module" src="js/theme.js?v=130"></script>
-    <script type="module" src="js/firebase-config.js?v=130"></script>
-    <script type="module" src="js/firestore.js?v=130"></script>
-    <script type="module" src="js/nav.js?v=130"></script>
-    <script type="module" src="js/loginAdmin.js?v=130"></script>
-    <script type="module" src="js/admin.js?v=130"></script>
-    <script type="module" src="js/currentEvents.js?v=130"></script>
-    <script type="module" src="js/aces.js?v=130"></script>
-    <script type="module" src="js/records.js?v=130"></script>
-    <script type="module" src="js/governance.js?v=130"></script>
-    <script type="module" src="js/bagTags.js?v=130"></script>
+    <script type="module" src="js/theme.js?v=131"></script>
+    <script type="module" src="js/firebase-config.js?v=131"></script>
+    <script type="module" src="js/firestore.js?v=131"></script>
+    <script type="module" src="js/nav.js?v=131"></script>
+    <script type="module" src="js/loginAdmin.js?v=131"></script>
+    <script type="module" src="js/admin.js?v=131"></script>
+    <script type="module" src="js/currentEvents.js?v=131"></script>
+    <script type="module" src="js/aces.js?v=131"></script>
+    <script type="module" src="js/records.js?v=131"></script>
+    <script type="module" src="js/governance.js?v=131"></script>
+    <script type="module" src="js/bagTags.js?v=131"></script>
 </body>
 </html>
