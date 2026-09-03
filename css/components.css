@@ -150,6 +150,49 @@ input:checked + .slider:before { transform: translateX(20px); }
     white-space: nowrap;
 }
 
+#league-schedule-select {
+    padding: 0.8rem;
+    border-radius: 6px;
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    background: var(--bg-color);
+    color: var(--text-color);
+    width: 100%;
+    font-size: 1rem;
+    transition: border-color 0.2s, background 0.3s;
+    box-sizing: border-box;
+}
+
+.league-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--text-color);
+    margin-top: 0.5rem;
+}
+
+.league-schedule-table th {
+    background: var(--sidebar-bg);
+    color: var(--heading-color);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--glass-border);
+    white-space: nowrap;
+}
+
+.league-schedule-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--glass-border);
+    vertical-align: middle;
+}
+
+.league-schedule-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.league-schedule-table tr:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
 /* Course filter dropdown in the league randomizer */
 .lr-course-filter-dropdown {
     border: 1px solid rgba(128, 128, 128, 0.3);

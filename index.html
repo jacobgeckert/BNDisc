@@ -10,11 +10,11 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css?v=123">
-    <link rel="stylesheet" href="css/calendar.css?v=123">
+    <link rel="stylesheet" href="css/components.css?v=124">
+    <link rel="stylesheet" href="css/calendar.css?v=124">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
-    <link rel="stylesheet" href="css/governance.css?v=123">
+    <link rel="stylesheet" href="css/governance.css?v=124">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
@@ -465,6 +465,25 @@
             <div class="about-container">
                 <div class="about-header" style="margin-bottom: 0.5rem;">
                     <h1 id="league-title">League Central</h1>
+                    <div class="accent-underline"></div>
+                </div>
+
+                <div class="admin-grid-wide" id="league-schedule-card">
+                    <div class="admin-card">
+                        <h3 id="league-schedule-title">League Schedule</h3>
+                        <p class="subtitle">Select a league to view its schedule.</p>
+                        <div class="form-group" style="margin-top: 0.5rem;">
+                            <label for="league-schedule-select">League</label>
+                            <select id="league-schedule-select" style="width: 100%;">
+                                <option value="" disabled selected>Select a league schedule...</option>
+                            </select>
+                        </div>
+                        <div id="league-schedule-table" style="margin-top: 1rem;"></div>
+                    </div>
+                </div>
+
+                <div id="league-director-header" class="about-header" style="margin: 2rem 0 0.5rem 0;">
+                    <h2 style="font-size: 1.5rem;">League Director Sign-In</h2>
                     <div class="accent-underline"></div>
                 </div>
 
@@ -1268,16 +1287,16 @@
         </div>
     </div>
 
-    <script type="module" src="js/theme.js?v=123"></script>
-    <script type="module" src="js/firebase-config.js?v=123"></script>
-    <script type="module" src="js/firestore.js?v=123"></script>
-    <script type="module" src="js/nav.js?v=123"></script>
-    <script type="module" src="js/loginAdmin.js?v=123"></script>
-    <script type="module" src="js/admin.js?v=123"></script>
-    <script type="module" src="js/currentEvents.js?v=123"></script>
-    <script type="module" src="js/aces.js?v=123"></script>
-    <script type="module" src="js/records.js?v=123"></script>
-    <script type="module" src="js/governance.js?v=123"></script>
-    <script type="module" src="js/bagTags.js?v=123"></script>
+    <script type="module" src="js/theme.js?v=124"></script>
+    <script type="module" src="js/firebase-config.js?v=124"></script>
+    <script type="module" src="js/firestore.js?v=124"></script>
+    <script type="module" src="js/nav.js?v=124"></script>
+    <script type="module" src="js/loginAdmin.js?v=124"></script>
+    <script type="module" src="js/admin.js?v=124"></script>
+    <script type="module" src="js/currentEvents.js?v=124"></script>
+    <script type="module" src="js/aces.js?v=124"></script>
+    <script type="module" src="js/records.js?v=124"></script>
+    <script type="module" src="js/governance.js?v=124"></script>
+    <script type="module" src="js/bagTags.js?v=124"></script>
 </body>
 </html>
