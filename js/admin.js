@@ -759,6 +759,16 @@ function initLeagueRandomizer() {
         return formatLocal(start);
     };
 
+    const courseFilter = document.getElementById('lr-course-filter');
+    if (courseFilter) {
+        courseFilter.innerHTML = LOCATIONS.map(loc => `
+            <label>
+                <input type="checkbox" class="lr-course-filter-option" value="${loc}" checked>
+                ${loc}
+            </label>
+        `).join('');
+    }
+
     form.onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('lr-generate-btn');
@@ -777,6 +787,12 @@ function initLeagueRandomizer() {
         const end = parseLocal(endDate);
         if (start > end) {
             alert('Start date must be before end date.');
+            return;
+        }
+
+        const selectedCourses = Array.from(document.querySelectorAll('.lr-course-filter-option:checked')).map(cb => cb.value);
+        if (selectedCourses.length === 0) {
+            alert('Please select at least one course.');
             return;
         }
 
@@ -819,7 +835,7 @@ function initLeagueRandomizer() {
             if (current.getDay() === dayOfWeek) {
                 const weekKey = getWeekStartKey(current);
                 const used = usedCoursesByWeek[weekKey] || new Set();
-                const location = getRandomUnusedLocation(used);
+                const location = getRandomUnusedLocation(used, selectedCourses);
                 const layout = getRandomLayout(location);
                 const dateStr = formatLocal(current);
                 generated.push({ date: dateStr, location, layout });
@@ -904,8 +920,8 @@ function initLeagueRandomizer() {
     };
 }
 
-function getRandomLocation() {
-    return LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+function getRandomLocation(pool = LOCATIONS) {
+    return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function getRandomLayout(location) {
@@ -914,9 +930,9 @@ function getRandomLayout(location) {
     return options[Math.floor(Math.random() * options.length)];
 }
 
-function getRandomUnusedLocation(usedSet) {
-    const available = LOCATIONS.filter(l => !usedSet.has(l));
-    if (available.length === 0) return getRandomLocation();
+function getRandomUnusedLocation(usedSet, pool = LOCATIONS) {
+    const available = pool.filter(l => !usedSet.has(l));
+    if (available.length === 0) return getRandomLocation(pool);
     return available[Math.floor(Math.random() * available.length)];
 }
 

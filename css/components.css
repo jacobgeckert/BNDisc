@@ -150,6 +150,36 @@ input:checked + .slider:before { transform: translateX(20px); }
     white-space: nowrap;
 }
 
+/* Course filter dropdown in the league randomizer */
+.lr-course-filter-dropdown {
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    border-radius: 6px;
+    padding: 0.8rem;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin-top: 0.4rem;
+    font-size: 1rem;
+}
+
+.lr-course-filter-dropdown summary {
+    cursor: pointer;
+    user-select: none;
+}
+
+.lr-course-filter-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.lr-course-filter-list label {
+    display: block;
+    padding: 0.35rem 0;
+    cursor: pointer;
+}
+
 #league-static-ctp {
     padding: 0.8rem;
     border-radius: 6px;
