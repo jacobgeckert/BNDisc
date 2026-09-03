@@ -248,17 +248,17 @@ function renderLeagueSchedule(group) {
         const notes = ev.notes || ev.layout || '';
         return `
             <tr>
-                <td>${dateStr}</td>
-                <td>${course}</td>
-                <td>${checkIn}</td>
-                <td>${teeOff}</td>
-                <td>${notes}</td>
+                <td data-label="Date">${dateStr}</td>
+                <td data-label="Course">${course}</td>
+                <td data-label="Check-In">${checkIn}</td>
+                <td data-label="Tee Off">${teeOff}</td>
+                <td data-label="Notes">${notes}</td>
             </tr>
         `;
     }).join('');
 
     container.innerHTML = `
-        <div style="overflow-x: auto;">
+        <div class="league-schedule-wrapper" style="overflow-x: auto;">
             <table class="league-schedule-table">
                 <thead>
                     <tr>
