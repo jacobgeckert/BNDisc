@@ -348,56 +348,23 @@ input:checked + .slider:before { transform: translateX(20px); }
         white-space: nowrap;
     }
 
-    .league-schedule-wrapper {
-        overflow: visible !important;
-    }
-
-    .league-schedule-table,
-    .league-schedule-table thead,
-    .league-schedule-table tbody,
-    .league-schedule-table th,
-    .league-schedule-table td,
-    .league-schedule-table tr {
-        display: block;
+    .league-schedule-table {
+        table-layout: fixed;
         width: 100%;
+        font-size: 0.85rem;
     }
 
-    .league-schedule-table thead {
-        display: none;
-    }
-
-    .league-schedule-table tr {
-        margin-bottom: 1rem;
-        padding: 0.75rem;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid var(--glass-border);
-        border-radius: 8px;
-    }
-
-    .league-schedule-table tr:nth-child(even) {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
+    .league-schedule-table th,
     .league-schedule-table td {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        padding: 0.45rem 0;
-        border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+        padding: 0.5rem 0.35rem;
         white-space: normal;
         overflow-wrap: break-word;
+        vertical-align: top;
     }
 
-    .league-schedule-table td:last-child {
-        border-bottom: none;
-    }
-
-    .league-schedule-table td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: var(--heading-color);
-        margin-right: 1rem;
-        flex-shrink: 0;
+    .league-schedule-table th {
+        white-space: normal;
+        overflow-wrap: break-word;
     }
 }
 
