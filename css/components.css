@@ -342,9 +342,10 @@ input:checked + .slider:before { transform: translateX(20px); }
     .schedule-back-btn {
         align-self: center;
         order: 1;
-        margin-bottom: 0;
-        min-width: 180px;
+        margin-bottom: 0.25rem;
+        min-width: 200px;
         text-align: center;
+        white-space: nowrap;
     }
 
     .league-schedule-table {
