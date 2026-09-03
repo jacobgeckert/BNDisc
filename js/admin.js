@@ -812,6 +812,8 @@ function initLeagueRandomizer() {
             monthCursor.setMonth(monthCursor.getMonth() + 1);
         }
 
+        const usedLayouts = new Set();
+
         await Promise.all([...monthIds].map(async monthId => {
             try {
                 const snap = await getDoc(doc(db, 'event_bundles', monthId));
@@ -822,6 +824,7 @@ function initLeagueRandomizer() {
                     const weekKey = getWeekStartKey(eventDate);
                     if (!usedCoursesByWeek[weekKey]) usedCoursesByWeek[weekKey] = new Set();
                     usedCoursesByWeek[weekKey].add(event.location);
+                    if (event.layout) usedLayouts.add(`${event.location}|${event.layout}`);
                 });
             } catch (err) {
                 console.error(`Error loading existing events for ${monthId}:`, err);
@@ -836,12 +839,13 @@ function initLeagueRandomizer() {
                 const weekKey = getWeekStartKey(current);
                 const used = usedCoursesByWeek[weekKey] || new Set();
                 const location = getRandomUnusedLocation(used, selectedCourses);
-                const layout = getRandomLayout(location);
+                const layout = getRandomUnusedLayout(location, usedLayouts) || getRandomLayout(location);
                 const dateStr = formatLocal(current);
                 generated.push({ date: dateStr, location, layout });
 
                 if (!usedCoursesByWeek[weekKey]) usedCoursesByWeek[weekKey] = used;
                 used.add(location);
+                usedLayouts.add(`${location}|${layout}`);
             }
             current.setDate(current.getDate() + 1);
         }
@@ -928,6 +932,13 @@ function getRandomLayout(location) {
     const options = LAYOUT_SUGGESTIONS[(location || '').toLowerCase().trim()];
     if (!options || options.length === 0) return 'Main';
     return options[Math.floor(Math.random() * options.length)];
+}
+
+function getRandomUnusedLayout(location, usedLayouts) {
+    const options = LAYOUT_SUGGESTIONS[(location || '').toLowerCase().trim()] || ['Main'];
+    const available = options.filter(o => !usedLayouts.has(`${location}|${o}`));
+    if (available.length === 0) return null;
+    return available[Math.floor(Math.random() * available.length)];
 }
 
 function getRandomUnusedLocation(usedSet, pool = LOCATIONS) {
