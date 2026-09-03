@@ -344,13 +344,15 @@ input:checked + .slider:before { transform: translateX(20px); }
         align-self: center;
         order: 1;
         margin-bottom: 0.25rem;
-        min-width: 200px;
+        width: 200px;
+        box-sizing: border-box;
         text-align: center;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .league-schedule-table {
-        table-layout: fixed;
         width: 100%;
         font-size: 0.85rem;
     }
@@ -359,13 +361,8 @@ input:checked + .slider:before { transform: translateX(20px); }
     .league-schedule-table td {
         padding: 0.5rem 0.35rem;
         white-space: normal;
-        overflow-wrap: break-word;
+        overflow-wrap: anywhere;
         vertical-align: top;
-    }
-
-    .league-schedule-table th {
-        white-space: normal;
-        overflow-wrap: break-word;
     }
 }
 

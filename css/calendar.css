@@ -330,9 +330,12 @@
         transform: none;
         align-self: center;
         margin-bottom: 0.25rem;
-        min-width: 200px;
+        width: 200px;
+        box-sizing: border-box;
         text-align: center;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .calendar-legend {
