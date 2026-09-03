@@ -184,6 +184,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 .lr-course-filter-list input[type="checkbox"] {
     margin: 0;
+    padding: 0;
+    width: auto;
+    height: auto;
     flex-shrink: 0;
 }
 
