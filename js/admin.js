@@ -753,9 +753,6 @@ function initLeagueRandomizer() {
         return `${y}-${m}-${d}`;
     };
 
-    let pendingEventsByMonth = {};
-    let pendingGenerated = [];
-
     form.onsubmit = (e) => {
         e.preventDefault();
         const btn = document.getElementById('lr-generate-btn');
@@ -764,9 +761,6 @@ function initLeagueRandomizer() {
         const startDate = document.getElementById('lr-start-date').value;
         const endDate = document.getElementById('lr-end-date').value;
         const dayOfWeek = parseInt(document.getElementById('lr-day-of-week').value, 10);
-        const checkInTime = document.getElementById('lr-checkin-time').value;
-        const teeOffTime = document.getElementById('lr-teeoff-time').value;
-        const leagueType = document.getElementById('lr-league-type').value;
 
         if (!startDate || !endDate) {
             alert('Please select a start and end date.');
@@ -785,7 +779,6 @@ function initLeagueRandomizer() {
             btn.textContent = 'Generating...';
         }
 
-        const eventsByMonth = {};
         const generated = [];
         let current = new Date(start);
 
@@ -794,29 +787,10 @@ function initLeagueRandomizer() {
                 const location = getRandomLocation();
                 const layout = getRandomLayout(location);
                 const dateStr = formatLocal(current);
-                const [year, month, day] = dateStr.split('-');
-                const monthId = `${year}-${month}`;
-
-                const event = {
-                    category: 'League',
-                    day: parseInt(day, 10),
-                    time: checkInTime,
-                    teeOffTime,
-                    location,
-                    leagueType,
-                    layout,
-                    createdAt: new Date().toISOString()
-                };
-
-                eventsByMonth[monthId] = eventsByMonth[monthId] || [];
-                eventsByMonth[monthId].push(event);
                 generated.push({ date: dateStr, location, layout });
             }
             current.setDate(current.getDate() + 1);
         }
-
-        pendingEventsByMonth = eventsByMonth;
-        pendingGenerated = generated;
 
         if (btn) {
             btn.disabled = false;
@@ -836,20 +810,47 @@ function initLeagueRandomizer() {
             confirmBtn.style.marginTop = '1rem';
             confirmBtn.textContent = 'Confirm & Save Schedule';
             confirmBtn.onclick = async () => {
-                if (Object.keys(pendingEventsByMonth).length === 0) return;
+                const rows = results.querySelectorAll('.lr-preview-row');
+                if (rows.length === 0) return;
+
+                const checkInTime = document.getElementById('lr-checkin-time').value;
+                const teeOffTime = document.getElementById('lr-teeoff-time').value;
+                const leagueType = document.getElementById('lr-league-type').value;
+
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = 'Saving...';
                 try {
-                    for (const [monthId, events] of Object.entries(pendingEventsByMonth)) {
+                    const eventsByMonth = {};
+                    rows.forEach(row => {
+                        const date = row.dataset.date;
+                        const location = row.querySelector('.lr-course-select').value;
+                        const layout = row.querySelector('.lr-layout-select').value;
+                        const [year, month, day] = date.split('-');
+                        const monthId = `${year}-${month}`;
+
+                        const event = {
+                            category: 'League',
+                            day: parseInt(day, 10),
+                            time: checkInTime,
+                            teeOffTime,
+                            location,
+                            leagueType,
+                            layout,
+                            createdAt: new Date().toISOString()
+                        };
+
+                        eventsByMonth[monthId] = eventsByMonth[monthId] || [];
+                        eventsByMonth[monthId].push(event);
+                    });
+
+                    for (const [monthId, events] of Object.entries(eventsByMonth)) {
                         await setDoc(doc(db, 'event_bundles', monthId), { events: arrayUnion(...events) }, { merge: true });
                         delete eventCache[monthId];
                     }
 
-                    alert(`Saved ${pendingGenerated.length} league events.`);
+                    alert(`Saved ${rows.length} league events.`);
                     updateManagementUI();
 
-                    pendingEventsByMonth = {};
-                    pendingGenerated = [];
                     results.innerHTML = '<p class="subtitle" style="margin-top: 1rem; opacity: 0.7;">Schedule saved successfully.</p>';
                     if (btn) btn.textContent = 'Generate League Schedule';
                 } catch (error) {
@@ -882,11 +883,24 @@ function renderRandomizerResults(generated, container) {
         return;
     }
 
+    const layoutOptionsFor = (location, selected = '') => {
+        const options = LAYOUT_SUGGESTIONS[(location || '').toLowerCase().trim()] || ['Main'];
+        return options.map(o => `<option value="${o}" ${o === selected ? 'selected' : ''}>${o}</option>`).join('');
+    };
+
     const rows = generated.map(e => `
-        <tr>
+        <tr class="lr-preview-row" data-date="${e.date}">
             <td style="padding: 0.25rem 0.5rem;">${e.date}</td>
-            <td style="padding: 0.25rem 0.5rem;">${e.location}</td>
-            <td style="padding: 0.25rem 0.5rem;">${e.layout}</td>
+            <td style="padding: 0.25rem 0.5rem;">
+                <select class="lr-course-select" style="width: 100%;">
+                    ${LOCATIONS.map(loc => `<option value="${loc}" ${loc === e.location ? 'selected' : ''}>${loc}</option>`).join('')}
+                </select>
+            </td>
+            <td style="padding: 0.25rem 0.5rem;">
+                <select class="lr-layout-select" style="width: 100%;">
+                    ${layoutOptionsFor(e.location, e.layout)}
+                </select>
+            </td>
         </tr>
     `).join('');
 
@@ -902,6 +916,16 @@ function renderRandomizerResults(generated, container) {
             <tbody>${rows}</tbody>
         </table>
     `;
+
+    container.querySelectorAll('.lr-course-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+            const row = sel.closest('.lr-preview-row');
+            const layoutSelect = row?.querySelector('.lr-layout-select');
+            if (!layoutSelect) return;
+            const current = layoutSelect.value;
+            layoutSelect.innerHTML = layoutOptionsFor(sel.value, current);
+        });
+    });
 }
 
 /**
