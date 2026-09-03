@@ -838,7 +838,7 @@ function initLeagueRandomizer() {
             if (current.getDay() === dayOfWeek) {
                 const weekKey = getWeekStartKey(current);
                 const used = usedCoursesByWeek[weekKey] || new Set();
-                const location = getRandomUnusedLocation(used, selectedCourses);
+                const location = getRandomUnusedLocation(used, selectedCourses, usedLayouts);
                 const layout = getRandomUnusedLayout(location, usedLayouts) || getRandomLayout(location);
                 const dateStr = formatLocal(current);
                 generated.push({ date: dateStr, location, layout });
@@ -941,8 +941,14 @@ function getRandomUnusedLayout(location, usedLayouts) {
     return available[Math.floor(Math.random() * available.length)];
 }
 
-function getRandomUnusedLocation(usedSet, pool = LOCATIONS) {
-    const available = pool.filter(l => !usedSet.has(l));
+function hasUnusedLayout(location, usedLayouts) {
+    const options = LAYOUT_SUGGESTIONS[(location || '').toLowerCase().trim()] || ['Main'];
+    return options.some(o => !usedLayouts.has(`${location}|${o}`));
+}
+
+function getRandomUnusedLocation(usedSet, pool = LOCATIONS, usedLayouts) {
+    let available = pool.filter(l => !usedSet.has(l) && hasUnusedLayout(l, usedLayouts));
+    if (available.length === 0) available = pool.filter(l => !usedSet.has(l));
     if (available.length === 0) return getRandomLocation(pool);
     return available[Math.floor(Math.random() * available.length)];
 }
