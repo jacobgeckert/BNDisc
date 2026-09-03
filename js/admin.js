@@ -753,7 +753,13 @@ function initLeagueRandomizer() {
         return `${y}-${m}-${d}`;
     };
 
-    form.onsubmit = (e) => {
+    const getWeekStartKey = date => {
+        const start = new Date(date);
+        start.setDate(date.getDate() - date.getDay()); // Sunday of the week
+        return formatLocal(start);
+    };
+
+    form.onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('lr-generate-btn');
         const results = document.getElementById('lr-results');
@@ -779,15 +785,47 @@ function initLeagueRandomizer() {
             btn.textContent = 'Generating...';
         }
 
+        // Load existing events for the months in the range so we don't
+        // schedule the same course twice in the same week.
+        const usedCoursesByWeek = {};
+        const monthIds = new Set();
+        const monthCursor = new Date(start.getFullYear(), start.getMonth(), 1);
+        while (monthCursor <= end) {
+            const monthId = `${monthCursor.getFullYear()}-${String(monthCursor.getMonth() + 1).padStart(2, '0')}`;
+            monthIds.add(monthId);
+            monthCursor.setMonth(monthCursor.getMonth() + 1);
+        }
+
+        await Promise.all([...monthIds].map(async monthId => {
+            try {
+                const snap = await getDoc(doc(db, 'event_bundles', monthId));
+                if (!snap.exists()) return;
+                (snap.data().events || []).forEach(event => {
+                    if (!event.location || !event.day) return;
+                    const eventDate = new Date(`${monthId}-${String(event.day).padStart(2, '0')}T00:00:00`);
+                    const weekKey = getWeekStartKey(eventDate);
+                    if (!usedCoursesByWeek[weekKey]) usedCoursesByWeek[weekKey] = new Set();
+                    usedCoursesByWeek[weekKey].add(event.location);
+                });
+            } catch (err) {
+                console.error(`Error loading existing events for ${monthId}:`, err);
+            }
+        }));
+
         const generated = [];
         let current = new Date(start);
 
         while (current <= end) {
             if (current.getDay() === dayOfWeek) {
-                const location = getRandomLocation();
+                const weekKey = getWeekStartKey(current);
+                const used = usedCoursesByWeek[weekKey] || new Set();
+                const location = getRandomUnusedLocation(used);
                 const layout = getRandomLayout(location);
                 const dateStr = formatLocal(current);
                 generated.push({ date: dateStr, location, layout });
+
+                if (!usedCoursesByWeek[weekKey]) usedCoursesByWeek[weekKey] = used;
+                used.add(location);
             }
             current.setDate(current.getDate() + 1);
         }
@@ -874,6 +912,12 @@ function getRandomLayout(location) {
     const options = LAYOUT_SUGGESTIONS[(location || '').toLowerCase().trim()];
     if (!options || options.length === 0) return 'Main';
     return options[Math.floor(Math.random() * options.length)];
+}
+
+function getRandomUnusedLocation(usedSet) {
+    const available = LOCATIONS.filter(l => !usedSet.has(l));
+    if (available.length === 0) return getRandomLocation();
+    return available[Math.floor(Math.random() * available.length)];
 }
 
 function renderRandomizerResults(generated, container) {
