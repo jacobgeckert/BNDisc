@@ -287,6 +287,8 @@ export async function loadLeagueSchedule() {
     try {
         const snapshot = await getDocs(collection(db, 'event_bundles'));
         const allEvents = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
         snapshot.forEach(docSnap => {
             const monthId = docSnap.id;
@@ -296,6 +298,8 @@ export async function loadLeagueSchedule() {
                 if (event.category !== 'League' || !event.day || !event.leagueType || !event.location) return;
                 const date = new Date(`${monthId}-${String(event.day).padStart(2, '0')}T00:00:00`);
                 if (isNaN(date.getTime())) return;
+                date.setHours(0, 0, 0, 0);
+                if (date.getTime() < today.getTime()) return;
                 allEvents.push({
                     ...event,
                     date,
