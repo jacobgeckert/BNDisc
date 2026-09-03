@@ -175,9 +175,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 .lr-course-filter-list label {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     padding: 0.35rem 0;
     cursor: pointer;
+}
+
+.lr-course-filter-list input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
 }
 
 #league-static-ctp {
