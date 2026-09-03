@@ -769,14 +769,27 @@ function initLeagueRandomizer() {
 
         const eventsByMonth = {};
         const generated = [];
-        const current = new Date(startDate);
-        const end = new Date(endDate);
+
+        const parseLocal = dateStr => {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        };
+
+        const formatLocal = date => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
+        const end = parseLocal(endDate);
+        let current = parseLocal(startDate);
 
         while (current <= end) {
             if (current.getDay() === dayOfWeek) {
                 const location = getRandomLocation();
                 const layout = getRandomLayout(location);
-                const dateStr = current.toISOString().split('T')[0];
+                const dateStr = formatLocal(current);
                 const [year, month, day] = dateStr.split('-');
                 const monthId = `${year}-${month}`;
 
