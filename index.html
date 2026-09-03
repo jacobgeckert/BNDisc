@@ -10,11 +10,11 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css?v=128">
-    <link rel="stylesheet" href="css/calendar.css?v=128">
+    <link rel="stylesheet" href="css/components.css?v=129">
+    <link rel="stylesheet" href="css/calendar.css?v=129">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
-    <link rel="stylesheet" href="css/governance.css?v=128">
+    <link rel="stylesheet" href="css/governance.css?v=129">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
@@ -55,14 +55,13 @@
                     <div class="accent-underline"></div>
                 </div>
 
-                <div class="view-toggle" id="events-view-toggle" style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
-                    <button type="button" id="events-view-calendar-btn" class="view-toggle-btn active" style="flex: 1; max-width: 200px;">Calendar</button>
-                    <button type="button" id="events-view-schedule-btn" class="view-toggle-btn" style="flex: 1; max-width: 200px;">League Schedule</button>
-                </div>
-
-                <div class="calendar-main-unit" id="events-calendar-view">
+                <div class="calendar-main-unit">
                     <div class="calendar-header-container">
-                        <div class="month-nav">
+                        <button type="button" id="events-view-toggle-btn" class="calendar-view-toggle" title="Toggle League Schedule">
+                            League Schedule
+                        </button>
+
+                        <div class="month-nav" id="events-month-nav">
                             <button id="prev-month-btn" class="nav-arrow" title="Previous Month">
                                 <i class="ph ph-caret-left"></i>
                             </button>
@@ -77,7 +76,7 @@
                             </button>
                         </div>
 
-                        <div class="calendar-legend">
+                        <div class="calendar-legend" id="events-calendar-legend">
                             <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #059669;"></span>Doubles League</div>
                             <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #d97706;"></span>Handicap League</div>
                             <div class="calendar-legend-item"><span class="calendar-legend-swatch" style="background-color: #0891b2;"></span>Scratch League</div>
@@ -87,7 +86,7 @@
                         </div>
                     </div>
 
-                    <div class="calendar-wrapper">
+                    <div class="calendar-wrapper" id="events-calendar-wrapper">
                         <div class="calendar-days-header">
                             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                         </div>
@@ -1287,16 +1286,16 @@
         </div>
     </div>
 
-    <script type="module" src="js/theme.js?v=128"></script>
-    <script type="module" src="js/firebase-config.js?v=128"></script>
-    <script type="module" src="js/firestore.js?v=128"></script>
-    <script type="module" src="js/nav.js?v=128"></script>
-    <script type="module" src="js/loginAdmin.js?v=128"></script>
-    <script type="module" src="js/admin.js?v=128"></script>
-    <script type="module" src="js/currentEvents.js?v=128"></script>
-    <script type="module" src="js/aces.js?v=128"></script>
-    <script type="module" src="js/records.js?v=128"></script>
-    <script type="module" src="js/governance.js?v=128"></script>
-    <script type="module" src="js/bagTags.js?v=128"></script>
+    <script type="module" src="js/theme.js?v=129"></script>
+    <script type="module" src="js/firebase-config.js?v=129"></script>
+    <script type="module" src="js/firestore.js?v=129"></script>
+    <script type="module" src="js/nav.js?v=129"></script>
+    <script type="module" src="js/loginAdmin.js?v=129"></script>
+    <script type="module" src="js/admin.js?v=129"></script>
+    <script type="module" src="js/currentEvents.js?v=129"></script>
+    <script type="module" src="js/aces.js?v=129"></script>
+    <script type="module" src="js/records.js?v=129"></script>
+    <script type="module" src="js/governance.js?v=129"></script>
+    <script type="module" src="js/bagTags.js?v=129"></script>
 </body>
 </html>

@@ -362,26 +362,41 @@ export async function loadLeagueSchedule() {
 }
 
 function setupEventsViewToggle() {
-    const calendarBtn = document.getElementById('events-view-calendar-btn');
-    const scheduleBtn = document.getElementById('events-view-schedule-btn');
-    const calendarView = document.getElementById('events-calendar-view');
+    const toggleBtn = document.getElementById('events-view-toggle-btn');
+    const calendarWrapper = document.getElementById('events-calendar-wrapper');
+    const monthNav = document.getElementById('events-month-nav');
+    const legend = document.getElementById('events-calendar-legend');
     const scheduleView = document.getElementById('events-schedule-view');
 
-    if (!calendarBtn || !scheduleBtn || !calendarView || !scheduleView) return;
+    if (!toggleBtn || !calendarWrapper || !scheduleView) return;
 
-    calendarBtn.onclick = () => {
-        calendarBtn.classList.add('active');
-        scheduleBtn.classList.remove('active');
-        calendarView.style.display = '';
+    let showingCalendar = true;
+
+    const showCalendar = () => {
+        showingCalendar = true;
+        toggleBtn.textContent = 'League Schedule';
+        calendarWrapper.style.display = '';
+        if (monthNav) monthNav.style.display = '';
+        if (legend) legend.style.display = '';
         scheduleView.style.display = 'none';
     };
 
-    scheduleBtn.onclick = () => {
-        scheduleBtn.classList.add('active');
-        calendarBtn.classList.remove('active');
-        calendarView.style.display = 'none';
+    const showSchedule = () => {
+        showingCalendar = false;
+        toggleBtn.textContent = 'Calendar';
+        calendarWrapper.style.display = 'none';
+        if (monthNav) monthNav.style.display = 'none';
+        if (legend) legend.style.display = 'none';
         scheduleView.style.display = 'block';
         loadLeagueSchedule();
+    };
+
+    toggleBtn.onclick = () => {
+        if (showingCalendar) {
+            showSchedule();
+        } else {
+            showCalendar();
+        }
     };
 }
 

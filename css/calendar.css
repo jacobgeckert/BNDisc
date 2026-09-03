@@ -40,6 +40,27 @@
     position: relative;
 }
 
+.calendar-view-toggle {
+    position: absolute;
+    left: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.55rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    background: transparent;
+    color: var(--text-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.calendar-view-toggle:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #fff;
+}
+
 .month-nav {
     display: grid;
     grid-template-columns: 42px 280px 42px;
@@ -302,6 +323,13 @@
         justify-content: center; /* Ensures the nav group stays centered */
         flex-direction: column;
         gap: 0.8rem;
+    }
+
+    .calendar-view-toggle {
+        position: static;
+        transform: none;
+        align-self: center;
+        margin-bottom: 0.25rem;
     }
 
     .calendar-legend {
