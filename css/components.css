@@ -300,6 +300,10 @@ input:checked + .slider:before { transform: translateX(20px); }
         gap: 0.5rem;
     }
 
+    #league-schedule-title {
+        display: none;
+    }
+
     .schedule-controls {
         width: 100%;
     }
