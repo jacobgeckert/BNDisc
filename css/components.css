@@ -139,6 +139,17 @@ input:checked + .slider:before { transform: translateX(20px); }
     transition: border-color 0.2s, background 0.3s;
 }
 
+.lr-preview-table {
+    table-layout: fixed;
+}
+
+.lr-preview-table th,
+.lr-preview-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 #league-static-ctp {
     padding: 0.8rem;
     border-radius: 6px;

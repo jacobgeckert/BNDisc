@@ -905,12 +905,12 @@ function renderRandomizerResults(generated, container) {
     `).join('');
 
     container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+        <table class="lr-preview-table" style="width: 100%; border-collapse: collapse; margin-top: 1rem; table-layout: fixed;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--glass-border);">
-                    <th style="text-align: left; padding: 0.25rem 0.5rem;">Date</th>
-                    <th style="text-align: left; padding: 0.25rem 0.5rem;">Course</th>
-                    <th style="text-align: left; padding: 0.25rem 0.5rem;">Layout</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 20%;">Date</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 40%;">Course</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 40%;">Layout</th>
                 </tr>
             </thead>
             <tbody>${rows}</tbody>
