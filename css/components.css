@@ -231,11 +231,13 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 @media (max-width: 768px) {
     #events-schedule-view {
+        width: 100%;
         max-width: none;
         margin: 0;
     }
 
     #events-schedule-view .admin-card {
+        width: 100%;
         background: transparent;
         border: none;
         box-shadow: none;
