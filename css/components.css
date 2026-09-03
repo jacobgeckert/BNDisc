@@ -204,11 +204,17 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 #events-schedule-view {
     margin-top: 0;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 #events-schedule-view .admin-card {
     padding: 0;
     overflow: hidden;
+    min-width: 0;
+}
+
+.schedule-body {
+    min-width: 0;
 }
 
 .schedule-header {
@@ -273,31 +279,45 @@ input:checked + .slider:before { transform: translateX(20px); }
         width: 100%;
         max-width: none;
         margin: 0;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     #events-schedule-view .admin-card {
         width: 100%;
+        min-width: 0;
         background: transparent;
         border: none;
         box-shadow: none;
         padding: 0;
         border-radius: 0;
         position: static;
-        overflow: visible;
+        overflow: hidden;
     }
 
-    .schedule-header,
-    .schedule-body {
+    .schedule-header {
+        width: 100%;
+        min-width: 0;
         background: transparent;
         border: none;
         border-radius: 0;
         padding: 0;
     }
 
+    .schedule-body {
+        width: 100%;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        padding: 0.8rem 0 0 0;
+    }
+
     .schedule-header {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--glass-border);
     }
 
     #league-schedule-title {
@@ -309,7 +329,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         flex-direction: column;
         align-items: stretch;
         width: 100%;
-        gap: 0.5rem;
+        gap: 0.8rem;
     }
 
     #league-schedule-select {
@@ -323,6 +343,19 @@ input:checked + .slider:before { transform: translateX(20px); }
         align-self: center;
         order: 1;
         margin-bottom: 0;
+        min-width: 180px;
+        text-align: center;
+    }
+
+    .league-schedule-table {
+        font-size: 0.85rem;
+    }
+
+    .league-schedule-table th,
+    .league-schedule-table td {
+        padding: 0.5rem;
+        white-space: normal;
+        overflow-wrap: break-word;
     }
 }
 
