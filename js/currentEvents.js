@@ -238,12 +238,9 @@ function renderLeagueSchedule(group) {
     }
 
     const rows = group.events.map(ev => {
-        const dateStr = ev.date.toLocaleDateString('en-US');
+        const dateStr = ev.date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
         const course = getCourseDisplayName(ev.location) || ev.location;
-        const checkInEnd = getCheckInEndTime(ev.time, ev.teeOffTime);
-        const checkIn = checkInEnd
-            ? `${formatTime12Hour(ev.time)} - ${formatTime12Hour(checkInEnd)}`
-            : formatTime12Hour(ev.time);
+        const checkIn = formatTime12Hour(ev.time);
         const teeOff = formatTime12Hour(ev.teeOffTime);
         const notes = ev.notes || ev.layout || '';
         return `
