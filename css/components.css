@@ -305,16 +305,21 @@ input:checked + .slider:before { transform: translateX(20px); }
     }
 
     .schedule-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
         width: 100%;
+        gap: 0.5rem;
     }
 
     #league-schedule-select {
         width: 100%;
         min-width: unset;
-        flex: 1;
+        flex: 0 0 auto;
     }
 
     .schedule-back-btn {
+        align-self: flex-start;
         margin-bottom: 0.5rem;
     }
 }
