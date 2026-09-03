@@ -128,6 +128,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* Themed selects inside the league randomizer preview table */
 .lr-course-select,
+.lr-league-type-select,
 .lr-layout-select {
     padding: 0.5rem;
     border-radius: 6px;
@@ -137,6 +138,13 @@ input:checked + .slider:before { transform: translateX(20px); }
     width: 100%;
     font-size: 1rem;
     transition: border-color 0.2s, background 0.3s;
+}
+
+.lr-course-select option,
+.lr-league-type-select option,
+.lr-layout-select option {
+    background-color: var(--sidebar-bg);
+    color: var(--text-color);
 }
 
 .lr-preview-table {

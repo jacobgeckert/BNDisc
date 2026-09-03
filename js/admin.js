@@ -841,7 +841,7 @@ function initLeagueRandomizer() {
                 const location = getRandomUnusedLocation(used, selectedCourses, usedLayouts);
                 const layout = getRandomUnusedLayout(location, usedLayouts) || getRandomLayout(location);
                 const dateStr = formatLocal(current);
-                generated.push({ date: dateStr, location, layout });
+                generated.push({ date: dateStr, location, layout, leagueType: document.getElementById('lr-league-type').value });
 
                 if (!usedCoursesByWeek[weekKey]) usedCoursesByWeek[weekKey] = used;
                 used.add(location);
@@ -873,7 +873,6 @@ function initLeagueRandomizer() {
 
                 const checkInTime = document.getElementById('lr-checkin-time').value;
                 const teeOffTime = document.getElementById('lr-teeoff-time').value;
-                const leagueType = document.getElementById('lr-league-type').value;
 
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = 'Saving...';
@@ -882,6 +881,7 @@ function initLeagueRandomizer() {
                     rows.forEach(row => {
                         const date = row.dataset.date;
                         const location = row.querySelector('.lr-course-select').value;
+                        const leagueType = row.querySelector('.lr-league-type-select').value;
                         const layout = row.querySelector('.lr-layout-select').value;
                         const [year, month, day] = date.split('-');
                         const monthId = `${year}-${month}`;
@@ -965,12 +965,19 @@ function renderRandomizerResults(generated, container) {
         return options.map(o => `<option value="${o}" ${o === selected ? 'selected' : ''}>${o}</option>`).join('');
     };
 
+    const LEAGUE_TYPES = ['Doubles', 'Handicap', 'Scratch'];
+
     const rows = generated.map(e => `
         <tr class="lr-preview-row" data-date="${e.date}">
             <td style="padding: 0.25rem 0.5rem;">${e.date}</td>
             <td style="padding: 0.25rem 0.5rem;">
                 <select class="lr-course-select" style="width: 100%;">
                     ${LOCATIONS.map(loc => `<option value="${loc}" ${loc === e.location ? 'selected' : ''}>${loc}</option>`).join('')}
+                </select>
+            </td>
+            <td style="padding: 0.25rem 0.5rem;">
+                <select class="lr-league-type-select" style="width: 100%;">
+                    ${LEAGUE_TYPES.map(t => `<option value="${t}" ${t === e.leagueType ? 'selected' : ''}>${t}</option>`).join('')}
                 </select>
             </td>
             <td style="padding: 0.25rem 0.5rem;">
@@ -985,9 +992,10 @@ function renderRandomizerResults(generated, container) {
         <table class="lr-preview-table" style="width: 100%; border-collapse: collapse; margin-top: 1rem; table-layout: fixed;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--glass-border);">
-                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 20%;">Date</th>
-                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 40%;">Course</th>
-                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 40%;">Layout</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 15%;">Date</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 30%;">Course</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 20%;">League Type</th>
+                    <th style="text-align: left; padding: 0.25rem 0.5rem; width: 35%;">Layout</th>
                 </tr>
             </thead>
             <tbody>${rows}</tbody>
