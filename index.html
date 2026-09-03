@@ -10,11 +10,11 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css?v=125">
-    <link rel="stylesheet" href="css/calendar.css?v=125">
+    <link rel="stylesheet" href="css/components.css?v=126">
+    <link rel="stylesheet" href="css/calendar.css?v=126">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
-    <link rel="stylesheet" href="css/governance.css?v=125">
+    <link rel="stylesheet" href="css/governance.css?v=126">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
@@ -55,7 +55,12 @@
                     <div class="accent-underline"></div>
                 </div>
 
-                <div class="calendar-main-unit">
+                <div class="view-toggle" id="events-view-toggle" style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <button type="button" id="events-view-calendar-btn" class="view-toggle-btn active" style="flex: 1; max-width: 200px;">Calendar</button>
+                    <button type="button" id="events-view-schedule-btn" class="view-toggle-btn" style="flex: 1; max-width: 200px;">League Schedule</button>
+                </div>
+
+                <div class="calendar-main-unit" id="events-calendar-view">
                     <div class="calendar-header-container">
                         <div class="month-nav">
                             <button id="prev-month-btn" class="nav-arrow" title="Previous Month">
@@ -87,6 +92,20 @@
                             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                         </div>
                         <div id="calendar-grid" class="calendar-grid"></div>
+                    </div>
+                </div>
+
+                <div class="admin-grid-wide" id="events-schedule-view" style="display: none;">
+                    <div class="admin-card">
+                        <h3 id="league-schedule-title">League Schedule</h3>
+                        <p class="subtitle">Select a league to view its schedule.</p>
+                        <div class="form-group" style="margin-top: 0.5rem;">
+                            <label for="league-schedule-select">League</label>
+                            <select id="league-schedule-select" style="width: 100%;">
+                                <option value="" disabled selected>Select a league schedule...</option>
+                            </select>
+                        </div>
+                        <div id="league-schedule-table" style="margin-top: 1rem;"></div>
                     </div>
                 </div>
             </div>
@@ -465,25 +484,6 @@
             <div class="about-container">
                 <div class="about-header" style="margin-bottom: 0.5rem;">
                     <h1 id="league-title">League Central</h1>
-                    <div class="accent-underline"></div>
-                </div>
-
-                <div class="admin-grid-wide" id="league-schedule-card">
-                    <div class="admin-card">
-                        <h3 id="league-schedule-title">League Schedule</h3>
-                        <p class="subtitle">Select a league to view its schedule.</p>
-                        <div class="form-group" style="margin-top: 0.5rem;">
-                            <label for="league-schedule-select">League</label>
-                            <select id="league-schedule-select" style="width: 100%;">
-                                <option value="" disabled selected>Select a league schedule...</option>
-                            </select>
-                        </div>
-                        <div id="league-schedule-table" style="margin-top: 1rem;"></div>
-                    </div>
-                </div>
-
-                <div id="league-director-header" class="about-header" style="margin: 2rem 0 0.5rem 0;">
-                    <h2 style="font-size: 1.5rem;">League Director Sign-In</h2>
                     <div class="accent-underline"></div>
                 </div>
 
@@ -1287,16 +1287,16 @@
         </div>
     </div>
 
-    <script type="module" src="js/theme.js?v=125"></script>
-    <script type="module" src="js/firebase-config.js?v=125"></script>
-    <script type="module" src="js/firestore.js?v=125"></script>
-    <script type="module" src="js/nav.js?v=125"></script>
-    <script type="module" src="js/loginAdmin.js?v=125"></script>
-    <script type="module" src="js/admin.js?v=125"></script>
-    <script type="module" src="js/currentEvents.js?v=125"></script>
-    <script type="module" src="js/aces.js?v=125"></script>
-    <script type="module" src="js/records.js?v=125"></script>
-    <script type="module" src="js/governance.js?v=125"></script>
-    <script type="module" src="js/bagTags.js?v=125"></script>
+    <script type="module" src="js/theme.js?v=126"></script>
+    <script type="module" src="js/firebase-config.js?v=126"></script>
+    <script type="module" src="js/firestore.js?v=126"></script>
+    <script type="module" src="js/nav.js?v=126"></script>
+    <script type="module" src="js/loginAdmin.js?v=126"></script>
+    <script type="module" src="js/admin.js?v=126"></script>
+    <script type="module" src="js/currentEvents.js?v=126"></script>
+    <script type="module" src="js/aces.js?v=126"></script>
+    <script type="module" src="js/records.js?v=126"></script>
+    <script type="module" src="js/governance.js?v=126"></script>
+    <script type="module" src="js/bagTags.js?v=126"></script>
 </body>
 </html>
