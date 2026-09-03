@@ -363,41 +363,25 @@ export async function loadLeagueSchedule() {
 
 function setupEventsViewToggle() {
     const toggleBtn = document.getElementById('events-view-toggle-btn');
-    const calendarWrapper = document.getElementById('events-calendar-wrapper');
-    const monthNav = document.getElementById('events-month-nav');
-    const legend = document.getElementById('events-calendar-legend');
+    const backBtn = document.getElementById('events-schedule-back-btn');
+    const calendarMain = document.getElementById('events-calendar-main');
     const scheduleView = document.getElementById('events-schedule-view');
 
-    if (!toggleBtn || !calendarWrapper || !scheduleView) return;
-
-    let showingCalendar = true;
+    if (!toggleBtn || !backBtn || !calendarMain || !scheduleView) return;
 
     const showCalendar = () => {
-        showingCalendar = true;
-        toggleBtn.textContent = 'League Schedule';
-        calendarWrapper.style.display = '';
-        if (monthNav) monthNav.style.display = '';
-        if (legend) legend.style.display = '';
+        calendarMain.style.display = '';
         scheduleView.style.display = 'none';
     };
 
     const showSchedule = () => {
-        showingCalendar = false;
-        toggleBtn.textContent = 'Calendar';
-        calendarWrapper.style.display = 'none';
-        if (monthNav) monthNav.style.display = 'none';
-        if (legend) legend.style.display = 'none';
+        calendarMain.style.display = 'none';
         scheduleView.style.display = 'block';
         loadLeagueSchedule();
     };
 
-    toggleBtn.onclick = () => {
-        if (showingCalendar) {
-            showSchedule();
-        } else {
-            showCalendar();
-        }
-    };
+    toggleBtn.onclick = showSchedule;
+    backBtn.onclick = showCalendar;
 }
 
 (function initEventModal() {

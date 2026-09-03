@@ -201,6 +201,26 @@ input:checked + .slider:before { transform: translateX(20px); }
     background: rgba(255, 255, 255, 0.06);
 }
 
+.schedule-back-btn {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    padding: 0.55rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    background: transparent;
+    color: var(--text-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.schedule-back-btn:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #fff;
+}
+
 @media (max-width: 768px) {
     #events-schedule-view {
         width: 100%;
@@ -215,6 +235,12 @@ input:checked + .slider:before { transform: translateX(20px); }
         box-shadow: none;
         padding: 0;
         border-radius: 0;
+        position: static;
+    }
+
+    .schedule-back-btn {
+        position: static;
+        margin-bottom: 0.5rem;
     }
 }
 
