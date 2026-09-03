@@ -741,7 +741,22 @@ function initLeagueRandomizer() {
     const form = document.getElementById('league-randomizer-form');
     if (!form) return;
 
-    form.onsubmit = async (e) => {
+    const parseLocal = dateStr => {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    };
+
+    const formatLocal = date => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+
+    let pendingEventsByMonth = {};
+    let pendingGenerated = [];
+
+    form.onsubmit = (e) => {
         e.preventDefault();
         const btn = document.getElementById('lr-generate-btn');
         const results = document.getElementById('lr-results');
@@ -757,7 +772,10 @@ function initLeagueRandomizer() {
             alert('Please select a start and end date.');
             return;
         }
-        if (new Date(startDate) > new Date(endDate)) {
+
+        const start = parseLocal(startDate);
+        const end = parseLocal(endDate);
+        if (start > end) {
             alert('Start date must be before end date.');
             return;
         }
@@ -769,21 +787,7 @@ function initLeagueRandomizer() {
 
         const eventsByMonth = {};
         const generated = [];
-
-        const parseLocal = dateStr => {
-            const [y, m, d] = dateStr.split('-').map(Number);
-            return new Date(y, m - 1, d);
-        };
-
-        const formatLocal = date => {
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-        };
-
-        const end = parseLocal(endDate);
-        let current = parseLocal(startDate);
+        let current = new Date(start);
 
         while (current <= end) {
             if (current.getDay() === dayOfWeek) {
@@ -811,23 +815,52 @@ function initLeagueRandomizer() {
             current.setDate(current.getDate() + 1);
         }
 
-        try {
-            for (const [monthId, events] of Object.entries(eventsByMonth)) {
-                await setDoc(doc(db, 'event_bundles', monthId), { events: arrayUnion(...events) }, { merge: true });
-                delete eventCache[monthId];
-            }
+        pendingEventsByMonth = eventsByMonth;
+        pendingGenerated = generated;
 
-            alert(`Generated ${generated.length} league events.`);
-            updateManagementUI();
-            renderRandomizerResults(generated, results);
-        } catch (error) {
-            console.error('League randomizer error:', error);
-            alert('Error generating league events.');
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Generate League Schedule';
-            }
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Regenerate';
+        }
+
+        renderRandomizerResults(generated, results);
+
+        if (generated.length > 0) {
+            const existingConfirm = document.getElementById('lr-confirm-btn');
+            if (existingConfirm) existingConfirm.remove();
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.id = 'lr-confirm-btn';
+            confirmBtn.className = 'btn-primary';
+            confirmBtn.style.width = '100%';
+            confirmBtn.style.marginTop = '1rem';
+            confirmBtn.textContent = 'Confirm & Save Schedule';
+            confirmBtn.onclick = async () => {
+                if (Object.keys(pendingEventsByMonth).length === 0) return;
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Saving...';
+                try {
+                    for (const [monthId, events] of Object.entries(pendingEventsByMonth)) {
+                        await setDoc(doc(db, 'event_bundles', monthId), { events: arrayUnion(...events) }, { merge: true });
+                        delete eventCache[monthId];
+                    }
+
+                    alert(`Saved ${pendingGenerated.length} league events.`);
+                    updateManagementUI();
+
+                    pendingEventsByMonth = {};
+                    pendingGenerated = [];
+                    results.innerHTML = '<p class="subtitle" style="margin-top: 1rem; opacity: 0.7;">Schedule saved successfully.</p>';
+                    if (btn) btn.textContent = 'Generate League Schedule';
+                } catch (error) {
+                    console.error('League randomizer save error:', error);
+                    alert('Error saving league events.');
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Confirm & Save Schedule';
+                }
+            };
+            results.appendChild(confirmBtn);
         }
     };
 }
