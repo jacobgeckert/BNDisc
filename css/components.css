@@ -119,9 +119,24 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 /* Dropdown options styling */
-.admin-form select option {
+.admin-form select option,
+.lr-course-select option,
+.lr-layout-select option {
     background-color: var(--sidebar-bg);
     color: var(--text-color);
+}
+
+/* Themed selects inside the league randomizer preview table */
+.lr-course-select,
+.lr-layout-select {
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    background: var(--bg-color);
+    color: var(--text-color);
+    width: 100%;
+    font-size: 1rem;
+    transition: border-color 0.2s, background 0.3s;
 }
 
 #league-static-ctp {
