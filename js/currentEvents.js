@@ -234,7 +234,7 @@ function renderLeagueSchedule(group) {
     }
 
     if (title) {
-        title.textContent = `${group.year} ${group.season.toUpperCase()} ${group.leagueType.toUpperCase()} LEAGUE SCHEDULE`;
+        title.textContent = `${group.year} ${group.season.toUpperCase()} ${group.leagueType.toUpperCase()}`;
     }
 
     const rows = group.events.map(ev => {
