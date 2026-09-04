@@ -136,3 +136,68 @@ export async function getRoster(force = false) {
     saveLocalRoster(roster);
     return { roster, source: 'firestore' };
 }
+
+const DOC_CACHE_PREFIX = 'bndisc_doc_cache_';
+const DEFAULT_DOC_TTL_MS = 15 * 60 * 1000;
+const pendingDocRequests = new Map();
+
+function docCacheKey(collection, docId) {
+    return `${DOC_CACHE_PREFIX}${collection}:${docId}`;
+}
+
+function readDocCache(collection, docId, ttlMs = DEFAULT_DOC_TTL_MS) {
+    try {
+        const raw = localStorage.getItem(docCacheKey(collection, docId));
+        if (!raw) return undefined;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed.fetchedAt !== 'number') return undefined;
+        if (Date.now() - parsed.fetchedAt > ttlMs) return undefined;
+        return { data: parsed.data, fetchedAt: parsed.fetchedAt };
+    } catch (e) {
+        console.warn('Could not read doc cache:', e);
+        return undefined;
+    }
+}
+
+function writeDocCache(collection, docId, data) {
+    try {
+        localStorage.setItem(docCacheKey(collection, docId), JSON.stringify({ data, fetchedAt: Date.now() }));
+    } catch (e) {
+        console.warn('Could not write doc cache:', e);
+    }
+}
+
+async function fetchDocAndCache(collection, docId) {
+    const key = docCacheKey(collection, docId);
+    if (pendingDocRequests.has(key)) return pendingDocRequests.get(key);
+
+    const promise = (async () => {
+        try {
+            const snap = await getDoc(doc(db, collection, docId));
+            const data = snap.exists() ? snap.data() : null;
+            writeDocCache(collection, docId, data);
+            return data;
+        } finally {
+            pendingDocRequests.delete(key);
+        }
+    })();
+    pendingDocRequests.set(key, promise);
+    return promise;
+}
+
+export async function getCachedDoc(collection, docId, ttlMs = DEFAULT_DOC_TTL_MS) {
+    const cached = readDocCache(collection, docId, ttlMs);
+    if (cached !== undefined) {
+        return { data: cached.data, source: 'cache' };
+    }
+    const data = await fetchDocAndCache(collection, docId);
+    return { data, source: 'firestore' };
+}
+
+export async function refreshCachedDoc(collection, docId, ttlMs = DEFAULT_DOC_TTL_MS) {
+    return fetchDocAndCache(collection, docId);
+}
+
+export function seedDocCache(collection, docId, data) {
+    writeDocCache(collection, docId, data);
+}

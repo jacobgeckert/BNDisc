@@ -1,10 +1,10 @@
 import { db } from './firebase-config.js?v=100';
-import { doc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getCourseDisplayName } from './courseData.js?v=100';
+import { getCachedDoc, seedDocCache } from './firestore.js?v=101';
 
 // 1. GLOBAL STATE & CACHE
 let viewDate = new Date();
-const calendarCache = {};
 let leagueScheduleGroups = [];
 let leagueScheduleLoaded = false; 
 
@@ -42,25 +42,18 @@ export async function loadCurrentEvents() {
 
     // 2. FETCH DATA (CACHE-FIRST LOGIC WITH CONSOLE LOGS)
     let events = [];
-    if (calendarCache[monthId]) {
-        // GREEN LOG FOR CACHE
-        console.log(`%c [Calendar Cache] ${monthId} found in memory. Zero reads used.`, "color: #10b981; font-weight: bold;");
-        events = calendarCache[monthId];
-    } else {
-        // ORANGE LOG FOR DATABASE READ
-        console.log(`%c [Firestore] ${monthId} not cached. Fetching from database... (1 Read)`, "color: #f59e0b; font-weight: bold;");
-        
-        try {
-            const docRef = doc(db, "event_bundles", monthId);
-            const docSnap = await getDoc(docRef);
-            events = docSnap.exists() ? docSnap.data().events || [] : [];
-            
-            calendarCache[monthId] = events;
-        } catch (error) {
-            console.error("Firestore Error:", error);
-            grid.innerHTML = `<p class="error">Error loading calendar.</p>`;
-            return;
+    try {
+        const { data, source } = await getCachedDoc('event_bundles', monthId);
+        if (source === 'cache') {
+            console.log(`%c [Calendar Cache] ${monthId} found in local cache. Zero reads used.`, "color: #10b981; font-weight: bold;");
+        } else {
+            console.log(`%c [Firestore] ${monthId} not cached. Fetching from database... (1 Read)`, "color: #f59e0b; font-weight: bold;");
         }
+        events = data?.events || [];
+    } catch (error) {
+        console.error("Firestore Error:", error);
+        grid.innerHTML = `<p class="error">Error loading calendar.</p>`;
+        return;
     }
 
     // 3. RENDER GRID
@@ -290,6 +283,7 @@ export async function loadLeagueSchedule() {
         snapshot.forEach(docSnap => {
             const monthId = docSnap.id;
             const data = docSnap.data() || {};
+            seedDocCache('event_bundles', monthId, data);
             const events = Array.isArray(data.events) ? data.events : [];
             events.forEach(event => {
                 if (event.category !== 'League' || !event.day || !event.leagueType || !event.location) return;

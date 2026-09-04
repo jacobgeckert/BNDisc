@@ -7,8 +7,8 @@ import {
     getRedirectResult,
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { isLeagueAdmin, checkLeagueAdminEligibility, getLocalRoster, getRoster } from './firestore.js?v=100';
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { isLeagueAdmin, checkLeagueAdminEligibility, getLocalRoster, getRoster, getCachedDoc, refreshCachedDoc } from './firestore.js?v=101';
 import { bindFirstTimeSetup } from './authSetup.js?v=100';
 import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
 
@@ -25,6 +25,9 @@ const CHECKIN_TAGS_ORIGINAL_KEY = 'bndisc_checkin_tags_original';
 const ROUND_SCORES_KEY = 'bndisc_round_scores';
 const LEAGUE_HASH_KEY = 'bndisc_league_hash';
 const TAGS_ASSIGNED_KEY = 'bndisc_tags_assigned';
+
+const EVENT_CACHE_TTL_MS = 15 * 60 * 1000;
+const COURSE_RECORD_CACHE_TTL_MS = 60 * 60 * 1000;
 
 let tagsAssigned = false;
 let userLeagues = [];
@@ -271,6 +274,13 @@ async function loadLeagueCheckin() {
 
     if (dateInput && !dateInput.value) {
         dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    if (dateInput && dateInput.value) {
+        const [year, month] = dateInput.value.split('-');
+        if (year && month) {
+            getCachedDoc('event_bundles', `${year}-${month}`, EVENT_CACHE_TTL_MS).catch(() => {});
+        }
     }
 
     function updateFinalizeButton() {
@@ -589,16 +599,35 @@ async function loadLeagueCheckin() {
             const [year, month, day] = date.split('-');
             const monthId = `${year}-${month}`;
             try {
-                const docRef = doc(db, 'event_bundles', monthId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const events = docSnap.data().events || [];
-                    const match = events.find(e => String(e.day) === String(Number(day)));
-                    if (match) {
-                        locationInput.value = match.location || '';
-                        layoutInput.value = match.layout || '';
-                        updateFinalizeButton();
-                        renderLayoutRecords();
+                const { data, source } = await getCachedDoc('event_bundles', monthId, EVENT_CACHE_TTL_MS);
+                let match = null;
+                if (data) {
+                    const events = data.events || [];
+                    match = events.find(e => String(e.day) === String(Number(day)));
+                }
+                if (match) {
+                    const oldLocation = match.location || '';
+                    const oldLayout = match.layout || '';
+                    locationInput.value = oldLocation;
+                    layoutInput.value = oldLayout;
+                    updateFinalizeButton();
+                    await renderLayoutRecords();
+
+                    if (source === 'cache') {
+                        refreshCachedDoc('event_bundles', monthId, EVENT_CACHE_TTL_MS).then(updated => {
+                            if (!updated) return;
+                            const newMatch = (updated.events || []).find(e => String(e.day) === String(Number(day)));
+                            if (!newMatch) return;
+                            const currentLocation = (locationInput.value || '').trim();
+                            const currentLayout = (layoutInput.value || '').trim();
+                            if ((currentLocation === oldLocation.trim() || currentLocation === '') &&
+                                (currentLayout === oldLayout.trim() || currentLayout === '')) {
+                                locationInput.value = newMatch.location || '';
+                                layoutInput.value = newMatch.layout || '';
+                                updateFinalizeButton();
+                                renderLayoutRecords();
+                            }
+                        }).catch(err => console.warn('Background event refresh failed:', err));
                     }
                 }
             } catch (error) {
@@ -1059,14 +1088,12 @@ async function renderLayoutRecords() {
     const displayName = getCourseDisplayName(storageName);
 
     try {
-        const docRef = doc(db, 'course_records', storageName);
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
+        const { data } = await getCachedDoc('course_records', storageName, COURSE_RECORD_CACHE_TTL_MS);
+        if (!data) {
             container.innerHTML = `<p class="subtitle" style="opacity: 0.6;">No records found for ${displayName}.</p>`;
             return;
         }
 
-        const data = docSnap.data() || {};
         const layouts = data.layouts || {};
         const layoutKey = Object.keys(layouts).find(k => k.toLowerCase().trim() === layout.toLowerCase());
         if (!layoutKey) {
