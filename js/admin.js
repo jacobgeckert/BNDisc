@@ -4,7 +4,7 @@ import {
     collection, addDoc, serverTimestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin, getRoster, saveLocalRoster } from './firestore.js?v=100';
-import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
+import { LOCATIONS, COURSE_NAME_OVERRIDES, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
 
 // State and Cache
 let viewDate = new Date(); 
