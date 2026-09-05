@@ -12,7 +12,7 @@ function calculateCurrentRating(history) {
     if (denominator === 0) return null;
     const weighted = latest5.reduce((sum, r) => sum + r.rating * 2, 0)
                    + previous10.reduce((sum, r) => sum + r.rating, 0);
-    return Math.round(weighted / denominator);
+    return Math.ceil(weighted / denominator);
 }
 
 function formatRating(rating) {
