@@ -1,7 +1,7 @@
 import { db, auth } from './firebase-config.js?v=100';
 import { 
     doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, deleteDoc,
-    collection, addDoc, serverTimestamp 
+    collection, addDoc, serverTimestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin, getRoster, saveLocalRoster } from './firestore.js?v=100';
 import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
@@ -26,6 +26,7 @@ export function initAdminForm() {
     updateManagementUI();
     initLeagueAdminManager();
     initLeagueRoster();
+    initRoundDatabaseImport();
     initCollapsibleSections();
 }
 
@@ -1251,6 +1252,275 @@ function initLeagueRoster() {
 
     // Auto-load roster when admin page initializes (use cache, no Firestore read if local exists)
     loadRosterData(false);
+}
+
+/**
+ * Import the "BNDisc Ratings - Round Database.csv" file into Firestore.
+ * Groups rows into round documents and builds player profile docs with history.
+ */
+function initRoundDatabaseImport() {
+    const fileInput = document.getElementById('round-db-file');
+    const importBtn = document.getElementById('import-round-db');
+    const status = document.getElementById('round-db-status');
+    const progress = document.getElementById('round-db-progress');
+    if (!fileInput || !importBtn || !status || !progress) return;
+
+    importBtn.onclick = async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('Please choose the Round Database CSV file.');
+            return;
+        }
+        const currentUser = auth.currentUser;
+        if (!currentUser || !(await isAdmin(currentUser.email))) {
+            alert('Only club admins can import the round database.');
+            return;
+        }
+
+        status.textContent = 'Reading file...';
+        progress.textContent = '';
+        importBtn.disabled = true;
+
+        try {
+            const csv = await file.text();
+            const { rounds, players, roundCount, playerCount, skipped } = buildRoundDatabase(csv);
+            status.textContent = `Parsed ${roundCount} rounds and ${playerCount} players (${skipped} skipped). Writing to Firestore...`;
+            const counts = await writeRoundDatabase(rounds, players, (msg) => { progress.textContent = msg; });
+            status.textContent = `Imported ${counts.roundCount} rounds and ${counts.playerCount} player profiles.`;
+            alert(`Imported ${counts.roundCount} rounds and ${counts.playerCount} players.`);
+        } catch (error) {
+            console.error('Round database import failed:', error);
+            status.textContent = `Error: ${error.message}`;
+            alert('Import failed. Check console for details.');
+        } finally {
+            importBtn.disabled = false;
+        }
+    };
+}
+
+function buildRoundDatabase(csv) {
+    const lines = csv.split(/\r?\n/).filter(line => line.trim());
+
+    const headerIndex = lines.findIndex(line => {
+        const first = parseCsvRow(line)[0] || '';
+        return first.toLowerCase().includes('player') && first.toLowerCase().includes('name');
+    });
+
+    if (headerIndex === -1) {
+        throw new Error('Could not find "Player Name" header in CSV.');
+    }
+
+    const dataLines = lines.slice(headerIndex + 1);
+    const rounds = {};
+    const playersById = {};
+    const playerInitialRatings = {};
+    const playerNames = {};
+    const playerRounds = {};
+    const seen = new Set();
+    let skipped = 0;
+
+    function normalizeForMatch(str) {
+        return String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function slug(str) {
+        return String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+
+    function playerId(name) {
+        return String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+
+    function parseDate(str) {
+        const parts = String(str).trim().split('/');
+        if (parts.length !== 3) return null;
+        const [m, d, y] = parts.map(Number);
+        if (!m || !d || !y) return null;
+        const dt = new Date(y, m - 1, d);
+        if (Number.isNaN(dt.getTime())) return null;
+        return dt.toISOString().split('T')[0];
+    }
+
+    function parseNumber(str) {
+        if (!str || String(str).trim().toUpperCase() === 'N/A') return null;
+        const cleaned = String(str).replace(/,/g, '').trim();
+        const n = parseInt(cleaned, 10);
+        return Number.isNaN(n) ? null : n;
+    }
+
+    function mapCourse(loc) {
+        const n = normalizeForMatch(loc);
+        for (const [storage, display] of Object.entries(COURSE_NAME_OVERRIDES)) {
+            if (n === normalizeForMatch(storage) || n === normalizeForMatch(display)) {
+                return storage;
+            }
+        }
+        for (const name of LOCATIONS) {
+            if (n === normalizeForMatch(name)) return name;
+        }
+        return loc.trim();
+    }
+
+    for (const line of dataLines) {
+        const cells = parseCsvRow(line);
+        if (cells.length < 6) continue;
+        if (!cells[0].trim() || cells[0].startsWith('Maximum') || cells[0].startsWith('Last Round')) {
+            skipped++;
+            continue;
+        }
+
+        const name = cells[0].trim();
+        const dateStr = cells[1].trim();
+        const loc = cells[2].trim();
+        const layout = cells[3].trim();
+        const score = parseNumber(cells[4]);
+        const rating = parseNumber(cells[5]);
+        const pid = playerId(name);
+        if (!pid) continue;
+
+        playerNames[pid] = name;
+
+        const locLower = loc.toLowerCase();
+
+        if (locLower === 'initial rating') {
+            if (rating !== null && !(pid in playerInitialRatings)) {
+                playerInitialRatings[pid] = rating;
+            }
+            continue;
+        }
+
+        if (locLower === 'unknown' || layout.toUpperCase() === 'N/A' || score === null || rating === null) {
+            skipped++;
+            continue;
+        }
+
+        const course = mapCourse(loc);
+        const date = parseDate(dateStr);
+        if (!date) {
+            skipped++;
+            continue;
+        }
+
+        const groupKey = `${date}|${course}|${layout}`;
+        const occurrences = (playerRounds[pid] || []).filter(r => r.groupKey === groupKey).length;
+        let roundId = `${date}_${slug(course)}_${slug(layout)}`;
+        if (occurrences > 0) {
+            roundId += `_occ${occurrences}`;
+        }
+
+        const dedupKey = `${pid}|${date}|${course}|${layout}|${occurrences}|${score}|${rating}`;
+        if (seen.has(dedupKey)) continue;
+        seen.add(dedupKey);
+
+        const entry = {
+            pid, name, date, course, layout, score, rating, roundId, groupKey
+        };
+
+        playerRounds[pid] = playerRounds[pid] || [];
+        playerRounds[pid].push(entry);
+
+        if (!rounds[roundId]) {
+            rounds[roundId] = {
+                date,
+                course,
+                layout,
+                courseDisplay: getCourseDisplayName(course),
+                scores: {},
+                playerIds: new Set()
+            };
+        }
+        rounds[roundId].scores[pid] = { name, score, rating };
+        rounds[roundId].playerIds.add(pid);
+    }
+
+    for (const pid of new Set([...Object.keys(playerRounds), ...Object.keys(playerInitialRatings)])) {
+        const entries = (playerRounds[pid] || []).slice();
+        entries.sort((a, b) => a.date.localeCompare(b.date) || a.roundId.localeCompare(b.roundId));
+
+        const history = entries.map(e => ({
+            roundId: e.roundId,
+            date: e.date,
+            course: e.course,
+            courseDisplay: getCourseDisplayName(e.course),
+            layout: e.layout,
+            score: e.score,
+            rating: e.rating
+        }));
+
+        const scores = entries.map(e => e.score).filter(n => n !== null);
+        const ratings = entries.map(e => e.rating).filter(n => n !== null);
+        const initialRating = playerInitialRatings[pid] || null;
+        const currentRating = ratings.length ? ratings[ratings.length - 1] : initialRating;
+
+        playersById[pid] = {
+            playerId: pid,
+            name: playerNames[pid] || pid,
+            initialRating,
+            currentRating,
+            stats: {
+                roundsPlayed: entries.length,
+                averageScore: scores.length ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2)) : null,
+                bestScore: scores.length ? Math.min(...scores) : null,
+                averageRating: ratings.length ? Number((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2)) : null,
+                bestRating: ratings.length ? Math.max(...ratings) : null
+            },
+            history
+        };
+    }
+
+    const roundDocs = {};
+    for (const [roundId, data] of Object.entries(rounds)) {
+        roundDocs[roundId] = {
+            date: data.date,
+            course: data.course,
+            courseDisplay: data.courseDisplay,
+            layout: data.layout,
+            playerIds: Array.from(data.playerIds).sort(),
+            scores: data.scores
+        };
+    }
+
+    return {
+        rounds: roundDocs,
+        players: playersById,
+        roundCount: Object.keys(roundDocs).length,
+        playerCount: Object.keys(playersById).length,
+        skipped
+    };
+}
+
+async function writeRoundDatabase(rounds, players, onProgress) {
+    let batch = writeBatch(db);
+    let count = 0;
+    let total = 0;
+    let roundCount = 0;
+    let playerCount = 0;
+
+    async function commitBatch() {
+        if (count === 0) return;
+        await batch.commit();
+        total += count;
+        if (onProgress) onProgress(`Wrote ${total} documents...`);
+        batch = writeBatch(db);
+        count = 0;
+    }
+
+    for (const [roundId, data] of Object.entries(rounds)) {
+        batch.set(doc(db, 'rounds', roundId), data);
+        count++;
+        roundCount++;
+        if (count >= 450) await commitBatch();
+    }
+
+    for (const [pid, data] of Object.entries(players)) {
+        batch.set(doc(db, 'players', pid), data);
+        count++;
+        playerCount++;
+        if (count >= 450) await commitBatch();
+    }
+
+    await commitBatch();
+    return { roundCount, playerCount, total };
 }
 
 function parseRosterNames(csv) {
