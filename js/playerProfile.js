@@ -70,34 +70,34 @@ function renderPlayerProfile(playerId) {
 
     statsEl.innerHTML = `
         <h3>${player.name}</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1rem;">
-            <div class="contact-card" style="padding: 1rem;">
-                <span style="font-size: 0.85rem; opacity: 0.7;">Current Rating</span>
-                <strong style="font-size: 1.25rem;">${formatRating(player.currentRating)}</strong>
+        <div class="player-stats-grid">
+            <div class="player-stat-card">
+                <span>Current Rating</span>
+                <strong>${formatRating(player.currentRating)}</strong>
             </div>
-            <div class="contact-card" style="padding: 1rem;">
-                <span style="font-size: 0.85rem; opacity: 0.7;">Initial Rating</span>
-                <strong style="font-size: 1.25rem;">${formatRating(player.initialRating)}</strong>
+            <div class="player-stat-card">
+                <span>Initial Rating</span>
+                <strong>${formatRating(player.initialRating)}</strong>
             </div>
-            <div class="contact-card" style="padding: 1rem;">
-                <span style="font-size: 0.85rem; opacity: 0.7;">Rounds Played</span>
-                <strong style="font-size: 1.25rem;">${stats.roundsPlayed ?? 0}</strong>
+            <div class="player-stat-card">
+                <span>Rounds Played</span>
+                <strong>${stats.roundsPlayed ?? 0}</strong>
             </div>
-            <div class="contact-card" style="padding: 1rem;">
-                <span style="font-size: 0.85rem; opacity: 0.7;">Best Score</span>
-                <strong style="font-size: 1.25rem;">${formatScore(stats.bestScore)}</strong>
+            <div class="player-stat-card">
+                <span>Best Score</span>
+                <strong>${formatScore(stats.bestScore)}</strong>
             </div>
-            <div class="contact-card" style="padding: 1rem;">
-                <span style="font-size: 0.85rem; opacity: 0.7;">Average Score</span>
-                <strong style="font-size: 1.25rem;">${stats.averageScore ?? '—'}</strong>
+            <div class="player-stat-card">
+                <span>Average Score</span>
+                <strong>${stats.averageScore ?? '—'}</strong>
             </div>
-            <div class="contact-card" style="padding: 1rem;">
-                <span style="font-size: 0.85rem; opacity: 0.7;">Best Rating</span>
-                <strong style="font-size: 1.25rem;">${formatRating(stats.bestRating)}</strong>
+            <div class="player-stat-card">
+                <span>Best Rating</span>
+                <strong>${formatRating(stats.bestRating)}</strong>
             </div>
-            <div class="contact-card" style="padding: 1rem;">
-                <span style="font-size: 0.85rem; opacity: 0.7;">Average Rating</span>
-                <strong style="font-size: 1.25rem;">${formatRating(stats.averageRating)}</strong>
+            <div class="player-stat-card">
+                <span>Average Rating</span>
+                <strong>${formatRating(stats.averageRating)}</strong>
             </div>
         </div>
     `;
@@ -120,14 +120,14 @@ function renderPlayerProfile(playerId) {
     roundsEl.innerHTML = `
         <h4>Round History</h4>
         <div style="overflow-x: auto; margin-top: 0.5rem;">
-            <table style="width: 100%; border-collapse: collapse;">
+            <table class="player-profile-table">
                 <thead>
-                    <tr style="border-bottom: 1px solid var(--glass-border);">
-                        <th style="text-align: left; padding: 0.5rem;">Date</th>
-                        <th style="text-align: left; padding: 0.5rem;">Course</th>
-                        <th style="text-align: left; padding: 0.5rem;">Layout</th>
-                        <th style="text-align: left; padding: 0.5rem;">Score</th>
-                        <th style="text-align: left; padding: 0.5rem;">Rating</th>
+                    <tr>
+                        <th>Date</th>
+                        <th>Course</th>
+                        <th>Layout</th>
+                        <th>Score</th>
+                        <th>Rating</th>
                     </tr>
                 </thead>
                 <tbody>
