@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css?v=145">
+    <link rel="stylesheet" href="css/components.css?v=146">
     <link rel="stylesheet" href="css/calendar.css?v=143">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
@@ -1302,8 +1302,7 @@
                 </div>
                 <div class="about-content">
                     <div class="form-group" style="margin-top: 0.5rem;">
-                        <label for="player-profile-select">Select Player</label>
-                        <select id="player-profile-select" class="admin-select">
+                        <select id="player-profile-select" aria-label="Select a player" style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%;">
                             <option value="" disabled selected>Select a player...</option>
                         </select>
                     </div>

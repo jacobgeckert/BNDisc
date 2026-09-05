@@ -237,28 +237,24 @@ input:checked + .slider:before { transform: translateX(20px); }
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
-.player-stat-card {
+.player-stat-item {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 1rem;
-    background: var(--sidebar-bg);
-    border: 1px solid rgba(128, 128, 128, 0.1);
-    border-radius: 12px;
     min-width: 0;
 }
 
-.player-stat-card span {
+.player-stat-item span {
     font-size: 0.85rem;
     opacity: 0.7;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.player-stat-card strong {
+.player-stat-item strong {
     font-size: 1.5rem;
     margin-top: 0.25rem;
 }
