@@ -4,6 +4,17 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/f
 let playerCache = null;
 let isLoading = false;
 
+function calculateCurrentRating(history) {
+    const sorted = history.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const latest5 = sorted.slice(-5).filter(r => typeof r.rating === 'number');
+    const previous10 = sorted.slice(-15, -5).filter(r => typeof r.rating === 'number');
+    const denominator = latest5.length * 2 + previous10.length;
+    if (denominator === 0) return null;
+    const weighted = latest5.reduce((sum, r) => sum + r.rating * 2, 0)
+                   + previous10.reduce((sum, r) => sum + r.rating, 0);
+    return Math.round(weighted / denominator);
+}
+
 function formatRating(rating) {
     return typeof rating === 'number' ? rating.toLocaleString() : '—';
 }
@@ -67,13 +78,14 @@ function renderPlayerProfile(playerId) {
 
     const stats = player.stats || {};
     const history = (player.history || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const currentRating = calculateCurrentRating(history) ?? player.currentRating;
 
     statsEl.innerHTML = `
         <h3>${player.name}</h3>
         <div class="player-stats-grid">
             <div class="player-stat-card">
                 <span>Current Rating</span>
-                <strong>${formatRating(player.currentRating)}</strong>
+                <strong>${formatRating(currentRating)}</strong>
             </div>
             <div class="player-stat-card">
                 <span>Initial Rating</span>

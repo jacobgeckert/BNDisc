@@ -1361,6 +1361,17 @@ function buildRoundDatabase(csv) {
         return loc.trim();
     }
 
+    function calculateCurrentRating(history) {
+        const sorted = history.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        const latest5 = sorted.slice(-5).filter(r => typeof r.rating === 'number');
+        const previous10 = sorted.slice(-15, -5).filter(r => typeof r.rating === 'number');
+        const denominator = latest5.length * 2 + previous10.length;
+        if (denominator === 0) return null;
+        const weighted = latest5.reduce((sum, r) => sum + r.rating * 2, 0)
+                       + previous10.reduce((sum, r) => sum + r.rating, 0);
+        return Math.round(weighted / denominator);
+    }
+
     for (const line of dataLines) {
         const cells = parseCsvRow(line);
         if (cells.length < 6) continue;
@@ -1450,7 +1461,7 @@ function buildRoundDatabase(csv) {
         const scores = entries.map(e => e.score).filter(n => n !== null);
         const ratings = entries.map(e => e.rating).filter(n => n !== null);
         const initialRating = playerInitialRatings[pid] || null;
-        const currentRating = ratings.length ? ratings[ratings.length - 1] : initialRating;
+        const currentRating = calculateCurrentRating(history) ?? (ratings.length ? ratings[ratings.length - 1] : initialRating);
 
         playersById[pid] = {
             playerId: pid,
