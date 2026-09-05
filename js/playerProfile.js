@@ -77,7 +77,7 @@ function renderPlayerProfile(playerId) {
     }
 
     const stats = player.stats || {};
-    const history = (player.history || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const history = (player.history || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
     const currentRating = calculateCurrentRating(history) ?? player.currentRating;
 
     statsEl.innerHTML = `
