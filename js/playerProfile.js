@@ -5,14 +5,27 @@ let playerCache = null;
 let isLoading = false;
 
 function calculateCurrentRating(history) {
-    const sorted = history.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const sorted = history.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
     const latest5 = sorted.slice(-5).filter(r => typeof r.rating === 'number');
     const previous10 = sorted.slice(-15, -5).filter(r => typeof r.rating === 'number');
     const denominator = latest5.length + previous10.length + 5;
     if (denominator === 0) return null;
     const weighted = latest5.reduce((sum, r) => sum + r.rating * 2, 0)
                    + previous10.reduce((sum, r) => sum + r.rating, 0);
-    return Math.ceil(weighted / denominator);
+    const raw = weighted / denominator;
+    const result = Math.ceil(raw);
+    console.log('[PlayerProfile] current rating math:', {
+        roundCount: sorted.length,
+        latest5Ratings: latest5.map(r => r.rating),
+        latest5Sum: latest5.reduce((s, r) => s + r.rating, 0),
+        previous10Ratings: previous10.map(r => r.rating),
+        previous10Sum: previous10.reduce((s, r) => s + r.rating, 0),
+        weighted,
+        denominator,
+        raw,
+        result
+    });
+    return result;
 }
 
 function formatRating(rating) {
@@ -79,6 +92,16 @@ function renderPlayerProfile(playerId) {
     const stats = player.stats || {};
     const history = (player.history || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
     const currentRating = calculateCurrentRating(history) ?? player.currentRating;
+
+    console.log('[PlayerProfile] render:', {
+        playerId,
+        name: player.name,
+        storedCurrentRating: player.currentRating,
+        computedCurrentRating: currentRating,
+        historyLength: history.length,
+        firstHistoryDate: history[0]?.date,
+        lastHistoryDate: history[history.length - 1]?.date
+    });
 
     statsEl.innerHTML = `
         <h3>${player.name}</h3>
