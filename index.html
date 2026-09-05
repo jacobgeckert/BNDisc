@@ -1301,7 +1301,15 @@
                     <div class="accent-underline"></div>
                 </div>
                 <div class="about-content">
-                    <p class="mission-statement">Player profile content coming soon.</p>
+                    <div class="form-group" style="margin-top: 0.5rem;">
+                        <label for="player-profile-select">Select Player</label>
+                        <select id="player-profile-select" class="admin-select">
+                            <option value="" disabled selected>Select a player...</option>
+                        </select>
+                    </div>
+                    <div id="player-profile-status" style="margin-top: 1rem; font-size: 0.9rem;"></div>
+                    <div id="player-profile-stats" style="margin-top: 1.5rem;"></div>
+                    <div id="player-profile-rounds" style="margin-top: 1.5rem;"></div>
                 </div>
             </div>
         </section>
@@ -1330,5 +1338,6 @@
     <script type="module" src="js/records.js?v=143"></script>
     <script type="module" src="js/governance.js?v=143"></script>
     <script type="module" src="js/bagTags.js?v=143"></script>
+    <script type="module" src="js/playerProfile.js?v=145"></script>
 </body>
 </html>
