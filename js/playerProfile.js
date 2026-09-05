@@ -97,14 +97,6 @@ function renderPlayerProfile(playerId) {
                     <strong>${stats.roundsPlayed ?? 0}</strong>
                 </div>
                 <div class="player-stat-item">
-                    <span>Best Score</span>
-                    <strong>${formatScore(stats.bestScore)}</strong>
-                </div>
-                <div class="player-stat-item">
-                    <span>Average Score</span>
-                    <strong>${stats.averageScore ?? '—'}</strong>
-                </div>
-                <div class="player-stat-item">
                     <span>Best Rating</span>
                     <strong>${formatRating(stats.bestRating)}</strong>
                 </div>
