@@ -194,6 +194,13 @@ function findColumnKey(headers, candidates) {
 async function importXlsx(file) {
     const summary = document.getElementById('rr-summary');
     const XLSX = window.XLSX;
+
+    const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch) {
+        const dateInput = document.getElementById('rr-date');
+        if (dateInput) dateInput.value = dateMatch[1];
+    }
+
     if (!XLSX) {
         if (summary) summary.textContent = 'Spreadsheet library not loaded. Please refresh and try again.';
         return;
