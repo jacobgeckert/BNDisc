@@ -1460,7 +1460,7 @@ function buildRoundDatabase(csv) {
 
         const scores = entries.map(e => e.score).filter(n => n !== null);
         const ratings = entries.map(e => e.rating).filter(n => n !== null);
-        const initialRating = playerInitialRatings[pid] || null;
+        const initialRating = playerInitialRatings[pid] || (history.length ? history[0].rating : null);
         const currentRating = calculateCurrentRating(history) ?? (ratings.length ? ratings[ratings.length - 1] : initialRating);
 
         playersById[pid] = {

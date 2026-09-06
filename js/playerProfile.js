@@ -348,12 +348,18 @@ function renderPlayerProfile(mainId, compareIds = []) {
     }
 
     const stats = player.stats || {};
-    const history = (player.history || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
-    const currentRating = calculateCurrentRating(history) ?? player.currentRating;
+    const ascHistory = (player.history || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
+    const history = ascHistory.slice().reverse();
+    const earliestRating = ascHistory.find(h => typeof h.rating === 'number')?.rating ?? null;
+    const initialRating = player.initialRating ?? earliestRating;
+    const currentRating = calculateCurrentRating(ascHistory) ?? player.currentRating;
 
     const compareBlocks = compares.map(compare => {
         const cstats = compare.stats || {};
-        const ccurrent = calculateCurrentRating(compare.history || []) ?? compare.currentRating;
+        const cAscHistory = (compare.history || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
+        const cEarliest = cAscHistory.find(h => typeof h.rating === 'number')?.rating ?? null;
+        const cInitial = compare.initialRating ?? cEarliest;
+        const ccurrent = calculateCurrentRating(cAscHistory) ?? compare.currentRating;
         return `
             <div class="admin-card" style="margin-top: 1rem;">
                 <h3>${compare.name}</h3>
@@ -364,7 +370,7 @@ function renderPlayerProfile(mainId, compareIds = []) {
                     </div>
                     <div class="player-stat-item">
                         <span>Initial Rating</span>
-                        <strong>${formatRating(compare.initialRating)}</strong>
+                        <strong>${formatRating(cInitial)}</strong>
                     </div>
                     <div class="player-stat-item">
                         <span>Rounds Played</span>
@@ -394,7 +400,7 @@ function renderPlayerProfile(mainId, compareIds = []) {
                     </div>
                     <div class="player-stat-item">
                         <span>Initial Rating</span>
-                        <strong>${formatRating(player.initialRating)}</strong>
+                        <strong>${formatRating(initialRating)}</strong>
                     </div>
                     <div class="player-stat-item">
                         <span>Rounds Played</span>
