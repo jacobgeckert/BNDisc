@@ -28,7 +28,6 @@ function formatDate(dateStr) {
 }
 
 function buildRoundTable(round) {
-    const courseDisplay = round.courseDisplay || round.course || 'Unknown course';
     const playerIds = round.playerIds || Object.keys(round.scores || {});
 
     const rows = playerIds.map(pid => {
@@ -76,25 +75,21 @@ function buildRoundTable(round) {
     `).join('');
 
     return `
-        <div class="admin-card" style="margin-top: 1rem;">
-            <h3 style="margin-bottom: 0.25rem; color: var(--heading-color);">BNDisc League Results for ${formatDate(round.date)}</h3>
-            <p style="margin-bottom: 0.75rem; opacity: 0.8;">${courseDisplay} - ${round.layout || '—'}</p>
-            <div style="overflow-x: auto;">
-                <table class="player-profile-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Previous Rating</th>
-                            <th>Score</th>
-                            <th>Round Rating</th>
-                            <th>New Rating</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                </table>
-            </div>
+        <div style="overflow-x: auto;">
+            <table class="player-profile-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Previous Rating</th>
+                        <th>Score</th>
+                        <th>Round Rating</th>
+                        <th>New Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
         </div>
     `;
 }
@@ -110,25 +105,24 @@ function render(container) {
     const count = roundsData.length;
 
     container.innerHTML = `
-        <div class="admin-card" style="padding: 1.5rem 2rem; margin-bottom: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; max-width: 480px; margin: 0 auto;">
+        <div class="admin-card" style="padding: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.25rem;">
                 <button type="button" id="ratings-prev" class="nav-arrow" title="Previous Round">
                     <i class="ph ph-caret-left"></i>
                 </button>
 
-                <div style="text-align: center; flex: 1;">
-                    <h2 style="font-size: 2rem; font-weight: 800; margin: 0; color: var(--text-color);">${formatDate(round.date)}</h2>
-                    <div class="accent-underline" style="margin: 0.5rem auto;"></div>
-                    <p style="margin: 0.3rem 0 0; opacity: 0.8; font-size: 0.95rem;">${courseDisplay} - ${round.layout || '—'}</p>
-                    <p style="margin: 0.2rem 0 0; opacity: 0.6; font-size: 0.85rem;">Round ${currentIndex + 1} of ${count}</p>
+                <div style="text-align: center;">
+                    <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-color); letter-spacing: -0.5px;">${formatDate(round.date)}</h2>
+                    <p style="margin: 0.25rem 0 0; opacity: 0.75; font-size: 0.95rem;">${courseDisplay} - ${round.layout || '—'}</p>
                 </div>
 
                 <button type="button" id="ratings-next" class="nav-arrow" title="Next Round">
                     <i class="ph ph-caret-right"></i>
                 </button>
             </div>
+            ${buildRoundTable(round)}
+            <p style="text-align: center; margin: 1rem 0 0; opacity: 0.6; font-size: 0.8rem;">Round ${currentIndex + 1} of ${count}</p>
         </div>
-        ${buildRoundTable(round)}
     `;
 
     const prevBtn = container.querySelector('#ratings-prev');
