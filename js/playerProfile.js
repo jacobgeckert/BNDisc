@@ -351,6 +351,38 @@ function renderPlayerProfile(mainId, compareIds = []) {
     const history = (player.history || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
     const currentRating = calculateCurrentRating(history) ?? player.currentRating;
 
+    const compareBlocks = compares.map(compare => {
+        const cstats = compare.stats || {};
+        const ccurrent = calculateCurrentRating(compare.history || []) ?? compare.currentRating;
+        return `
+            <div class="admin-card" style="margin-top: 1rem;">
+                <h3>${compare.name}</h3>
+                <div class="player-stats-grid">
+                    <div class="player-stat-item">
+                        <span>Current Rating</span>
+                        <strong>${formatRating(ccurrent)}</strong>
+                    </div>
+                    <div class="player-stat-item">
+                        <span>Initial Rating</span>
+                        <strong>${formatRating(compare.initialRating)}</strong>
+                    </div>
+                    <div class="player-stat-item">
+                        <span>Rounds Played</span>
+                        <strong>${cstats.roundsPlayed ?? 0}</strong>
+                    </div>
+                    <div class="player-stat-item">
+                        <span>Best Rating</span>
+                        <strong>${formatRating(cstats.bestRating)}</strong>
+                    </div>
+                    <div class="player-stat-item">
+                        <span>Average Rating</span>
+                        <strong>${formatRating(cstats.averageRating)}</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
     if (statsEl) {
         statsEl.innerHTML = `
             <div class="admin-card">
@@ -378,6 +410,7 @@ function renderPlayerProfile(mainId, compareIds = []) {
                     </div>
                 </div>
             </div>
+            ${compareBlocks}
         `;
     }
 
