@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js?v=100';
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { LOCATIONS, LAYOUT_SUGGESTIONS } from './courseData.js?v=100';
+import { collection, getDocs, getDoc, doc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseStorageName, getCourseDisplayName } from './courseData.js?v=100';
 
 const PPS_DEFAULTS = [
     { max: 0.80, pps: 13.0 },
@@ -49,6 +49,14 @@ function computePreRoundRating(player, manualInitial) {
 function computeHandicap(rating) {
     if (typeof rating !== 'number') return null;
     return Math.ceil(((1005 - rating) / 12) * 2) / 2;
+}
+
+function slug(str) {
+    return String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function playerId(name) {
+    return String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 function populationStdDev(values) {
@@ -470,6 +478,114 @@ function rateRound() {
     }
 }
 
+async function pushRoundToDatabase() {
+    const summary = document.getElementById('rr-summary');
+    const dateInput = document.getElementById('rr-date');
+    const locationInput = document.getElementById('rr-location');
+    const layoutInput = document.getElementById('rr-layout');
+
+    const date = dateInput?.value;
+    const loc = locationInput?.value.trim();
+    const layout = layoutInput?.value.trim();
+
+    if (!date || !loc || !layout) {
+        if (summary) summary.textContent = 'Please fill out Date, Location, and Layout before pushing the round.';
+        return;
+    }
+
+    if (rows.length === 0) {
+        if (summary) summary.textContent = 'Add and rate at least one player before pushing.';
+        return;
+    }
+
+    if (rows.some(r => typeof r.finalRoundRating !== 'number')) {
+        if (summary) summary.textContent = 'Rate the round before pushing to the database.';
+        return;
+    }
+
+    const course = getCourseStorageName(loc);
+    const courseDisplay = getCourseDisplayName(course);
+    const roundId = `${date}_${slug(course)}_${slug(layout)}`;
+
+    try {
+        const roundRef = doc(db, 'rounds', roundId);
+        const existing = await getDoc(roundRef);
+        if (existing.exists()) {
+            if (summary) summary.textContent = `A round with ID ${roundId} already exists. Use a different date, location, or layout.`;
+            return;
+        }
+
+        const batch = writeBatch(db);
+        const scores = {};
+        const playerIds = [];
+        const roundHistoryEntry = { roundId, date, course, courseDisplay, layout };
+
+        for (const row of rows) {
+            const pid = playerId(row.name);
+            const name = row.player?.name || row.name;
+            scores[pid] = { name, score: row.score, rating: row.finalRoundRating };
+            playerIds.push(pid);
+
+            let playerData;
+            if (row.player) {
+                const newHistory = [...(row.player.history || []), { ...roundHistoryEntry, score: row.score, rating: row.finalRoundRating }];
+                newHistory.sort((a, b) => a.date.localeCompare(b.date));
+                const allScores = newHistory.map(h => h.score).filter(n => typeof n === 'number');
+                const allRatings = newHistory.map(h => h.rating).filter(n => typeof n === 'number');
+                playerData = {
+                    playerId: pid,
+                    name,
+                    initialRating: row.player.initialRating ?? (newHistory.length ? newHistory[0].rating : null),
+                    currentRating: calculateCurrentRating(newHistory),
+                    stats: {
+                        roundsPlayed: newHistory.length,
+                        averageScore: allScores.length ? Number((allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(2)) : null,
+                        bestScore: allScores.length ? Math.min(...allScores) : null,
+                        averageRating: allRatings.length ? Number((allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(2)) : null,
+                        bestRating: allRatings.length ? Math.max(...allRatings) : null
+                    },
+                    history: newHistory
+                };
+            } else {
+                const newHistory = [{ ...roundHistoryEntry, score: row.score, rating: row.finalRoundRating }];
+                const allScores = [row.score];
+                const allRatings = [row.finalRoundRating];
+                playerData = {
+                    playerId: pid,
+                    name,
+                    initialRating: newHistory[0].rating,
+                    currentRating: calculateCurrentRating(newHistory),
+                    stats: {
+                        roundsPlayed: 1,
+                        averageScore: Number(row.score.toFixed(2)),
+                        bestScore: row.score,
+                        averageRating: Number(row.finalRoundRating.toFixed(2)),
+                        bestRating: row.finalRoundRating
+                    },
+                    history: newHistory
+                };
+            }
+
+            batch.set(doc(db, 'players', pid), playerData);
+        }
+
+        batch.set(roundRef, {
+            date,
+            course,
+            courseDisplay,
+            layout,
+            playerIds,
+            scores
+        });
+
+        await batch.commit();
+        if (summary) summary.textContent = 'Round pushed to database successfully.';
+    } catch (err) {
+        console.error(err);
+        if (summary) summary.textContent = `Error pushing round: ${err.message}`;
+    }
+}
+
 function initRoundRaterSuggestions() {
     const locationInput = document.getElementById('rr-location');
     const layoutInput = document.getElementById('rr-layout');
@@ -599,6 +715,9 @@ function initRoundRater() {
         e.preventDefault();
         rateRound();
     });
+
+    const pushBtn = document.getElementById('rr-push-round');
+    if (pushBtn) pushBtn.addEventListener('click', pushRoundToDatabase);
 
     const table = document.getElementById('rr-table');
     if (table) {
