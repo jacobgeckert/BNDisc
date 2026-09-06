@@ -199,7 +199,7 @@ function calculateSampleData(player, period) {
         startTime = Math.max(startTime, periodStart.getTime());
     }
 
-    const sampleCount = 24;
+    const sampleCount = months ? months * 2 : Math.min(24, fullRounds.length);
     const step = (endTime - startTime) / Math.max(1, sampleCount - 1);
     const data = [];
 
