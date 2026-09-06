@@ -1584,3 +1584,47 @@ COURSE LISTING (Reusing about us layout with minor tweaks)
 #admin-content .admin-tab-panel.active .admin-grid-wide > .admin-card > .admin-section-heading::after {
     content: none !important;
 }
+
+/* Round Rater responsive fixes */
+.admin-tab-panels,
+.admin-tab-panel {
+    min-width: 0;
+}
+
+.admin-tab-panel > .admin-grid-wide,
+.admin-tab-panel > .admin-card {
+    min-width: 0;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+#round-rater-form .form-row {
+    flex-wrap: wrap;
+}
+
+#round-rater-form .form-row > .form-group {
+    flex: 1 1 160px;
+    min-width: 0;
+}
+
+#round-rater-form #rr-player-row > .form-group:first-child {
+    flex: 2 1 220px;
+}
+
+#round-rater-form .form-row-triple {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+#round-rater-form input[type="number"],
+#round-rater-form input[type="text"] {
+    min-width: 0;
+}
+
+#round-rater-form .player-profile-table th,
+#round-rater-form .player-profile-table td {
+    white-space: nowrap;
+}
+
+#round-rater-form [style*="overflow-x: auto"] {
+    -webkit-overflow-scrolling: touch;
+}

@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css?v=149">
+    <link rel="stylesheet" href="css/components.css?v=150">
     <link rel="stylesheet" href="css/calendar.css?v=143">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
@@ -1321,17 +1321,17 @@
                                     </div>
                                 </div>
                                 <hr class="course-divider">
-                                <div class="form-row" style="align-items: flex-end;">
-                                    <div class="form-group" style="position: relative; flex: 2;">
+                                <div class="form-row" id="rr-player-row" style="align-items: flex-end;">
+                                    <div class="form-group" style="position: relative;">
                                         <label for="rr-player-input">Player</label>
                                         <input type="text" id="rr-player-input" autocomplete="off" placeholder="Type a player name...">
                                         <div id="rr-player-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
                                     </div>
-                                    <div class="form-group" style="flex: 1;">
+                                    <div class="form-group">
                                         <label for="rr-score">Score</label>
                                         <input type="number" id="rr-score" placeholder="Scratch" min="18">
                                     </div>
-                                    <div class="form-group" style="flex: 1;">
+                                    <div class="form-group">
                                         <label for="rr-initial-rating">Initial Rating</label>
                                         <input type="number" id="rr-initial-rating" placeholder="New player">
                                     </div>
