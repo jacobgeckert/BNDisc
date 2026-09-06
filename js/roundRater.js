@@ -610,6 +610,7 @@ async function pushRoundToDatabase() {
         clearTable();
         clearInputs();
         loadLatestRoundDate();
+        window.dispatchEvent(new CustomEvent('roundPushed'));
         window.alert('Round successfully pushed to the database.');
         if (summary) summary.textContent = 'Round pushed to database successfully.';
     } catch (err) {

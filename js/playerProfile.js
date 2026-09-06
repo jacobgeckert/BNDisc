@@ -60,8 +60,9 @@ function formatDate(dateStr) {
     return d.toLocaleDateString('en-US');
 }
 
-async function loadPlayers() {
-    if (playerCache || isLoading) return playerCache;
+async function loadPlayers(force = false) {
+    if (!force && playerCache) return playerCache;
+    if (isLoading) return playerCache;
     isLoading = true;
 
     const status = document.getElementById('player-profile-status');
@@ -525,7 +526,7 @@ function removeCompareRow(btn) {
 
 function handleHash() {
     if (window.location.hash === '#player-profile') {
-        loadPlayers();
+        loadPlayers(true);
     }
 }
 
@@ -549,6 +550,13 @@ function init() {
     if (addBtn) {
         addBtn.addEventListener('click', addCompareRow);
     }
+
+    window.addEventListener('roundPushed', () => {
+        playerCache = null;
+        if (window.location.hash === '#player-profile') {
+            loadPlayers(true).then(() => updateProfileFromInputs());
+        }
+    });
 
     handleHash();
     window.addEventListener('hashchange', handleHash);
