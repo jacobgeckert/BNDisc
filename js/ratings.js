@@ -66,17 +66,17 @@ function buildRoundTable(round) {
 
     const tableRows = rows.map(r => `
         <tr>
-            <td>${r.name}</td>
-            <td>${formatRating(r.previousRating)}</td>
-            <td>${r.score}</td>
-            <td>${formatRating(r.roundRating)}</td>
-            <td>${formatRating(r.newRating)}</td>
+            <td style="white-space: normal;">${r.name}</td>
+            <td style="white-space: nowrap;">${formatRating(r.previousRating)}</td>
+            <td style="white-space: nowrap;">${r.score}</td>
+            <td style="white-space: nowrap;">${formatRating(r.roundRating)}</td>
+            <td style="white-space: nowrap;">${formatRating(r.newRating)}</td>
         </tr>
     `).join('');
 
     return `
         <div style="overflow-x: auto;">
-            <table class="player-profile-table" style="table-layout: fixed;">
+            <table class="player-profile-table" style="table-layout: fixed; min-width: 650px;">
                 <colgroup>
                     <col style="width: 30%;">
                     <col style="width: 17.5%;">
@@ -86,11 +86,11 @@ function buildRoundTable(round) {
                 </colgroup>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Previous Rating</th>
-                        <th>Score</th>
-                        <th>Round Rating</th>
-                        <th>New Rating</th>
+                        <th style="white-space: normal;">Name</th>
+                        <th style="white-space: normal;">Previous Rating</th>
+                        <th style="white-space: normal;">Score</th>
+                        <th style="white-space: normal;">Round Rating</th>
+                        <th style="white-space: normal;">New Rating</th>
                     </tr>
                 </thead>
                 <tbody>
