@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js?v=100';
-import { collection, getDocs, getDoc, doc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, getDoc, doc, setDoc, writeBatch, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseStorageName, getCourseDisplayName } from './courseData.js?v=100';
 
 const PPS_DEFAULTS = [
@@ -667,6 +667,59 @@ function initRoundRaterSuggestions() {
     }
 }
 
+async function loadLatestRound() {
+    const summary = document.getElementById('rr-summary');
+    try {
+        const q = query(collection(db, 'rounds'), orderBy('date', 'desc'), limit(1));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+            if (summary) summary.textContent = 'No rounds found in the database.';
+            return;
+        }
+
+        const roundDoc = snapshot.docs[0];
+        const data = roundDoc.data();
+
+        const dateInput = document.getElementById('rr-date');
+        const locationInput = document.getElementById('rr-location');
+        const layoutInput = document.getElementById('rr-layout');
+
+        if (dateInput) dateInput.value = data.date || '';
+        if (locationInput) locationInput.value = data.courseDisplay || data.course || '';
+        if (layoutInput) layoutInput.value = data.layout || '';
+
+        rows = [];
+        const playerIds = data.playerIds || [];
+        const scores = data.scores || {};
+
+        for (const pid of playerIds) {
+            const entry = scores[pid];
+            if (!entry) continue;
+            rows.push({
+                id: Math.random().toString(36).slice(2),
+                name: entry.name,
+                player: null,
+                score: Number(entry.score),
+                preRoundRating: null,
+                handicap: null,
+                qualified: 'No',
+                roundsPlayed: null,
+                initialEstimate: null,
+                diff: null,
+                stdDev: null,
+                finalRoundRating: typeof entry.rating === 'number' ? entry.rating : null,
+                eliminated: false
+            });
+        }
+
+        renderTable();
+        if (summary) summary.textContent = `Loaded round from ${data.date} at ${data.courseDisplay || data.course} / ${data.layout} with ${rows.length} player${rows.length === 1 ? '' : 's'}.`;
+    } catch (err) {
+        console.error(err);
+        if (summary) summary.textContent = `Error loading latest round: ${err.message}`;
+    }
+}
+
 function initRoundRater() {
     const dateInput = document.getElementById('rr-date');
     if (dateInput) dateInput.value = new Date().toLocaleDateString('en-CA');
@@ -725,6 +778,9 @@ function initRoundRater() {
 
     const pushBtn = document.getElementById('rr-push-round');
     if (pushBtn) pushBtn.addEventListener('click', pushRoundToDatabase);
+
+    const loadLatestBtn = document.getElementById('rr-load-latest-round');
+    if (loadLatestBtn) loadLatestBtn.addEventListener('click', loadLatestRound);
 
     const table = document.getElementById('rr-table');
     if (table) {
