@@ -2,8 +2,10 @@ import { db } from './firebase-config.js?v=100';
 import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let roundsData = [];
+let roundsById = {};
 let playersById = {};
 let currentIndex = 0;
+let viewMode = 'round';
 let loaded = false;
 
 function calculateCurrentRating(history) {
@@ -25,6 +27,16 @@ function formatDate(dateStr) {
     const d = new Date(dateStr);
     if (Number.isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('en-US', { timeZone: 'UTC' });
+}
+
+function getRoundYear(round) {
+    return round.date ? new Date(round.date).getUTCFullYear() : new Date().getUTCFullYear();
+}
+
+function isScratchOrHandicap(round) {
+    const t = (round.leagueType || '').toString().toLowerCase().trim();
+    if (!t) return true;
+    return t === 'scratch' || t === 'handicap';
 }
 
 function buildRoundTable(round) {
@@ -101,6 +113,61 @@ function buildRoundTable(round) {
     `;
 }
 
+function buildLeadersTable(year) {
+    const eligibleRounds = roundsData.filter(r => getRoundYear(r) === year && isScratchOrHandicap(r));
+    const totalRounds = eligibleRounds.length;
+    const threshold = totalRounds > 0 ? Math.ceil(totalRounds * 0.25) : 0;
+    const eligibleRoundIds = new Set(eligibleRounds.map(r => r.id));
+
+    const leaders = [];
+    Object.values(playersById).forEach(player => {
+        const filteredHistory = (player.history || []).filter(h => {
+            const roundYear = h.date ? new Date(h.date).getUTCFullYear() : null;
+            return roundYear === year && eligibleRoundIds.has(h.roundId);
+        });
+        if (filteredHistory.length < threshold || filteredHistory.length === 0) return;
+
+        const rating = calculateCurrentRating(filteredHistory);
+        if (typeof rating !== 'number') return;
+
+        leaders.push({ name: player.name || 'Unknown', rating, rounds: filteredHistory.length });
+    });
+
+    leaders.sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name));
+
+    const tableRows = leaders.map(p => `
+        <tr>
+            <td style="white-space: normal;">${p.name}</td>
+            <td style="white-space: nowrap;">${formatRating(p.rating)}</td>
+        </tr>
+    `).join('');
+
+    return `
+        <div style="background: rgba(236, 72, 153, 0.25); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center;">
+            <h3 style="margin: 0; color: var(--heading-color);">${year} League Leaders</h3>
+            <p style="margin: 0.5rem 0 0; font-size: 0.85rem; opacity: 0.9;">Played at least 25% of the rated BNDisc Rounds</p>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="player-profile-table" style="table-layout: fixed; min-width: 300px;">
+                <colgroup>
+                    <col style="width: 70%;">
+                    <col style="width: 30%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th style="white-space: normal;">Name</th>
+                        <th style="white-space: normal;">Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows || `<tr><td colspan="2" style="text-align: center; opacity: 0.7;">No players meet the 25% threshold for ${year}.</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+        <p style="opacity: 0.6; font-size: 0.8rem; text-align: center; margin-top: 1rem;">Counted ${totalRounds} scratch or handicap round${totalRounds === 1 ? '' : 's'} in ${year}. Minimum rounds to qualify: ${threshold}.</p>
+    `;
+}
+
 function render(container) {
     if (roundsData.length === 0) {
         container.innerHTML = '<p style="opacity: 0.7;">No rated rounds in the database yet.</p>';
@@ -109,45 +176,69 @@ function render(container) {
 
     const round = roundsData[currentIndex];
     const courseDisplay = round.courseDisplay || round.course || 'Unknown course';
+    const year = getRoundYear(round);
+    const isRound = viewMode === 'round';
 
-    container.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem;">
-            <button type="button" id="ratings-prev" class="nav-arrow" title="Previous Round">
-                <i class="ph ph-caret-left"></i>
-            </button>
+    const navHtml = isRound ? `
+        <button type="button" id="ratings-prev" class="nav-arrow" title="Previous Round">
+            <i class="ph ph-caret-left"></i>
+        </button>
 
-            <div style="text-align: center;">
-                <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-color); letter-spacing: -0.5px;">${formatDate(round.date)}</h2>
-                <p style="margin: 0.25rem 0 0; opacity: 0.75; font-size: 0.95rem;">${courseDisplay} - ${round.layout || '—'}</p>
-            </div>
-
-            <button type="button" id="ratings-next" class="nav-arrow" title="Next Round">
-                <i class="ph ph-caret-right"></i>
-            </button>
+        <div style="text-align: center;">
+            <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-color); letter-spacing: -0.5px;">${formatDate(round.date)}</h2>
+            <p style="margin: 0.25rem 0 0; opacity: 0.75; font-size: 0.95rem;">${courseDisplay} - ${round.layout || '—'}</p>
         </div>
-        ${buildRoundTable(round)}
+
+        <button type="button" id="ratings-next" class="nav-arrow" title="Next Round">
+            <i class="ph ph-caret-right"></i>
+        </button>
+    ` : `
+        <div style="text-align: center;">
+            <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-color); letter-spacing: -0.5px;">${year} League Leaders</h2>
+            <p style="margin: 0.25rem 0 0; opacity: 0.75; font-size: 0.95rem;">Played at least 25% of the rated BNDisc Rounds</p>
+        </div>
     `;
 
-    const prevBtn = container.querySelector('#ratings-prev');
-    const nextBtn = container.querySelector('#ratings-next');
+    container.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <button type="button" id="ratings-leaders" class="btn-primary" style="padding: 0.5rem 0.9rem; font-size: 0.9rem; background: rgba(236, 72, 153, 0.3); border: 1px solid rgba(236, 72, 153, 0.5); color: var(--text-color);">${isRound ? `${year} League Leaders` : 'Round Results'}</button>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem;">
+                ${navHtml}
+            </div>
+        </div>
+        ${isRound ? buildRoundTable(round) : buildLeadersTable(year)}
+    `;
 
-    if (prevBtn) {
-        prevBtn.disabled = currentIndex === roundsData.length - 1;
-        prevBtn.addEventListener('click', () => {
-            if (currentIndex < roundsData.length - 1) {
-                currentIndex++;
-                render(container);
-            }
+    const leadersBtn = container.querySelector('#ratings-leaders');
+    if (leadersBtn) {
+        leadersBtn.addEventListener('click', () => {
+            viewMode = isRound ? 'leaders' : 'round';
+            render(container);
         });
     }
-    if (nextBtn) {
-        nextBtn.disabled = currentIndex === 0;
-        nextBtn.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                currentIndex--;
-                render(container);
-            }
-        });
+
+    if (isRound) {
+        const prevBtn = container.querySelector('#ratings-prev');
+        const nextBtn = container.querySelector('#ratings-next');
+
+        if (prevBtn) {
+            prevBtn.disabled = currentIndex === roundsData.length - 1;
+            prevBtn.addEventListener('click', () => {
+                if (currentIndex < roundsData.length - 1) {
+                    currentIndex++;
+                    render(container);
+                }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.disabled = currentIndex === 0;
+            nextBtn.addEventListener('click', () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    render(container);
+                }
+            });
+        }
     }
 }
 
@@ -166,14 +257,20 @@ async function loadData() {
             getDocs(collection(db, 'players'))
         ]);
 
+        playersById = {};
         playersSnap.forEach(docSnap => {
             playersById[docSnap.id] = { id: docSnap.id, ...docSnap.data() };
         });
 
         roundsData = [];
+        roundsById = {};
         roundsSnap.forEach(docSnap => {
             const data = docSnap.data();
-            if (data) roundsData.push({ id: docSnap.id, ...data });
+            if (data) {
+                const round = { id: docSnap.id, ...data };
+                roundsData.push(round);
+                roundsById[round.id] = round;
+            }
         });
 
         loaded = true;
@@ -184,6 +281,7 @@ async function loadData() {
         }
 
         currentIndex = 0;
+        viewMode = 'round';
         render(container);
     } catch (err) {
         console.error(err);
