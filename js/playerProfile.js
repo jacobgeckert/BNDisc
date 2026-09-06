@@ -16,6 +16,33 @@ function calculateCurrentRating(history) {
     return Math.ceil(weighted / denominator);
 }
 
+function periodMonths(period) {
+    if (period === '3m') return 3;
+    if (period === '6m') return 6;
+    if (period === '1y') return 12;
+    return null;
+}
+
+function calculateRollingRating(targetDate, fullRounds, period) {
+    const target = new Date(targetDate);
+    const months = periodMonths(period);
+
+    let start = null;
+    if (months) {
+        start = new Date(target.getFullYear(), target.getMonth() - (months * 2), target.getDate());
+    }
+
+    const windowRounds = fullRounds.filter(r => {
+        const d = new Date(r.date);
+        if (d.getTime() > target.getTime()) return false;
+        if (start && d.getTime() < start.getTime()) return false;
+        return typeof r.rating === 'number';
+    });
+
+    if (windowRounds.length === 0) return null;
+    return calculateCurrentRating(windowRounds);
+}
+
 function formatRating(rating) {
     return typeof rating === 'number' ? rating.toLocaleString() : '—';
 }
@@ -151,27 +178,46 @@ function filterRounds(player, period) {
     return allRounds.filter(r => new Date(r.date).getTime() >= cutoff);
 }
 
+function getFullRounds(player) {
+    return (player.history || [])
+        .filter(r => typeof r.rating === 'number' && r.date)
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function calculateChartData(player, period) {
+    const fullRounds = getFullRounds(player);
+    const chartRounds = filterRounds(player, period);
+    return chartRounds
+        .map(r => {
+            const rolling = calculateRollingRating(r.date, fullRounds, period);
+            if (rolling === null) return null;
+            return { date: r.date, rating: rolling, fullDate: r.date };
+        })
+        .filter(Boolean);
+}
+
 function renderRatingChart(main, period, compare = null) {
     currentPeriod = period;
     const chartEl = document.getElementById('player-profile-chart');
     if (!chartEl) return;
 
-    const mainRounds = filterRounds(main, period);
-    const compareRounds = compare ? filterRounds(compare, period) : [];
+    const mainData = calculateChartData(main, period);
+    const compareData = compare ? calculateChartData(compare, period) : [];
 
-    if (mainRounds.length === 0 && compareRounds.length === 0) {
+    if (mainData.length === 0 && compareData.length === 0) {
         chartEl.innerHTML = '<p style="opacity: 0.7;">No rounds for this period.</p>';
         return;
     }
 
-    const allRounds = [...mainRounds, ...compareRounds].sort((a, b) => a.date.localeCompare(b.date));
-    const ratings = allRounds.map(r => r.rating);
+    const allData = [...mainData, ...compareData].sort((a, b) => a.date.localeCompare(b.date));
+    const ratings = allData.map(d => d.rating);
     const yMin = Math.min(...ratings) - 15;
     const yMax = Math.max(...ratings) + 15;
     const yRange = Math.max(1, yMax - yMin);
 
-    const startTime = new Date(allRounds[0].date).getTime();
-    const endTime = new Date(allRounds[allRounds.length - 1].date).getTime();
+    const startTime = new Date(allData[0].date).getTime();
+    const endTime = new Date(allData[allData.length - 1].date).getTime();
     const xRange = Math.max(1, endTime - startTime);
 
     const width = 800;
@@ -191,17 +237,17 @@ function renderRatingChart(main, period, compare = null) {
         return topPad + innerH - ((rating - yMin) / yRange) * innerH;
     }
 
-    function makeLine(rounds, color) {
-        const points = rounds.map(r => ({
-            x: mapX(new Date(r.date).getTime()),
-            y: mapY(r.rating),
-            rating: r.rating,
-            date: formatDate(r.date)
+    function makeLine(data, color) {
+        const points = data.map(d => ({
+            x: mapX(new Date(d.date).getTime()),
+            y: mapY(d.rating),
+            rating: d.rating,
+            date: formatDate(d.date)
         }));
 
         const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
         const circles = points.map(p =>
-            `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}" stroke="var(--sidebar-bg)" stroke-width="2" style="cursor: pointer;"><title>Rating: ${p.rating} on ${p.date}</title></circle>`
+            `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}" stroke="var(--sidebar-bg)" stroke-width="2" style="cursor: pointer;"><title>Calculated Rating: ${p.rating} on ${p.date}</title></circle>`
         ).join('');
 
         return `
@@ -254,8 +300,8 @@ function renderRatingChart(main, period, compare = null) {
             <line x1="${left}" y1="${height - bottomPad}" x2="${width - right}" y2="${height - bottomPad}" stroke="var(--glass-border)" stroke-width="1.5" />
             ${yAxis}
             ${xLabels}
-            ${makeLine(mainRounds, 'var(--accent-color)')}
-            ${compareRounds.length > 0 ? makeLine(compareRounds, 'var(--text-color)') : ''}
+            ${makeLine(mainData, 'var(--accent-color)')}
+            ${compareData.length > 0 ? makeLine(compareData, 'var(--text-color)') : ''}
         </svg>
     `;
 
