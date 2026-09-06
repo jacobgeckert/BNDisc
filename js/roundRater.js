@@ -293,7 +293,8 @@ function addRaterRow(name, score, manualInitial, options = {}) {
         diff: null,
         stdDev: null,
         finalRoundRating: null,
-        eliminated: false
+        eliminated: false,
+        eliminationReason: null
     });
 
     renderTable();
@@ -353,7 +354,7 @@ function renderTable() {
     if (!tbody) return;
 
     if (rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; opacity: 0.7;">Add players to rate the round.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; opacity: 0.7;">Add players to rate the round.</td></tr>';
         return;
     }
 
@@ -367,6 +368,7 @@ function renderTable() {
             <td>${formatRating(row.initialEstimate)}</td>
             <td>${formatRating(row.diff)}</td>
             <td>${row.stdDev !== null ? row.stdDev.toFixed(2) : '—'}</td>
+            <td>${row.eliminationReason || '—'}</td>
             <td>${formatRating(row.finalRoundRating)}</td>
             <td><button type="button" class="rr-remove-btn" data-id="${row.id}" style="padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); cursor: pointer;">×</button></td>
         </tr>
@@ -400,6 +402,7 @@ function rateRound() {
         r.stdDev = null;
         r.finalRoundRating = null;
         r.eliminated = false;
+        r.eliminationReason = null;
     });
 
     const ratings = validQualifiedRows.map(r => r.preRoundRating);
@@ -437,6 +440,7 @@ function rateRound() {
         validQualifiedRows.forEach(row => {
             if ((maxPositive !== null && row.diff === maxPositive) || (minNegative !== null && row.diff === minNegative)) {
                 row.eliminated = true;
+                row.eliminationReason = 'Eliminated: initial estimate outlier';
             }
         });
     }
@@ -454,6 +458,7 @@ function rateRound() {
             const toEliminate = sorted.length - 8;
             for (let i = 0; i < toEliminate; i++) {
                 sorted[i].eliminated = true;
+                sorted[i].eliminationReason = 'Eliminated: high last-15 round variance';
             }
         }
     }
@@ -708,7 +713,8 @@ async function loadLatestRound() {
                 diff: null,
                 stdDev: null,
                 finalRoundRating: typeof entry.rating === 'number' ? entry.rating : null,
-                eliminated: false
+                eliminated: false,
+                eliminationReason: null
             });
         }
 
