@@ -207,6 +207,10 @@ function calculateSampleData(player, period) {
         }
     }
 
+    if (data.length > 0) {
+        data[data.length - 1].rating = calculateCurrentRating(fullRounds);
+    }
+
     return { data, startTime, endTime };
 }
 
