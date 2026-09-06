@@ -76,7 +76,14 @@ function buildRoundTable(round) {
 
     return `
         <div style="overflow-x: auto;">
-            <table class="player-profile-table">
+            <table class="player-profile-table" style="table-layout: fixed;">
+                <colgroup>
+                    <col style="width: 30%;">
+                    <col style="width: 17.5%;">
+                    <col style="width: 17.5%;">
+                    <col style="width: 17.5%;">
+                    <col style="width: 17.5%;">
+                </colgroup>
                 <thead>
                     <tr>
                         <th>Name</th>
