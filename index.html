@@ -1305,10 +1305,13 @@
                         <input type="text" id="player-profile-input" aria-label="Search for a player" autocomplete="off" placeholder="Type a player name..." style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%; box-sizing: border-box;">
                         <div id="player-profile-suggestions" class="player-suggestions"></div>
                     </div>
-                    <div class="form-group" style="margin-top: 0.5rem;">
-                        <input type="text" id="player-profile-compare-input" aria-label="Compare with a player" autocomplete="off" placeholder="Compare with..." style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%; box-sizing: border-box;">
-                        <div id="player-profile-compare-suggestions" class="player-suggestions"></div>
+                    <div id="player-profile-compare-list" style="margin-top: 0.5rem;">
+                        <div class="player-compare-row" data-index="0" style="position: relative;">
+                            <input type="text" id="player-profile-compare-input-0" aria-label="Compare with player 1" autocomplete="off" placeholder="Compare with..." style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%; box-sizing: border-box;">
+                            <div id="player-profile-compare-suggestions-0" class="player-suggestions"></div>
+                        </div>
                     </div>
+                    <button type="button" id="player-profile-add-compare" class="player-chart-period" style="margin-top: 0.5rem; width: 100%;">+ Compare another player</button>
                     <div id="player-profile-status" style="margin-top: 1rem; font-size: 0.9rem;"></div>
                     <div id="player-profile-stats" style="margin-top: 1.5rem;"></div>
                     <div id="player-profile-chart" style="margin-top: 1.5rem;"></div>
@@ -1341,6 +1344,6 @@
     <script type="module" src="js/records.js?v=143"></script>
     <script type="module" src="js/governance.js?v=143"></script>
     <script type="module" src="js/bagTags.js?v=143"></script>
-    <script type="module" src="js/playerProfile.js?v=162"></script>
+    <script type="module" src="js/playerProfile.js?v=163"></script>
 </body>
 </html>

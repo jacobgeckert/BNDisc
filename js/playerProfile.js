@@ -4,6 +4,9 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/f
 let playerCache = null;
 let isLoading = false;
 let currentPeriod = 'all';
+let compareColorIndex = 0;
+
+const COMPARE_COLORS = ['var(--text-color)', '#f472b6', '#a78bfa', '#34d399', '#fbbf24', '#fb923c'];
 
 function calculateCurrentRating(history) {
     const sorted = history.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
@@ -126,7 +129,9 @@ function hideSuggestions(container) {
 
 function hideAllSuggestions() {
     hideSuggestions(document.getElementById('player-profile-suggestions'));
-    hideSuggestions(document.getElementById('player-profile-compare-suggestions'));
+    document.querySelectorAll('.player-compare-row').forEach(row => {
+        hideSuggestions(row.querySelector('.player-suggestions'));
+    });
 }
 
 function getSelectedPlayerId(input) {
@@ -136,11 +141,19 @@ function getSelectedPlayerId(input) {
     return player ? player.id : null;
 }
 
+function getCompareIds() {
+    const ids = [];
+    document.querySelectorAll('.player-compare-row input[type="text"]').forEach(input => {
+        const id = getSelectedPlayerId(input);
+        if (id) ids.push(id);
+    });
+    return ids;
+}
+
 function updateProfileFromInputs() {
     const mainInput = document.getElementById('player-profile-input');
-    const compareInput = document.getElementById('player-profile-compare-input');
     const mainId = getSelectedPlayerId(mainInput);
-    const compareId = getSelectedPlayerId(compareInput);
+    const compareIds = getCompareIds();
 
     if (!mainId) {
         const statsEl = document.getElementById('player-profile-stats');
@@ -152,30 +165,7 @@ function updateProfileFromInputs() {
         return;
     }
 
-    renderPlayerProfile(mainId, compareId);
-}
-
-function filterRounds(player, period) {
-    const allRounds = (player.history || [])
-        .filter(r => typeof r.rating === 'number' && r.date)
-        .slice()
-        .sort((a, b) => a.date.localeCompare(b.date));
-
-    if (allRounds.length === 0) return [];
-
-    const latestDate = new Date(allRounds[allRounds.length - 1].date);
-    let months = 0;
-    if (period === '3m') months = 3;
-    if (period === '6m') months = 6;
-    if (period === '1y') months = 12;
-
-    let cutoff = new Date(allRounds[0].date).getTime();
-    if (months > 0) {
-        const c = new Date(latestDate.getFullYear(), latestDate.getMonth() - months, latestDate.getDate());
-        cutoff = Math.max(cutoff, c.getTime());
-    }
-
-    return allRounds.filter(r => new Date(r.date).getTime() >= cutoff);
+    renderPlayerProfile(mainId, compareIds);
 }
 
 function calculateSampleData(player, period) {
@@ -215,27 +205,28 @@ function calculateSampleData(player, period) {
     return { data, startTime, endTime };
 }
 
-function renderRatingChart(main, period, compare = null) {
+function renderRatingChart(main, period, comparePlayers = []) {
     currentPeriod = period;
+    compareColorIndex = 0;
     const chartEl = document.getElementById('player-profile-chart');
     if (!chartEl) return;
 
     const mainSample = calculateSampleData(main, period);
-    const compareSample = compare ? calculateSampleData(compare, period) : { data: [], startTime: 0, endTime: 0 };
+    const compareSamples = comparePlayers.map(p => calculateSampleData(p, period));
 
-    if (mainSample.data.length === 0 && compareSample.data.length === 0) {
+    if (mainSample.data.length === 0 && compareSamples.every(s => s.data.length === 0)) {
         chartEl.innerHTML = '<p style="opacity: 0.7;">No rounds for this period.</p>';
         return;
     }
 
-    const allData = [...mainSample.data, ...compareSample.data].sort((a, b) => a.date.localeCompare(b.date));
+    const allData = [...mainSample.data, ...compareSamples.flatMap(s => s.data)].sort((a, b) => a.date.localeCompare(b.date));
     const ratings = allData.map(d => d.rating);
     const yMin = Math.min(...ratings) - 15;
     const yMax = Math.max(...ratings) + 15;
     const yRange = Math.max(1, yMax - yMin);
 
-    const startTime = Math.min(mainSample.startTime, compareSample.startTime) || mainSample.startTime;
-    const endTime = Math.max(mainSample.endTime, compareSample.endTime) || mainSample.endTime;
+    const startTime = [mainSample.startTime, ...compareSamples.map(s => s.startTime)].filter(Boolean).sort((a, b) => a - b)[0] || mainSample.startTime;
+    const endTime = [mainSample.endTime, ...compareSamples.map(s => s.endTime)].filter(Boolean).sort((a, b) => b - a)[0] || mainSample.endTime;
     const xRange = Math.max(1, endTime - startTime);
 
     const width = 800;
@@ -255,17 +246,18 @@ function renderRatingChart(main, period, compare = null) {
         return topPad + innerH - ((rating - yMin) / yRange) * innerH;
     }
 
-    function makeLine(data, color) {
+    function makeLine(data, color, playerName) {
         const points = data.map(d => ({
             x: mapX(new Date(d.date).getTime()),
             y: mapY(d.rating),
             rating: d.rating,
-            date: formatDate(d.date)
+            date: formatDate(d.date),
+            name: playerName
         }));
 
         const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
         const circles = points.map(p =>
-            `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}" stroke="var(--sidebar-bg)" stroke-width="2" style="cursor: pointer;"><title>Calculated Rating: ${p.rating} on ${p.date}</title></circle>`
+            `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}" stroke="var(--sidebar-bg)" stroke-width="2" style="cursor: pointer;"><title>${p.name}: ${p.rating} on ${p.date}</title></circle>`
         ).join('');
 
         return `
@@ -287,9 +279,9 @@ function renderRatingChart(main, period, compare = null) {
     }).join('');
 
     const xLabels = [startDate, chartEndDate].map((d, i) => {
-        const x = mapX(d.getTime());
+        const x = i === 0 ? left : width - right;
         const anchor = i === 0 ? 'start' : 'end';
-        return `<text x="${x.toFixed(1)}" y="${height - 15}" text-anchor="${anchor}" fill="var(--text-color)" font-size="12" font-family="Inter, sans-serif">${d.toLocaleDateString('en-US')}</text>`;
+        return `<text x="${x}" y="${height - 15}" text-anchor="${anchor}" fill="var(--text-color)" font-size="12" font-family="Inter, sans-serif">${d.toLocaleDateString('en-US')}</text>`;
     }).join('');
 
     const buttons = ['3m', '6m', '1y', 'all'].map(k => {
@@ -297,18 +289,24 @@ function renderRatingChart(main, period, compare = null) {
         return `<button type="button" class="player-chart-period ${period === k ? 'active' : ''}" data-period="${k}">${label}</button>`;
     }).join('');
 
-    const legend = compare ? `
+    const legendItems = [{ name: main.name, color: 'var(--accent-color)' }, ...comparePlayers.map((p, i) => ({ name: p.name, color: COMPARE_COLORS[i % COMPARE_COLORS.length] }))];
+    const legend = `
         <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="display: inline-block; width: 20px; height: 3px; background: var(--accent-color); border-radius: 2px;"></span>
-                <span>${main.name}</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="display: inline-block; width: 20px; height: 3px; background: var(--text-color); border-radius: 2px;"></span>
-                <span>${compare.name}</span>
-            </div>
+            ${legendItems.map(item => `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="display: inline-block; width: 20px; height: 3px; background: ${item.color}; border-radius: 2px;"></span>
+                    <span>${item.name}</span>
+                </div>
+            `).join('')}
         </div>
-    ` : '';
+    `;
+
+    const lines = [makeLine(mainSample.data, 'var(--accent-color)', main.name)];
+    compareSamples.forEach((sample, i) => {
+        if (sample.data.length > 0) {
+            lines.push(makeLine(sample.data, COMPARE_COLORS[i % COMPARE_COLORS.length], comparePlayers[i].name));
+        }
+    });
 
     chartEl.innerHTML = `
         <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">${buttons}</div>
@@ -318,30 +316,29 @@ function renderRatingChart(main, period, compare = null) {
             <line x1="${left}" y1="${height - bottomPad}" x2="${width - right}" y2="${height - bottomPad}" stroke="var(--glass-border)" stroke-width="1.5" />
             ${yAxis}
             ${xLabels}
-            ${makeLine(mainSample.data, 'var(--accent-color)')}
-            ${compareSample.data.length > 0 ? makeLine(compareSample.data, 'var(--text-color)') : ''}
+            ${lines.join('')}
         </svg>
     `;
 
     chartEl.querySelectorAll('.player-chart-period').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const mainId = getSelectedPlayerId(document.getElementById('player-profile-input'));
-            const compareId = getSelectedPlayerId(document.getElementById('player-profile-compare-input'));
+            const compareIds = getCompareIds();
             const main = playerCache ? playerCache.find(p => p.id === mainId) : null;
-            const compare = playerCache && compareId ? playerCache.find(p => p.id === compareId) : null;
-            if (main) renderRatingChart(main, e.target.dataset.period, compare);
+            const compares = playerCache ? compareIds.map(id => playerCache.find(p => p.id === id)).filter(Boolean) : [];
+            if (main) renderRatingChart(main, e.target.dataset.period, compares);
         });
     });
 }
 
-function renderPlayerProfile(mainId, compareId = null) {
+function renderPlayerProfile(mainId, compareIds = []) {
     const statsEl = document.getElementById('player-profile-stats');
     const roundsEl = document.getElementById('player-profile-rounds');
     const chartEl = document.getElementById('player-profile-chart');
     if (!playerCache) return;
 
     const player = playerCache.find(p => p.id === mainId);
-    const compare = compareId ? playerCache.find(p => p.id === compareId) : null;
+    const compares = compareIds.map(id => playerCache.find(p => p.id === id)).filter(Boolean);
 
     if (!player) {
         if (statsEl) statsEl.innerHTML = '<p>Player not found.</p>';
@@ -353,34 +350,6 @@ function renderPlayerProfile(mainId, compareId = null) {
     const stats = player.stats || {};
     const history = (player.history || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
     const currentRating = calculateCurrentRating(history) ?? player.currentRating;
-
-    const compareBlock = compare ? `
-        <div class="admin-card" style="margin-top: 1rem;">
-            <h3>${compare.name}</h3>
-            <div class="player-stats-grid">
-                <div class="player-stat-item">
-                    <span>Current Rating</span>
-                    <strong>${formatRating(calculateCurrentRating(compare.history || []) ?? compare.currentRating)}</strong>
-                </div>
-                <div class="player-stat-item">
-                    <span>Initial Rating</span>
-                    <strong>${formatRating(compare.initialRating)}</strong>
-                </div>
-                <div class="player-stat-item">
-                    <span>Rounds Played</span>
-                    <strong>${compare.stats?.roundsPlayed ?? 0}</strong>
-                </div>
-                <div class="player-stat-item">
-                    <span>Best Rating</span>
-                    <strong>${formatRating(compare.stats?.bestRating)}</strong>
-                </div>
-                <div class="player-stat-item">
-                    <span>Average Rating</span>
-                    <strong>${formatRating(compare.stats?.averageRating)}</strong>
-                </div>
-            </div>
-        </div>
-    ` : '';
 
     if (statsEl) {
         statsEl.innerHTML = `
@@ -409,11 +378,10 @@ function renderPlayerProfile(mainId, compareId = null) {
                     </div>
                 </div>
             </div>
-            ${compareBlock}
         `;
     }
 
-    renderRatingChart(player, currentPeriod, compare);
+    renderRatingChart(player, currentPeriod, compares);
 
     if (history.length === 0) {
         if (roundsEl) roundsEl.innerHTML = '<p style="margin-top: 1rem;">No rounds found for this player.</p>';
@@ -453,9 +421,7 @@ function renderPlayerProfile(mainId, compareId = null) {
     }
 }
 
-function bindInput(inputId, suggestionsId) {
-    const input = document.getElementById(inputId);
-    const suggestions = document.getElementById(suggestionsId);
+function bindInput(input, suggestions) {
     if (!input || !suggestions || input.dataset.bound) return;
 
     input.dataset.bound = 'true';
@@ -482,6 +448,32 @@ function bindInput(inputId, suggestionsId) {
     });
 }
 
+function bindCompareRows() {
+    document.querySelectorAll('.player-compare-row').forEach(row => {
+        const input = row.querySelector('input[type="text"]');
+        const suggestions = row.querySelector('.player-suggestions');
+        bindInput(input, suggestions);
+    });
+}
+
+function addCompareRow() {
+    const list = document.getElementById('player-profile-compare-list');
+    if (!list) return;
+
+    const rows = list.querySelectorAll('.player-compare-row');
+    const index = rows.length;
+    const row = document.createElement('div');
+    row.className = 'player-compare-row';
+    row.dataset.index = String(index);
+    row.style.cssText = 'position: relative; margin-top: 0.5rem;';
+    row.innerHTML = `
+        <input type="text" id="player-profile-compare-input-${index}" aria-label="Compare with player ${index + 1}" autocomplete="off" placeholder="Compare with..." style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%; box-sizing: border-box;">
+        <div id="player-profile-compare-suggestions-${index}" class="player-suggestions"></div>
+    `;
+    list.appendChild(row);
+    bindInput(row.querySelector('input'), row.querySelector('.player-suggestions'));
+}
+
 function handleHash() {
     if (window.location.hash === '#player-profile') {
         loadPlayers();
@@ -489,8 +481,17 @@ function handleHash() {
 }
 
 function init() {
-    bindInput('player-profile-input', 'player-profile-suggestions');
-    bindInput('player-profile-compare-input', 'player-profile-compare-suggestions');
+    const mainInput = document.getElementById('player-profile-input');
+    const mainSuggestions = document.getElementById('player-profile-suggestions');
+    bindInput(mainInput, mainSuggestions);
+
+    bindCompareRows();
+
+    const addBtn = document.getElementById('player-profile-add-compare');
+    if (addBtn) {
+        addBtn.addEventListener('click', addCompareRow);
+    }
+
     handleHash();
     window.addEventListener('hashchange', handleHash);
 }
