@@ -200,11 +200,11 @@ function render(container) {
     `;
 
     container.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-            <button type="button" id="ratings-leaders" class="btn-primary" style="padding: 0.5rem 0.9rem; font-size: 0.9rem; background: rgba(236, 72, 153, 0.3); border: 1px solid rgba(236, 72, 153, 0.5); color: var(--text-color);">${isRound ? `${year} League Leaders` : 'Round Results'}</button>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; position: relative;">
             <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem;">
                 ${navHtml}
             </div>
+            <button type="button" id="ratings-leaders" class="calendar-view-toggle">${isRound ? `${year} League Leaders` : 'Round Results'}</button>
         </div>
         ${isRound ? buildRoundTable(round) : buildLeadersTable(year)}
     `;
