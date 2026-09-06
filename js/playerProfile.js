@@ -174,7 +174,7 @@ function renderRatingChart(player, period = 'all') {
 
     const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
     const circles = points.map(p =>
-        `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="var(--accent-color)" stroke="var(--sidebar-bg)" stroke-width="2" />`
+        `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="var(--accent-color)" stroke="var(--sidebar-bg)" stroke-width="2" style="cursor: pointer;"><title>Rating: ${p.rating} on ${p.date}</title></circle>`
     ).join('');
 
     const yTicks = [yMin, (yMin + yMax) / 2, yMax];
