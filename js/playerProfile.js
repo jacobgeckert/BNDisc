@@ -178,23 +178,41 @@ function filterRounds(player, period) {
     return allRounds.filter(r => new Date(r.date).getTime() >= cutoff);
 }
 
-function getFullRounds(player) {
-    return (player.history || [])
+function calculateSampleData(player, period) {
+    const fullRounds = (player.history || [])
         .filter(r => typeof r.rating === 'number' && r.date)
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date));
-}
 
-function calculateChartData(player, period) {
-    const fullRounds = getFullRounds(player);
-    const chartRounds = filterRounds(player, period);
-    return chartRounds
-        .map(r => {
-            const rolling = calculateRollingRating(r.date, fullRounds, period);
-            if (rolling === null) return null;
-            return { date: r.date, rating: rolling, fullDate: r.date };
-        })
-        .filter(Boolean);
+    if (fullRounds.length === 0) {
+        return { data: [], startTime: 0, endTime: 0 };
+    }
+
+    const latest = new Date(fullRounds[fullRounds.length - 1].date);
+    const months = periodMonths(period);
+
+    let startTime = new Date(fullRounds[0].date).getTime();
+    let endTime = latest.getTime();
+
+    if (months) {
+        const periodStart = new Date(latest.getFullYear(), latest.getMonth() - months, latest.getDate());
+        startTime = Math.max(startTime, periodStart.getTime());
+    }
+
+    const sampleCount = 24;
+    const step = (endTime - startTime) / Math.max(1, sampleCount - 1);
+    const data = [];
+
+    for (let i = 0; i < sampleCount; i++) {
+        const t = startTime + i * step;
+        const dateStr = new Date(t).toISOString().split('T')[0];
+        const rolling = calculateRollingRating(dateStr, fullRounds, period);
+        if (rolling !== null) {
+            data.push({ date: dateStr, rating: rolling });
+        }
+    }
+
+    return { data, startTime, endTime };
 }
 
 function renderRatingChart(main, period, compare = null) {
@@ -202,22 +220,22 @@ function renderRatingChart(main, period, compare = null) {
     const chartEl = document.getElementById('player-profile-chart');
     if (!chartEl) return;
 
-    const mainData = calculateChartData(main, period);
-    const compareData = compare ? calculateChartData(compare, period) : [];
+    const mainSample = calculateSampleData(main, period);
+    const compareSample = compare ? calculateSampleData(compare, period) : { data: [], startTime: 0, endTime: 0 };
 
-    if (mainData.length === 0 && compareData.length === 0) {
+    if (mainSample.data.length === 0 && compareSample.data.length === 0) {
         chartEl.innerHTML = '<p style="opacity: 0.7;">No rounds for this period.</p>';
         return;
     }
 
-    const allData = [...mainData, ...compareData].sort((a, b) => a.date.localeCompare(b.date));
+    const allData = [...mainSample.data, ...compareSample.data].sort((a, b) => a.date.localeCompare(b.date));
     const ratings = allData.map(d => d.rating);
     const yMin = Math.min(...ratings) - 15;
     const yMax = Math.max(...ratings) + 15;
     const yRange = Math.max(1, yMax - yMin);
 
-    const startTime = new Date(allData[0].date).getTime();
-    const endTime = new Date(allData[allData.length - 1].date).getTime();
+    const startTime = Math.min(mainSample.startTime, compareSample.startTime) || mainSample.startTime;
+    const endTime = Math.max(mainSample.endTime, compareSample.endTime) || mainSample.endTime;
     const xRange = Math.max(1, endTime - startTime);
 
     const width = 800;
@@ -300,8 +318,8 @@ function renderRatingChart(main, period, compare = null) {
             <line x1="${left}" y1="${height - bottomPad}" x2="${width - right}" y2="${height - bottomPad}" stroke="var(--glass-border)" stroke-width="1.5" />
             ${yAxis}
             ${xLabels}
-            ${makeLine(mainData, 'var(--accent-color)')}
-            ${compareData.length > 0 ? makeLine(compareData, 'var(--text-color)') : ''}
+            ${makeLine(mainSample.data, 'var(--accent-color)')}
+            ${compareSample.data.length > 0 ? makeLine(compareSample.data, 'var(--text-color)') : ''}
         </svg>
     `;
 
