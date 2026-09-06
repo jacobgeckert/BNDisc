@@ -143,10 +143,6 @@ function buildLeadersTable(year) {
     `).join('');
 
     return `
-        <div style="background: rgba(236, 72, 153, 0.25); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center;">
-            <h3 style="margin: 0; color: var(--heading-color);">${year} League Leaders</h3>
-            <p style="margin: 0.5rem 0 0; font-size: 0.85rem; opacity: 0.9;">Played at least 25% of the rated BNDisc Rounds</p>
-        </div>
         <div style="overflow-x: auto;">
             <table class="player-profile-table" style="table-layout: fixed; min-width: 300px;">
                 <colgroup>
