@@ -290,6 +290,28 @@ input:checked + .slider:before { transform: translateX(20px); }
     background: rgba(255, 255, 255, 0.06);
 }
 
+.player-chart-period {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    background: var(--sidebar-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.player-chart-period:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.player-chart-period.active {
+    background: var(--accent-color);
+    color: #ffffff;
+    border-color: var(--accent-color);
+}
+
 #events-schedule-view {
     margin-top: 0;
     grid-template-columns: minmax(0, 1fr);
