@@ -1628,3 +1628,15 @@ COURSE LISTING (Reusing about us layout with minor tweaks)
 #round-rater-form [style*="overflow-x: auto"] {
     -webkit-overflow-scrolling: touch;
 }
+
+.rr-pps-table th,
+.rr-pps-table td {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.rr-pps-table input[type="number"] {
+    width: 70px;
+    text-align: center;
+    padding: 0.3rem;
+}

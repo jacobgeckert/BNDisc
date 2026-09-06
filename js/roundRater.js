@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js?v=100';
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const PPS_TABLE = [
+const PPS_DEFAULTS = [
     { max: 0.80, pps: 13.0 },
     { max: 0.90, pps: 12.6 },
     { max: 1.00, pps: 12.2 },
@@ -19,6 +19,8 @@ const PPS_TABLE = [
     { max: 2.20, pps: 7.4 },
     { max: Infinity, pps: 7.0 }
 ];
+
+let ppsTable = PPS_DEFAULTS.map(r => ({ ...r }));
 
 let raterPlayers = [];
 let rows = [];
@@ -64,10 +66,49 @@ function stdDevLast15(history) {
 }
 
 function getPPS(ratio) {
-    for (const row of PPS_TABLE) {
+    for (const row of ppsTable) {
         if (ratio <= row.max) return row.pps;
     }
     return 7.0;
+}
+
+function formatRatioRange(row, index) {
+    if (row.max === Infinity) {
+        const prevMax = ppsTable[index - 1]?.max ?? 2.20;
+        return `> ${prevMax.toFixed(2)}`;
+    }
+    if (index === 0) {
+        return `0.00 - ${row.max.toFixed(2)}`;
+    }
+    const lower = (ppsTable[index - 1].max + 0.01);
+    return `${lower.toFixed(2)} - ${row.max.toFixed(2)}`;
+}
+
+function renderPPSTable() {
+    const tbody = document.querySelector('#rr-pps-table tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = ppsTable.map((row, i) => `
+        <tr>
+            <td>${formatRatioRange(row, i)}</td>
+            <td><input type="number" step="0.1" class="rr-pps-input" data-index="${i}" value="${row.pps.toFixed(1)}" style="width: 80px; padding: 0.3rem; border-radius: 4px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color);"></td>
+        </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.rr-pps-input').forEach(input => {
+        input.addEventListener('change', () => {
+            const idx = Number(input.dataset.index);
+            const val = Number(input.value);
+            if (!Number.isNaN(val) && val > 0) {
+                ppsTable[idx].pps = val;
+            }
+        });
+    });
+}
+
+function resetPPSTable() {
+    ppsTable = PPS_DEFAULTS.map(r => ({ ...r }));
+    renderPPSTable();
 }
 
 function formatRating(rating) {
@@ -235,7 +276,6 @@ function renderTable() {
 function rateRound() {
     const summary = document.getElementById('rr-summary');
     const adjustInput = document.getElementById('rr-rating-adjust');
-    const ppsOverrideInput = document.getElementById('rr-pps-override');
 
     if (rows.length === 0) {
         if (summary) summary.textContent = 'Add players before rating.';
@@ -281,8 +321,7 @@ function rateRound() {
     let ppsRatio = scoreSD / handicapSD;
     ppsRatio = Math.ceil(ppsRatio * 100) / 100;
 
-    const override = ppsOverrideInput?.value ? Number(ppsOverrideInput.value) : null;
-    const pps = (override !== null && !Number.isNaN(override)) ? override : getPPS(ppsRatio);
+    const pps = getPPS(ppsRatio);
 
     validQualifiedRows.forEach(row => {
         row.initialEstimate = Math.ceil((genBenchmarkScore - row.score) * pps + genBenchmarkRating);
@@ -377,6 +416,11 @@ function initRoundRater() {
 
     const clearBtn = document.getElementById('rr-clear-table');
     if (clearBtn) clearBtn.addEventListener('click', clearTable);
+
+    const resetPpsBtn = document.getElementById('rr-reset-pps');
+    if (resetPpsBtn) resetPpsBtn.addEventListener('click', resetPPSTable);
+
+    renderPPSTable();
 
     const form = document.getElementById('round-rater-form');
     if (form) form.addEventListener('submit', (e) => {
