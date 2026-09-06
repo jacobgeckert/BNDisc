@@ -504,13 +504,23 @@ function addCompareRow() {
     const row = document.createElement('div');
     row.className = 'player-compare-row';
     row.dataset.index = String(index);
-    row.style.cssText = 'position: relative; margin-top: 0.5rem;';
+    row.style.cssText = 'display: flex; gap: 0.5rem; align-items: flex-start; margin-top: 0.5rem;';
     row.innerHTML = `
-        <input type="text" id="player-profile-compare-input-${index}" aria-label="Compare with player ${index + 1}" autocomplete="off" placeholder="Compare with..." style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%; box-sizing: border-box;">
-        <div id="player-profile-compare-suggestions-${index}" class="player-suggestions"></div>
+        <div style="flex: 1;">
+            <input type="text" id="player-profile-compare-input-${index}" aria-label="Compare with player ${index + 1}" autocomplete="off" placeholder="Compare with..." style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%; box-sizing: border-box;">
+            <div id="player-profile-compare-suggestions-${index}" class="player-suggestions"></div>
+        </div>
+        <button type="button" class="remove-compare-btn" data-index="${index}" style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); cursor: pointer; line-height: 1.2;">×</button>
     `;
     list.appendChild(row);
     bindInput(row.querySelector('input'), row.querySelector('.player-suggestions'));
+}
+
+function removeCompareRow(btn) {
+    const row = btn.closest('.player-compare-row');
+    if (!row) return;
+    row.remove();
+    updateProfileFromInputs();
 }
 
 function handleHash() {
@@ -525,6 +535,15 @@ function init() {
     bindInput(mainInput, mainSuggestions);
 
     bindCompareRows();
+
+    const list = document.getElementById('player-profile-compare-list');
+    if (list) {
+        list.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-compare-btn')) {
+                removeCompareRow(e.target);
+            }
+        });
+    }
 
     const addBtn = document.getElementById('player-profile-add-compare');
     if (addBtn) {

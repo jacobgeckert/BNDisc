@@ -1306,9 +1306,12 @@
                         <div id="player-profile-suggestions" class="player-suggestions"></div>
                     </div>
                     <div id="player-profile-compare-list" style="margin-top: 0.5rem;">
-                        <div class="player-compare-row" data-index="0" style="position: relative;">
-                            <input type="text" id="player-profile-compare-input-0" aria-label="Compare with player 1" autocomplete="off" placeholder="Compare with..." style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%; box-sizing: border-box;">
-                            <div id="player-profile-compare-suggestions-0" class="player-suggestions"></div>
+                        <div class="player-compare-row" data-index="0" style="display: flex; gap: 0.5rem; align-items: flex-start; margin-top: 0.5rem;">
+                            <div style="flex: 1;">
+                                <input type="text" id="player-profile-compare-input-0" aria-label="Compare with player 1" autocomplete="off" placeholder="Compare with..." style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); width: 100%; box-sizing: border-box;">
+                                <div id="player-profile-compare-suggestions-0" class="player-suggestions"></div>
+                            </div>
+                            <button type="button" class="remove-compare-btn" data-index="0" style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--sidebar-bg); color: var(--text-color); cursor: pointer; line-height: 1.2;">×</button>
                         </div>
                     </div>
                     <button type="button" id="player-profile-add-compare" class="player-chart-period" style="margin-top: 0.5rem; width: 100%;">+ Compare another player</button>
@@ -1344,6 +1347,6 @@
     <script type="module" src="js/records.js?v=143"></script>
     <script type="module" src="js/governance.js?v=143"></script>
     <script type="module" src="js/bagTags.js?v=143"></script>
-    <script type="module" src="js/playerProfile.js?v=165"></script>
+    <script type="module" src="js/playerProfile.js?v=166"></script>
 </body>
 </html>
