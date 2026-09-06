@@ -3,6 +3,7 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/f
 
 let playerCache = null;
 let isLoading = false;
+let currentPeriod = 'all';
 
 function calculateCurrentRating(history) {
     const sorted = history.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
@@ -64,9 +65,7 @@ function filterPlayers(term) {
     return playerCache.filter(p => p.name.toLowerCase().includes(t)).slice(0, 15);
 }
 
-function renderSuggestions(matches) {
-    const container = document.getElementById('player-profile-suggestions');
-    const input = document.getElementById('player-profile-input');
+function renderSuggestions(matches, input, container) {
     if (!container) return;
     container.innerHTML = '';
 
@@ -81,8 +80,9 @@ function renderSuggestions(matches) {
         item.textContent = p.name;
         item.addEventListener('mousedown', (e) => {
             e.preventDefault();
-            selectPlayer(p.id);
             if (input) input.value = p.name;
+            updateProfileFromInputs();
+            hideAllSuggestions();
         });
         container.appendChild(item);
     });
@@ -90,32 +90,51 @@ function renderSuggestions(matches) {
     container.style.display = 'block';
 }
 
-function hideSuggestions() {
-    const container = document.getElementById('player-profile-suggestions');
+function hideSuggestions(container) {
     if (container) {
         container.innerHTML = '';
         container.style.display = 'none';
     }
 }
 
-function selectPlayer(playerId) {
-    renderPlayerProfile(playerId);
-    hideSuggestions();
+function hideAllSuggestions() {
+    hideSuggestions(document.getElementById('player-profile-suggestions'));
+    hideSuggestions(document.getElementById('player-profile-compare-suggestions'));
 }
 
-function renderRatingChart(player, period = 'all') {
-    const chartEl = document.getElementById('player-profile-chart');
-    if (!chartEl) return;
+function getSelectedPlayerId(input) {
+    if (!input || !playerCache) return null;
+    const name = input.value.trim().toLowerCase();
+    const player = playerCache.find(p => p.name.toLowerCase() === name);
+    return player ? player.id : null;
+}
 
+function updateProfileFromInputs() {
+    const mainInput = document.getElementById('player-profile-input');
+    const compareInput = document.getElementById('player-profile-compare-input');
+    const mainId = getSelectedPlayerId(mainInput);
+    const compareId = getSelectedPlayerId(compareInput);
+
+    if (!mainId) {
+        const statsEl = document.getElementById('player-profile-stats');
+        const roundsEl = document.getElementById('player-profile-rounds');
+        const chartEl = document.getElementById('player-profile-chart');
+        if (statsEl) statsEl.innerHTML = '';
+        if (roundsEl) roundsEl.innerHTML = '';
+        if (chartEl) chartEl.innerHTML = '';
+        return;
+    }
+
+    renderPlayerProfile(mainId, compareId);
+}
+
+function filterRounds(player, period) {
     const allRounds = (player.history || [])
         .filter(r => typeof r.rating === 'number' && r.date)
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date));
 
-    if (allRounds.length === 0) {
-        chartEl.innerHTML = '';
-        return;
-    }
+    if (allRounds.length === 0) return [];
 
     const latestDate = new Date(allRounds[allRounds.length - 1].date);
     let months = 0;
@@ -123,29 +142,36 @@ function renderRatingChart(player, period = 'all') {
     if (period === '6m') months = 6;
     if (period === '1y') months = 12;
 
-    let startTime = new Date(allRounds[0].date).getTime();
-    let endTime = latestDate.getTime();
-
+    let cutoff = new Date(allRounds[0].date).getTime();
     if (months > 0) {
-        const cutoff = new Date(latestDate.getFullYear(), latestDate.getMonth() - months, latestDate.getDate());
-        startTime = Math.max(startTime, cutoff.getTime());
+        const c = new Date(latestDate.getFullYear(), latestDate.getMonth() - months, latestDate.getDate());
+        cutoff = Math.max(cutoff, c.getTime());
     }
 
-    const rounds = allRounds.filter(r => new Date(r.date).getTime() >= startTime);
-    if (rounds.length === 0) {
+    return allRounds.filter(r => new Date(r.date).getTime() >= cutoff);
+}
+
+function renderRatingChart(main, period, compare = null) {
+    currentPeriod = period;
+    const chartEl = document.getElementById('player-profile-chart');
+    if (!chartEl) return;
+
+    const mainRounds = filterRounds(main, period);
+    const compareRounds = compare ? filterRounds(compare, period) : [];
+
+    if (mainRounds.length === 0 && compareRounds.length === 0) {
         chartEl.innerHTML = '<p style="opacity: 0.7;">No rounds for this period.</p>';
         return;
     }
 
-    const ratings = rounds.map(r => r.rating);
+    const allRounds = [...mainRounds, ...compareRounds].sort((a, b) => a.date.localeCompare(b.date));
+    const ratings = allRounds.map(r => r.rating);
     const yMin = Math.min(...ratings) - 15;
     const yMax = Math.max(...ratings) + 15;
     const yRange = Math.max(1, yMax - yMin);
 
-    const startDate = new Date(rounds[0].date);
-    const chartEndDate = new Date(rounds[rounds.length - 1].date);
-    startTime = startDate.getTime();
-    endTime = Math.max(startTime + 1, chartEndDate.getTime());
+    const startTime = new Date(allRounds[0].date).getTime();
+    const endTime = new Date(allRounds[allRounds.length - 1].date).getTime();
     const xRange = Math.max(1, endTime - startTime);
 
     const width = 800;
@@ -165,17 +191,27 @@ function renderRatingChart(player, period = 'all') {
         return topPad + innerH - ((rating - yMin) / yRange) * innerH;
     }
 
-    const points = rounds.map(r => ({
-        x: mapX(new Date(r.date).getTime()),
-        y: mapY(r.rating),
-        rating: r.rating,
-        date: formatDate(r.date)
-    }));
+    function makeLine(rounds, color) {
+        const points = rounds.map(r => ({
+            x: mapX(new Date(r.date).getTime()),
+            y: mapY(r.rating),
+            rating: r.rating,
+            date: formatDate(r.date)
+        }));
 
-    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-    const circles = points.map(p =>
-        `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="var(--accent-color)" stroke="var(--sidebar-bg)" stroke-width="2" style="cursor: pointer;"><title>Rating: ${p.rating} on ${p.date}</title></circle>`
-    ).join('');
+        const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+        const circles = points.map(p =>
+            `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${color}" stroke="var(--sidebar-bg)" stroke-width="2" style="cursor: pointer;"><title>Rating: ${p.rating} on ${p.date}</title></circle>`
+        ).join('');
+
+        return `
+            <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            ${circles}
+        `;
+    }
+
+    const startDate = new Date(startTime);
+    const chartEndDate = new Date(endTime);
 
     const yTicks = [yMin, (yMin + yMax) / 2, yMax];
     const yAxis = yTicks.map(v => {
@@ -197,32 +233,52 @@ function renderRatingChart(player, period = 'all') {
         return `<button type="button" class="player-chart-period ${period === k ? 'active' : ''}" data-period="${k}">${label}</button>`;
     }).join('');
 
+    const legend = compare ? `
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="display: inline-block; width: 20px; height: 3px; background: var(--accent-color); border-radius: 2px;"></span>
+                <span>${main.name}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="display: inline-block; width: 20px; height: 3px; background: var(--text-color); border-radius: 2px;"></span>
+                <span>${compare.name}</span>
+            </div>
+        </div>
+    ` : '';
+
     chartEl.innerHTML = `
         <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">${buttons}</div>
+        ${legend}
         <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 12px; display: block;">
             <line x1="${left}" y1="${topPad}" x2="${left}" y2="${height - bottomPad}" stroke="var(--glass-border)" stroke-width="1.5" />
             <line x1="${left}" y1="${height - bottomPad}" x2="${width - right}" y2="${height - bottomPad}" stroke="var(--glass-border)" stroke-width="1.5" />
             ${yAxis}
             ${xLabels}
-            <path d="${pathD}" fill="none" stroke="var(--accent-color)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-            ${circles}
+            ${makeLine(mainRounds, 'var(--accent-color)')}
+            ${compareRounds.length > 0 ? makeLine(compareRounds, 'var(--text-color)') : ''}
         </svg>
     `;
 
     chartEl.querySelectorAll('.player-chart-period').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            renderRatingChart(player, e.target.dataset.period);
+            const mainId = getSelectedPlayerId(document.getElementById('player-profile-input'));
+            const compareId = getSelectedPlayerId(document.getElementById('player-profile-compare-input'));
+            const main = playerCache ? playerCache.find(p => p.id === mainId) : null;
+            const compare = playerCache && compareId ? playerCache.find(p => p.id === compareId) : null;
+            if (main) renderRatingChart(main, e.target.dataset.period, compare);
         });
     });
 }
 
-function renderPlayerProfile(playerId) {
+function renderPlayerProfile(mainId, compareId = null) {
     const statsEl = document.getElementById('player-profile-stats');
     const roundsEl = document.getElementById('player-profile-rounds');
     const chartEl = document.getElementById('player-profile-chart');
     if (!playerCache) return;
 
-    const player = playerCache.find(p => p.id === playerId);
+    const player = playerCache.find(p => p.id === mainId);
+    const compare = compareId ? playerCache.find(p => p.id === compareId) : null;
+
     if (!player) {
         if (statsEl) statsEl.innerHTML = '<p>Player not found.</p>';
         if (roundsEl) roundsEl.innerHTML = '';
@@ -233,6 +289,34 @@ function renderPlayerProfile(playerId) {
     const stats = player.stats || {};
     const history = (player.history || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
     const currentRating = calculateCurrentRating(history) ?? player.currentRating;
+
+    const compareBlock = compare ? `
+        <div class="admin-card" style="margin-top: 1rem;">
+            <h3>${compare.name}</h3>
+            <div class="player-stats-grid">
+                <div class="player-stat-item">
+                    <span>Current Rating</span>
+                    <strong>${formatRating(calculateCurrentRating(compare.history || []) ?? compare.currentRating)}</strong>
+                </div>
+                <div class="player-stat-item">
+                    <span>Initial Rating</span>
+                    <strong>${formatRating(compare.initialRating)}</strong>
+                </div>
+                <div class="player-stat-item">
+                    <span>Rounds Played</span>
+                    <strong>${compare.stats?.roundsPlayed ?? 0}</strong>
+                </div>
+                <div class="player-stat-item">
+                    <span>Best Rating</span>
+                    <strong>${formatRating(compare.stats?.bestRating)}</strong>
+                </div>
+                <div class="player-stat-item">
+                    <span>Average Rating</span>
+                    <strong>${formatRating(compare.stats?.averageRating)}</strong>
+                </div>
+            </div>
+        </div>
+    ` : '';
 
     if (statsEl) {
         statsEl.innerHTML = `
@@ -261,10 +345,11 @@ function renderPlayerProfile(playerId) {
                     </div>
                 </div>
             </div>
+            ${compareBlock}
         `;
     }
 
-    renderRatingChart(player, 'all');
+    renderRatingChart(player, currentPeriod, compare);
 
     if (history.length === 0) {
         if (roundsEl) roundsEl.innerHTML = '<p style="margin-top: 1rem;">No rounds found for this player.</p>';
@@ -304,31 +389,33 @@ function renderPlayerProfile(playerId) {
     }
 }
 
-function bindEvents() {
-    const input = document.getElementById('player-profile-input');
-    if (input && !input.dataset.bound) {
-        input.dataset.bound = 'true';
+function bindInput(inputId, suggestionsId) {
+    const input = document.getElementById(inputId);
+    const suggestions = document.getElementById(suggestionsId);
+    if (!input || !suggestions || input.dataset.bound) return;
 
-        input.addEventListener('input', (e) => {
-            const matches = filterPlayers(e.target.value);
-            renderSuggestions(matches);
-        });
+    input.dataset.bound = 'true';
 
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const matches = filterPlayers(input.value);
-                if (matches.length > 0) {
-                    selectPlayer(matches[0].id);
-                    input.value = matches[0].name;
-                }
+    input.addEventListener('input', (e) => {
+        const matches = filterPlayers(e.target.value);
+        renderSuggestions(matches, input, suggestions);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const matches = filterPlayers(input.value);
+            if (matches.length > 0) {
+                input.value = matches[0].name;
+                updateProfileFromInputs();
+                hideAllSuggestions();
             }
-        });
+        }
+    });
 
-        input.addEventListener('blur', () => {
-            window.setTimeout(hideSuggestions, 150);
-        });
-    }
+    input.addEventListener('blur', () => {
+        window.setTimeout(() => hideSuggestions(suggestions), 150);
+    });
 }
 
 function handleHash() {
@@ -338,7 +425,8 @@ function handleHash() {
 }
 
 function init() {
-    bindEvents();
+    bindInput('player-profile-input', 'player-profile-suggestions');
+    bindInput('player-profile-compare-input', 'player-profile-compare-suggestions');
     handleHash();
     window.addEventListener('hashchange', handleHash);
 }
