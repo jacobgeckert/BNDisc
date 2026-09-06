@@ -110,17 +110,17 @@ function render(container) {
     const count = roundsData.length;
 
     container.innerHTML = `
-        <div class="calendar-header-container">
-            <div class="month-nav" style="display: grid; grid-template-columns: 42px 280px 42px; align-items: center; gap: 1.25rem;">
+        <div class="admin-card" style="padding: 1.5rem 2rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; max-width: 480px; margin: 0 auto;">
                 <button type="button" id="ratings-prev" class="nav-arrow" title="Previous Round">
                     <i class="ph ph-caret-left"></i>
                 </button>
 
-                <div class="month-title-wrap" style="text-align: center;">
-                    <h2 style="font-size: 1.8rem; font-weight: 800; margin: 0; color: var(--text-color); letter-spacing: -0.5px; white-space: nowrap;">${formatDate(round.date)}</h2>
-                    <div class="accent-underline"></div>
-                    <p style="margin: 0.25rem 0 0; opacity: 0.8; font-size: 0.95rem;">${courseDisplay} - ${round.layout || '—'}</p>
-                    <p style="margin: 0.2rem 0 0; opacity: 0.6; font-size: 0.8rem;">Round ${currentIndex + 1} of ${count}</p>
+                <div style="text-align: center; flex: 1;">
+                    <h2 style="font-size: 2rem; font-weight: 800; margin: 0; color: var(--text-color);">${formatDate(round.date)}</h2>
+                    <div class="accent-underline" style="margin: 0.5rem auto;"></div>
+                    <p style="margin: 0.3rem 0 0; opacity: 0.8; font-size: 0.95rem;">${courseDisplay} - ${round.layout || '—'}</p>
+                    <p style="margin: 0.2rem 0 0; opacity: 0.6; font-size: 0.85rem;">Round ${currentIndex + 1} of ${count}</p>
                 </div>
 
                 <button type="button" id="ratings-next" class="nav-arrow" title="Next Round">
