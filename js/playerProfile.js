@@ -47,7 +47,7 @@ async function loadPlayers() {
         });
         players.sort((a, b) => a.name.localeCompare(b.name));
         playerCache = players;
-        if (status) status.textContent = `${players.length} players loaded.`;
+        if (status) status.textContent = '';
         return players;
     } catch (error) {
         console.error('Failed to load players:', error);
