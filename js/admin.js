@@ -15,6 +15,7 @@ let playersCache = null;
  * Main Initialization
  */
 export function initAdminForm() {
+    setupAdminTabs();
     setupEventCarousel();
     initEventForm();
     initAceForm();
@@ -1594,4 +1595,77 @@ function parseCsvRow(row) {
     }
     cells.push(current);
     return cells;
+}
+
+/**
+ * Convert the stacked admin dashboard cards into a tabbed interface.
+ */
+function setupAdminTabs() {
+    const adminContent = document.getElementById('admin-content');
+    if (!adminContent || adminContent.dataset.tabsSetup) return;
+    adminContent.dataset.tabsSetup = 'true';
+
+    const hr = adminContent.querySelector('hr.course-divider');
+    if (!hr) return;
+
+    const tabsNav = document.createElement('div');
+    tabsNav.className = 'admin-tabs';
+    tabsNav.id = 'admin-tabs';
+
+    const panelsContainer = document.createElement('div');
+    panelsContainer.className = 'admin-tab-panels';
+
+    hr.after(tabsNav);
+    tabsNav.after(panelsContainer);
+
+    const cards = [];
+    const gridsToRemove = [];
+
+    Array.from(adminContent.children).forEach(child => {
+        if (child === tabsNav || child === panelsContainer) return;
+        if (child.classList.contains('admin-grid-wide') || child.classList.contains('admin-card')) {
+            cards.push(child);
+        } else if (child.classList.contains('admin-grid')) {
+            Array.from(child.children).forEach(inner => {
+                if (inner.classList.contains('admin-grid-wide') || inner.classList.contains('admin-card')) {
+                    cards.push(inner);
+                }
+            });
+            gridsToRemove.push(child);
+        }
+    });
+
+    gridsToRemove.forEach(grid => grid.remove());
+
+    const fragment = document.createDocumentFragment();
+    cards.forEach((card, i) => {
+        const h3 = card.querySelector('h3');
+        const title = h3 ? h3.textContent.trim() : `Tab ${i + 1}`;
+
+        const panel = document.createElement('div');
+        panel.className = 'admin-tab-panel';
+        panel.id = `admin-tab-panel-${i}`;
+        card.style.marginTop = '';
+        panel.appendChild(card);
+        fragment.appendChild(panel);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'admin-tab-btn';
+        btn.textContent = title;
+        btn.dataset.panel = panel.id;
+        btn.addEventListener('click', () => {
+            panelsContainer.querySelectorAll('.admin-tab-panel').forEach(p => p.classList.remove('active'));
+            tabsNav.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+            panel.classList.add('active');
+            btn.classList.add('active');
+        });
+        tabsNav.appendChild(btn);
+    });
+
+    panelsContainer.appendChild(fragment);
+
+    if (tabsNav.firstElementChild) {
+        tabsNav.firstElementChild.click();
+    }
 }
