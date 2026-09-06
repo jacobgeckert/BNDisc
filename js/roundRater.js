@@ -28,10 +28,10 @@ let rows = [];
 let selectedPlayer = null;
 
 function calculateCurrentRating(history) {
-    const sorted = (history || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const sorted = (history || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
     const latest5 = sorted.slice(-5).filter(r => typeof r.rating === 'number');
     const previous10 = sorted.slice(-15, -5).filter(r => typeof r.rating === 'number');
-    const denominator = latest5.length + previous10.length + 5;
+    const denominator = latest5.length * 2 + previous10.length;
     if (denominator === 0) return null;
     const weighted = latest5.reduce((sum, r) => sum + r.rating * 2, 0)
                    + previous10.reduce((sum, r) => sum + r.rating, 0);
