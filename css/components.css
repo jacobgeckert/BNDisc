@@ -1543,9 +1543,13 @@ COURSE LISTING (Reusing about us layout with minor tweaks)
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin: 1rem 0 1.25rem;
-    border-bottom: 1px solid var(--glass-border);
-    padding-bottom: 0.75rem;
+    margin: 0.25rem 0 0.5rem;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+#admin-content > hr.course-divider {
+    margin: 0.75rem 0 0.25rem;
 }
 
 .admin-tab-btn {
