@@ -112,24 +112,22 @@ function render(container) {
     const count = roundsData.length;
 
     container.innerHTML = `
-        <div class="admin-card" style="padding: 1.5rem;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.25rem;">
-                <button type="button" id="ratings-prev" class="nav-arrow" title="Previous Round">
-                    <i class="ph ph-caret-left"></i>
-                </button>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.25rem;">
+            <button type="button" id="ratings-prev" class="nav-arrow" title="Previous Round">
+                <i class="ph ph-caret-left"></i>
+            </button>
 
-                <div style="text-align: center;">
-                    <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-color); letter-spacing: -0.5px;">${formatDate(round.date)}</h2>
-                    <p style="margin: 0.25rem 0 0; opacity: 0.75; font-size: 0.95rem;">${courseDisplay} - ${round.layout || '—'}</p>
-                </div>
-
-                <button type="button" id="ratings-next" class="nav-arrow" title="Next Round">
-                    <i class="ph ph-caret-right"></i>
-                </button>
+            <div style="text-align: center;">
+                <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-color); letter-spacing: -0.5px;">${formatDate(round.date)}</h2>
+                <p style="margin: 0.25rem 0 0; opacity: 0.75; font-size: 0.95rem;">${courseDisplay} - ${round.layout || '—'}</p>
             </div>
-            ${buildRoundTable(round)}
-            <p style="text-align: center; margin: 1rem 0 0; opacity: 0.6; font-size: 0.8rem;">Round ${currentIndex + 1} of ${count}</p>
+
+            <button type="button" id="ratings-next" class="nav-arrow" title="Next Round">
+                <i class="ph ph-caret-right"></i>
+            </button>
         </div>
+        <p style="text-align: center; margin: 0 0 1rem; opacity: 0.6; font-size: 0.8rem;">Round ${currentIndex + 1} of ${count}</p>
+        ${buildRoundTable(round)}
     `;
 
     const prevBtn = container.querySelector('#ratings-prev');
