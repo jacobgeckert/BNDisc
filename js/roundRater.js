@@ -1,5 +1,6 @@
 import { db } from './firebase-config.js?v=100';
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { LOCATIONS, LAYOUT_SUGGESTIONS } from './courseData.js?v=100';
 
 const PPS_DEFAULTS = [
     { max: 0.80, pps: 13.0 },
@@ -385,6 +386,80 @@ function rateRound() {
     }
 }
 
+function initRoundRaterSuggestions() {
+    const locationInput = document.getElementById('rr-location');
+    const layoutInput = document.getElementById('rr-layout');
+    const locationSuggestions = document.getElementById('rr-location-suggestions');
+    const layoutSuggestions = document.getElementById('rr-layout-suggestions');
+
+    function updateLocationSuggestions() {
+        if (!locationSuggestions || !locationInput) return;
+        const term = locationInput.value.toLowerCase();
+        const matches = LOCATIONS.filter(l => l.toLowerCase().includes(term));
+        locationSuggestions.innerHTML = '';
+        if (matches.length === 0) {
+            locationSuggestions.style.display = 'none';
+            return;
+        }
+        matches.forEach(l => {
+            const div = document.createElement('div');
+            div.textContent = l;
+            div.style.cssText = 'padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--glass-border);';
+            div.onmousedown = (e) => {
+                e.preventDefault();
+                locationInput.value = l;
+                locationSuggestions.style.display = 'none';
+            };
+            div.onmouseenter = () => div.style.background = 'var(--hover-bg, rgba(255,255,255,0.1))';
+            div.onmouseleave = () => div.style.background = '';
+            locationSuggestions.appendChild(div);
+        });
+        locationSuggestions.style.display = 'block';
+    }
+
+    function updateLayoutSuggestions() {
+        if (!layoutSuggestions || !layoutInput) return;
+        const loc = (locationInput?.value || '').toLowerCase().trim();
+        const term = layoutInput.value.toLowerCase();
+        const options = LAYOUT_SUGGESTIONS[loc] || [];
+        const matches = options.filter(o => o.toLowerCase().includes(term));
+        layoutSuggestions.innerHTML = '';
+        if (matches.length === 0) {
+            layoutSuggestions.style.display = 'none';
+            return;
+        }
+        matches.forEach(l => {
+            const div = document.createElement('div');
+            div.textContent = l;
+            div.style.cssText = 'padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--glass-border);';
+            div.onmousedown = (e) => {
+                e.preventDefault();
+                layoutInput.value = l;
+                layoutSuggestions.style.display = 'none';
+            };
+            div.onmouseenter = () => div.style.background = 'var(--hover-bg, rgba(255,255,255,0.1))';
+            div.onmouseleave = () => div.style.background = '';
+            layoutSuggestions.appendChild(div);
+        });
+        layoutSuggestions.style.display = 'block';
+    }
+
+    if (locationInput) {
+        locationInput.addEventListener('input', updateLocationSuggestions);
+        locationInput.addEventListener('focus', updateLocationSuggestions);
+        locationInput.addEventListener('blur', () => {
+            setTimeout(() => { if (locationSuggestions) locationSuggestions.style.display = 'none'; }, 150);
+        });
+    }
+    if (layoutInput) {
+        layoutInput.addEventListener('input', updateLayoutSuggestions);
+        layoutInput.addEventListener('focus', updateLayoutSuggestions);
+        layoutInput.addEventListener('blur', () => {
+            setTimeout(() => { if (layoutSuggestions) layoutSuggestions.style.display = 'none'; }, 150);
+        });
+    }
+}
+
 function initRoundRater() {
     const dateInput = document.getElementById('rr-date');
     if (dateInput) dateInput.value = new Date().toLocaleDateString('en-CA');
@@ -421,6 +496,7 @@ function initRoundRater() {
     if (resetPpsBtn) resetPpsBtn.addEventListener('click', resetPPSTable);
 
     renderPPSTable();
+    initRoundRaterSuggestions();
 
     const form = document.getElementById('round-rater-form');
     if (form) form.addEventListener('submit', (e) => {
