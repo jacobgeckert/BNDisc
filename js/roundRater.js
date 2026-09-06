@@ -758,7 +758,7 @@ async function loadLatestRoundDate() {
         }
         const data = snapshot.docs[0].data();
         const display = data.courseDisplay || data.course || 'Unknown course';
-        label.textContent = `Latest round: ${data.date} at ${display} / ${data.layout}`;
+        label.textContent = `Last Rated Round was on ${data.date} at ${display} - ${data.layout}`;
     } catch (err) {
         console.error(err);
         label.textContent = 'Unable to load latest round date.';
