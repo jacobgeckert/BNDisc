@@ -174,6 +174,118 @@ function findPlayerByName(name) {
     return raterPlayers.find(p => p.name.toLowerCase() === name.trim().toLowerCase()) || null;
 }
 
+function findColumnKey(headers, candidates) {
+    const lowerHeaders = headers.map(h => String(h).toLowerCase().trim());
+    for (const cand of candidates) {
+        const idx = lowerHeaders.indexOf(cand.toLowerCase());
+        if (idx !== -1) return headers[idx];
+    }
+    return null;
+}
+
+async function importXlsx(file) {
+    const summary = document.getElementById('rr-summary');
+    const XLSX = window.XLSX;
+    if (!XLSX) {
+        if (summary) summary.textContent = 'Spreadsheet library not loaded. Please refresh and try again.';
+        return;
+    }
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        if (!workbook.SheetNames.length) {
+            if (summary) summary.textContent = 'No sheets found in file.';
+            return;
+        }
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const parsedRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        if (!parsedRows.length) {
+            if (summary) summary.textContent = 'No data rows found in file.';
+            return;
+        }
+
+        const headers = Object.keys(parsedRows[0]);
+        const nameKey = findColumnKey(headers, ['name', 'player', 'player name']);
+        const scoreKey = findColumnKey(headers, ['event_total_score', 'event total score', 'total score', 'total', 'score']);
+        if (!nameKey || !scoreKey) {
+            if (summary) summary.textContent = 'Could not find name and event_total_score columns.';
+            return;
+        }
+
+        let added = 0;
+        let skipped = 0;
+        for (const row of parsedRows) {
+            const name = String(row[nameKey] || '').trim();
+            const rawScore = row[scoreKey];
+            const score = typeof rawScore === 'number' ? rawScore : Number(String(rawScore).trim());
+            if (!name || Number.isNaN(score)) {
+                skipped++;
+                continue;
+            }
+            const success = addRaterRow(name, score, null, { skipDuplicate: true });
+            if (success) added++; else skipped++;
+        }
+
+        if (summary) {
+            summary.textContent = `Imported ${added} player${added === 1 ? '' : 's'}${skipped > 0 ? `; ${skipped} skipped` : ''}.`;
+        }
+    } catch (err) {
+        console.error(err);
+        if (summary) summary.textContent = `Error reading file: ${err.message}`;
+    }
+}
+
+function addRaterRow(name, score, manualInitial, options = {}) {
+    const { skipDuplicate = false } = options;
+    const summary = document.getElementById('rr-summary');
+
+    if (!name || score === null || Number.isNaN(score)) {
+        if (!skipDuplicate && summary) summary.textContent = 'Please enter a valid player name and score.';
+        return false;
+    }
+
+    const trimmed = name.trim();
+    if (rows.some(r => r.name.toLowerCase() === trimmed.toLowerCase())) {
+        if (!skipDuplicate && summary) summary.textContent = `${trimmed} is already in the round.`;
+        return false;
+    }
+
+    const player = findPlayerByName(trimmed) || null;
+    let preRoundRating;
+    if (player) {
+        preRoundRating = computePreRoundRating(player, null);
+    } else if (typeof manualInitial === 'number' && !Number.isNaN(manualInitial)) {
+        preRoundRating = manualInitial;
+    } else {
+        preRoundRating = null;
+    }
+
+    const history = player?.history || [];
+    const roundsPlayed = player?.stats?.roundsPlayed ?? history.length;
+    const qualified = roundsPlayed > 14;
+    const preRoundRatingNum = typeof preRoundRating === 'number' ? preRoundRating : null;
+
+    rows.push({
+        id: Math.random().toString(36).slice(2),
+        name: player?.name || trimmed,
+        player,
+        score,
+        preRoundRating: preRoundRatingNum,
+        handicap: computeHandicap(preRoundRatingNum),
+        qualified: qualified ? 'Yes' : 'No',
+        roundsPlayed,
+        initialEstimate: null,
+        diff: null,
+        stdDev: null,
+        finalRoundRating: null,
+        eliminated: false
+    });
+
+    renderTable();
+    if (!skipDuplicate && summary) summary.textContent = '';
+    return true;
+}
+
 function addRow() {
     const nameInput = document.getElementById('rr-player-input');
     const scoreInput = document.getElementById('rr-score');
@@ -193,48 +305,20 @@ function addRow() {
         return;
     }
 
-    const existing = findPlayerByName(name);
-    if (existing) {
-        if (rows.some(r => r.name.toLowerCase() === existing.name.toLowerCase())) {
-            if (summary) summary.textContent = `${existing.name} is already in the round.`;
-            return;
-        }
-    } else {
-        if (manualInitial === null || Number.isNaN(manualInitial)) {
-            if (summary) summary.textContent = 'New players require an initial rating.';
-            return;
-        }
+    const player = findPlayerByName(name);
+    if (!player && (manualInitial === null || Number.isNaN(manualInitial))) {
+        if (summary) summary.textContent = 'New players require an initial rating.';
+        return;
     }
 
-    const player = existing || null;
-    const preRoundRating = computePreRoundRating(player, manualInitial);
-    const history = player?.history || [];
-    const roundsPlayed = player?.stats?.roundsPlayed ?? history.length;
-    const qualified = roundsPlayed > 14;
-
-    rows.push({
-        id: Math.random().toString(36).slice(2),
-        name: player?.name || name,
-        player,
-        score,
-        preRoundRating,
-        handicap: computeHandicap(preRoundRating),
-        qualified: qualified ? 'Yes' : 'No',
-        roundsPlayed,
-        initialEstimate: null,
-        diff: null,
-        stdDev: null,
-        finalRoundRating: null,
-        eliminated: false
-    });
-
-    nameInput.value = '';
-    scoreInput.value = '';
-    initialInput.value = '';
-    selectedPlayer = null;
-    hideSuggestions();
-    renderTable();
-    if (summary) summary.textContent = '';
+    const added = addRaterRow(name, score, manualInitial, { skipDuplicate: false });
+    if (added) {
+        nameInput.value = '';
+        scoreInput.value = '';
+        initialInput.value = '';
+        selectedPlayer = null;
+        hideSuggestions();
+    }
 }
 
 function removeRow(id) {
@@ -494,6 +578,18 @@ function initRoundRater() {
 
     const resetPpsBtn = document.getElementById('rr-reset-pps');
     if (resetPpsBtn) resetPpsBtn.addEventListener('click', resetPPSTable);
+
+    const importInput = document.getElementById('rr-import-xlsx');
+    const importBtn = document.getElementById('rr-import-xlsx-btn');
+    if (importBtn && importInput) {
+        importBtn.addEventListener('click', () => importInput.click());
+    }
+    if (importInput) {
+        importInput.addEventListener('change', (e) => {
+            if (e.target.files.length) importXlsx(e.target.files[0]);
+            e.target.value = '';
+        });
+    }
 
     renderPPSTable();
     initRoundRaterSuggestions();
