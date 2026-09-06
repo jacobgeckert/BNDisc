@@ -720,6 +720,25 @@ async function loadLatestRound() {
     }
 }
 
+async function loadLatestRoundDate() {
+    const label = document.getElementById('rr-latest-round-date');
+    if (!label) return;
+    try {
+        const q = query(collection(db, 'rounds'), orderBy('date', 'desc'), limit(1));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+            label.textContent = 'No rounds in the database yet.';
+            return;
+        }
+        const data = snapshot.docs[0].data();
+        const display = data.courseDisplay || data.course || 'Unknown course';
+        label.textContent = `Latest round: ${data.date} at ${display} / ${data.layout}`;
+    } catch (err) {
+        console.error(err);
+        label.textContent = 'Unable to load latest round date.';
+    }
+}
+
 function initRoundRater() {
     const dateInput = document.getElementById('rr-date');
     if (dateInput) dateInput.value = new Date().toLocaleDateString('en-CA');
@@ -797,6 +816,7 @@ function initRoundRater() {
     });
 
     loadRaterPlayers();
+    loadLatestRoundDate();
 }
 
 if (document.readyState === 'loading') {
