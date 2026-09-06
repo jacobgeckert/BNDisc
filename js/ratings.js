@@ -3,7 +3,9 @@ import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/fir
 
 let roundsData = [];
 let playersById = {};
-let currentIndex = 0;
+let viewDate = new Date();
+let selectedRoundIndex = 0;
+let loaded = false;
 
 function calculateCurrentRating(history) {
     const sorted = (history || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
@@ -96,54 +98,136 @@ function buildRoundTable(round) {
     `;
 }
 
-function render(container) {
-    if (roundsData.length === 0) {
-        container.innerHTML = '<p style="opacity: 0.7;">No rated rounds in the database yet.</p>';
-        return;
+function pad(n) {
+    return String(n).padStart(2, '0');
+}
+
+function getMonthData(year, month) {
+    const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    return { firstDay, daysInMonth };
+}
+
+function renderCalendar(container) {
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const todayKey = new Date().toISOString().split('T')[0];
+
+    const year = viewDate.getUTCFullYear();
+    const month = viewDate.getUTCMonth();
+    const { firstDay, daysInMonth } = getMonthData(year, month);
+
+    const monthDisplay = `${monthNames[month]} ${year}`;
+
+    const dayHeaders = dayNames.map(d => `<div>${d}</div>`).join('');
+
+    let padding = '';
+    for (let i = 0; i < firstDay; i++) {
+        padding += '<div class="calendar-day padding-day"></div>';
     }
 
-    const round = roundsData[currentIndex];
-    const tableHtml = buildRoundTable(round);
-    const count = roundsData.length;
+    const selectedRound = roundsData[selectedRoundIndex];
+
+    let days = '';
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dayKey = `${year}-${pad(month + 1)}-${pad(d)}`;
+        const dayRounds = roundsData.filter(r => r.date === dayKey);
+        const hasRounds = dayRounds.length > 0;
+        const isToday = dayKey === todayKey;
+
+        let pills = '';
+        if (hasRounds) {
+            const pillContainer = document.createElement('div');
+            pills = dayRounds.map((r, i) => {
+                const course = r.courseDisplay || r.course || 'Round';
+                return `<div class="event-pill" data-round-id="${r.id}" style="cursor: pointer; background: var(--accent-color);" title="${course} - ${r.layout || ''}">${course}</div>`;
+            }).join('');
+            pills = `<div class="pill-container">${pills}</div>`;
+        }
+
+        const selectedClass = selectedRound && selectedRound.date === dayKey ? 'today' : '';
+        const classes = ['calendar-day', isToday ? 'today' : '', hasRounds ? '' : 'no-events', selectedClass].filter(Boolean).join(' ');
+
+        days += `
+            <div class="${classes}" data-day="${dayKey}">
+                <span class="day-number">${d}<span class="day-name">${dayNames[new Date(Date.UTC(year, month, d)).getUTCDay()]}</span></span>
+                ${pills}
+            </div>
+        `;
+    }
+
+    const selectedHtml = selectedRound ? buildRoundTable(selectedRound) : '<p style="opacity: 0.7;">Select a round from the calendar to view the results.</p>';
 
     container.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-            <button type="button" id="ratings-prev" class="btn-primary" style="padding: 0.4rem 0.8rem;">←</button>
-            <span style="opacity: 0.8;">Round ${currentIndex + 1} of ${count}</span>
-            <button type="button" id="ratings-next" class="btn-primary" style="padding: 0.4rem 0.8rem;">→</button>
+        <div class="calendar-main-unit" style="width: 100%;">
+            <div class="calendar-header-container">
+                <div class="month-nav" style="display: grid; grid-template-columns: 42px 280px 42px; align-items: center; gap: 1.25rem;">
+                    <button type="button" id="ratings-prev" class="nav-arrow" title="Previous Month">
+                        <i class="ph ph-caret-left"></i>
+                    </button>
+
+                    <div class="month-title-wrap" style="text-align: center;">
+                        <h2 id="ratings-month-display" style="font-size: 1.8rem; font-weight: 800; margin: 0; color: var(--text-color); letter-spacing: -0.5px; text-transform: uppercase; white-space: nowrap;">${monthDisplay}</h2>
+                        <div class="accent-underline"></div>
+                    </div>
+
+                    <button type="button" id="ratings-next" class="nav-arrow" title="Next Month">
+                        <i class="ph ph-caret-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="calendar-wrapper">
+                <div class="calendar-days-header">
+                    ${dayHeaders}
+                </div>
+                <div class="calendar-grid" id="ratings-calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); width: 100%;">
+                    ${padding}${days}
+                </div>
+            </div>
+
+            <div id="ratings-selected-round" style="margin-top: 2rem;">
+                ${selectedHtml}
+            </div>
         </div>
-        ${tableHtml}
     `;
 
     const prevBtn = container.querySelector('#ratings-prev');
     const nextBtn = container.querySelector('#ratings-next');
 
     if (prevBtn) {
-        prevBtn.disabled = currentIndex === 0;
         prevBtn.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                currentIndex--;
-                render(container);
-            }
+            viewDate = new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() - 1, 1));
+            renderCalendar(container);
         });
     }
     if (nextBtn) {
-        nextBtn.disabled = currentIndex === count - 1;
         nextBtn.addEventListener('click', () => {
-            if (currentIndex < count - 1) {
-                currentIndex++;
-                render(container);
-            }
+            viewDate = new Date(Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() + 1, 1));
+            renderCalendar(container);
         });
     }
+
+    container.querySelectorAll('.event-pill').forEach(pill => {
+        pill.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const roundId = e.currentTarget.dataset.roundId;
+            const idx = roundsData.findIndex(r => r.id === roundId);
+            if (idx >= 0) {
+                selectedRoundIndex = idx;
+                renderCalendar(container);
+            }
+        });
+    });
 }
 
 async function loadData() {
     const container = document.getElementById('rounds-list');
     if (!container) return;
 
-    if (roundsData.length > 0) {
-        render(container);
+    if (loaded) {
+        renderCalendar(container);
         return;
     }
 
@@ -157,15 +241,26 @@ async function loadData() {
             playersById[docSnap.id] = { id: docSnap.id, ...docSnap.data() };
         });
 
-        const rounds = [];
+        roundsData = [];
         roundsSnap.forEach(docSnap => {
             const data = docSnap.data();
-            if (data) rounds.push({ id: docSnap.id, ...data });
+            if (data) roundsData.push({ id: docSnap.id, ...data });
         });
 
-        roundsData = rounds;
-        currentIndex = 0;
-        render(container);
+        loaded = true;
+
+        if (roundsData.length === 0) {
+            container.innerHTML = '<p style="opacity: 0.7;">No rated rounds in the database yet.</p>';
+            return;
+        }
+
+        if (roundsData.length > 0) {
+            const [y, m] = roundsData[0].date.split('-').map(Number);
+            viewDate = new Date(Date.UTC(y, m - 1, 1));
+            selectedRoundIndex = 0;
+        }
+
+        renderCalendar(container);
     } catch (err) {
         console.error(err);
         if (container) container.innerHTML = `<p style="opacity: 0.7;">Error loading rounds: ${err.message}</p>`;
