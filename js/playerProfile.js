@@ -142,8 +142,10 @@ function renderRatingChart(player, period = 'all') {
     const yMax = Math.max(...ratings) + 15;
     const yRange = Math.max(1, yMax - yMin);
 
-    const startDate = new Date(startTime);
-    const chartEndDate = new Date(endTime);
+    const startDate = new Date(rounds[0].date);
+    const chartEndDate = new Date(rounds[rounds.length - 1].date);
+    startTime = startDate.getTime();
+    endTime = Math.max(startTime + 1, chartEndDate.getTime());
     const xRange = Math.max(1, endTime - startTime);
 
     const width = 800;
