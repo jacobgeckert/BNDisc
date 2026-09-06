@@ -1653,3 +1653,20 @@ COURSE LISTING (Reusing about us layout with minor tweaks)
         grid-template-columns: 1fr;
     }
 }
+
+.rr-rater-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.rr-rater-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.rr-rater-actions button {
+    width: 100%;
+}
