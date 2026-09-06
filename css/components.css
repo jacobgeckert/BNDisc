@@ -1640,3 +1640,16 @@ COURSE LISTING (Reusing about us layout with minor tweaks)
     text-align: center;
     padding: 0.3rem;
 }
+
+.rr-rater-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .rr-rater-grid {
+        grid-template-columns: 1fr;
+    }
+}
