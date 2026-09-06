@@ -129,19 +129,19 @@ function render(container) {
     const nextBtn = container.querySelector('#ratings-next');
 
     if (prevBtn) {
-        prevBtn.disabled = currentIndex === 0;
+        prevBtn.disabled = currentIndex === count - 1;
         prevBtn.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                currentIndex--;
+            if (currentIndex < count - 1) {
+                currentIndex++;
                 render(container);
             }
         });
     }
     if (nextBtn) {
-        nextBtn.disabled = currentIndex === count - 1;
+        nextBtn.disabled = currentIndex === 0;
         nextBtn.addEventListener('click', () => {
-            if (currentIndex < count - 1) {
-                currentIndex++;
+            if (currentIndex > 0) {
+                currentIndex--;
                 render(container);
             }
         });
