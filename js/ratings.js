@@ -132,9 +132,9 @@ function render(container) {
     const nextBtn = container.querySelector('#ratings-next');
 
     if (prevBtn) {
-        prevBtn.disabled = currentIndex === count - 1;
+        prevBtn.disabled = currentIndex === roundsData.length - 1;
         prevBtn.addEventListener('click', () => {
-            if (currentIndex < count - 1) {
+            if (currentIndex < roundsData.length - 1) {
                 currentIndex++;
                 render(container);
             }
