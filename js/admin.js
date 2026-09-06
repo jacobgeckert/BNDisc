@@ -1607,6 +1607,7 @@ function setupAdminTabs() {
 
     const hr = adminContent.querySelector('hr.course-divider');
     if (!hr) return;
+    hr.style.display = 'none';
 
     const tabsNav = document.createElement('div');
     tabsNav.className = 'admin-tabs';
