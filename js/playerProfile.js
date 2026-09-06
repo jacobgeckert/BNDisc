@@ -41,7 +41,6 @@ async function loadPlayers() {
         });
         players.sort((a, b) => a.name.localeCompare(b.name));
         playerCache = players;
-        populateDropdown(players);
         if (status) status.textContent = `${players.length} players loaded.`;
         return players;
     } catch (error) {
@@ -52,16 +51,50 @@ async function loadPlayers() {
     }
 }
 
-function populateDropdown(players) {
-    const select = document.getElementById('player-profile-select');
-    if (!select) return;
-    select.innerHTML = '<option value="" disabled selected>Select a player...</option>';
-    players.forEach(p => {
-        const option = document.createElement('option');
-        option.value = p.id;
-        option.textContent = p.name;
-        select.appendChild(option);
+function filterPlayers(term) {
+    if (!playerCache) return [];
+    const t = term.trim().toLowerCase();
+    if (!t) return [];
+    return playerCache.filter(p => p.name.toLowerCase().includes(t)).slice(0, 15);
+}
+
+function renderSuggestions(matches) {
+    const container = document.getElementById('player-profile-suggestions');
+    const input = document.getElementById('player-profile-input');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (matches.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    matches.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'player-suggestion';
+        item.textContent = p.name;
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            selectPlayer(p.id);
+            if (input) input.value = p.name;
+        });
+        container.appendChild(item);
     });
+
+    container.style.display = 'block';
+}
+
+function hideSuggestions() {
+    const container = document.getElementById('player-profile-suggestions');
+    if (container) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+    }
+}
+
+function selectPlayer(playerId) {
+    renderPlayerProfile(playerId);
+    hideSuggestions();
 }
 
 function renderPlayerProfile(playerId) {
@@ -145,11 +178,28 @@ function renderPlayerProfile(playerId) {
 }
 
 function bindEvents() {
-    const select = document.getElementById('player-profile-select');
-    if (select && !select.dataset.bound) {
-        select.dataset.bound = 'true';
-        select.addEventListener('change', (e) => {
-            renderPlayerProfile(e.target.value);
+    const input = document.getElementById('player-profile-input');
+    if (input && !input.dataset.bound) {
+        input.dataset.bound = 'true';
+
+        input.addEventListener('input', (e) => {
+            const matches = filterPlayers(e.target.value);
+            renderSuggestions(matches);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const matches = filterPlayers(input.value);
+                if (matches.length > 0) {
+                    selectPlayer(matches[0].id);
+                    input.value = matches[0].name;
+                }
+            }
+        });
+
+        input.addEventListener('blur', () => {
+            window.setTimeout(hideSuggestions, 150);
         });
     }
 }

@@ -259,6 +259,37 @@ input:checked + .slider:before { transform: translateX(20px); }
     margin-top: 0.25rem;
 }
 
+.player-suggestions {
+    display: none;
+    position: relative;
+    width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-top: 0.25rem;
+    background: var(--sidebar-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+}
+
+.player-suggestion {
+    padding: 0.6rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    color: var(--text-color);
+    transition: background 0.15s ease;
+}
+
+.player-suggestion:last-child {
+    border-bottom: none;
+}
+
+.player-suggestion:hover,
+.player-suggestion:focus {
+    background: rgba(255, 255, 255, 0.06);
+}
+
 #events-schedule-view {
     margin-top: 0;
     grid-template-columns: minmax(0, 1fr);
