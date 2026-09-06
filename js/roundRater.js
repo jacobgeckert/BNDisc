@@ -804,9 +804,6 @@ function initRoundRater() {
     const pushBtn = document.getElementById('rr-push-round');
     if (pushBtn) pushBtn.addEventListener('click', pushRoundToDatabase);
 
-    const loadLatestBtn = document.getElementById('rr-load-latest-round');
-    if (loadLatestBtn) loadLatestBtn.addEventListener('click', loadLatestRound);
-
     const table = document.getElementById('rr-table');
     if (table) {
         table.addEventListener('click', (e) => {
