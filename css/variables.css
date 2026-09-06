@@ -34,13 +34,14 @@ body {
 /* ==========================================================================
    DYNAMIC BACKGROUNDS (SHARED BASE)
    ========================================================================== */
-.upcoming-bg-overlay, 
-.courses-bg-overlay, 
-.ratings-bg-overlay, 
-.aces-bg-overlay, 
+.upcoming-bg-overlay,
+.courses-bg-overlay,
+.ratings-bg-overlay,
+.aces-bg-overlay,
 .records-bg-overlay,
 .about-bg-overlay,
-.league-bg-overlay {
+.league-bg-overlay,
+.profile-bg-overlay {
     position: fixed;
     top: 0;
     left: 260px; /* Offset for 260px sidebar */
@@ -105,17 +106,25 @@ body {
     background-position: 50% center;
 }
 
+/* 8. Player Profile (9.jpg) */
+.profile-bg-overlay {
+    background: linear-gradient(var(--overlay-color), var(--overlay-color)), url('../assets/9.jpg');
+    background-size: 110% auto;
+    background-position: 50% center;
+}
+
 /* ==========================================================================
    MOBILE BACKGROUND FIXES
    ========================================================================== */
 @media (max-width: 768px) {
-    .upcoming-bg-overlay, 
-    .courses-bg-overlay, 
-    .ratings-bg-overlay, 
-    .aces-bg-overlay, 
+    .upcoming-bg-overlay,
+    .courses-bg-overlay,
+    .ratings-bg-overlay,
+    .aces-bg-overlay,
     .records-bg-overlay,
     .about-bg-overlay,
-    .league-bg-overlay {
+    .league-bg-overlay,
+    .profile-bg-overlay {
         left: 0;
         width: 100%;
         /* 'scroll' works better than 'fixed' on mobile to prevent tiling/zoom bugs */

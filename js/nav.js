@@ -52,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
             '#aces': 'aces-bg',
             '#records': 'records-bg',
             '#league': 'league-bg',
-            '#about': 'about-bg'
+            '#about': 'about-bg',
+            '#player-profile': 'player-profile-bg'
         };
 
         // 3. Toggle all backgrounds
