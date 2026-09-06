@@ -109,10 +109,9 @@ function render(container) {
 
     const round = roundsData[currentIndex];
     const courseDisplay = round.courseDisplay || round.course || 'Unknown course';
-    const count = roundsData.length;
 
     container.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem;">
             <button type="button" id="ratings-prev" class="nav-arrow" title="Previous Round">
                 <i class="ph ph-caret-left"></i>
             </button>
@@ -126,7 +125,6 @@ function render(container) {
                 <i class="ph ph-caret-right"></i>
             </button>
         </div>
-        <p style="text-align: center; margin: 0 0 1rem; opacity: 0.6; font-size: 0.8rem;">Round ${currentIndex + 1} of ${count}</p>
         ${buildRoundTable(round)}
     `;
 
