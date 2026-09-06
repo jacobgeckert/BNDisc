@@ -32,7 +32,7 @@ function calculateRollingRating(targetDate, fullRounds, period) {
 
     let start = null;
     if (months) {
-        start = new Date(target.getFullYear(), target.getMonth() - (months * 2), target.getDate());
+        start = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() - (months * 2), target.getUTCDate()));
     }
 
     const windowRounds = fullRounds.filter(r => {
@@ -57,7 +57,7 @@ function formatScore(score) {
 function formatDate(dateStr) {
     const d = new Date(dateStr);
     if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString('en-US');
+    return d.toLocaleDateString('en-US', { timeZone: 'UTC' });
 }
 
 async function loadPlayers(force = false) {
@@ -180,13 +180,14 @@ function calculateSampleData(player, period) {
     }
 
     const latest = new Date(fullRounds[fullRounds.length - 1].date);
+    const latestDate = fullRounds[fullRounds.length - 1].date;
     const months = periodMonths(period);
 
     let startTime = new Date(fullRounds[0].date).getTime();
     let endTime = latest.getTime();
 
     if (months) {
-        const periodStart = new Date(latest.getFullYear(), latest.getMonth() - months, latest.getDate());
+        const periodStart = new Date(Date.UTC(latest.getUTCFullYear(), latest.getUTCMonth() - months, latest.getUTCDate()));
         startTime = Math.max(startTime, periodStart.getTime());
     }
 
@@ -196,7 +197,10 @@ function calculateSampleData(player, period) {
 
     for (let i = 0; i < sampleCount; i++) {
         const t = startTime + i * step;
-        const dateStr = new Date(t).toISOString().split('T')[0];
+        let dateStr = new Date(t).toISOString().split('T')[0];
+        if (i === sampleCount - 1) {
+            dateStr = latestDate;
+        }
         const rolling = calculateRollingRating(dateStr, fullRounds, period);
         if (rolling !== null) {
             data.push({ date: dateStr, rating: rolling });
@@ -282,7 +286,7 @@ function renderRatingChart(main, period, comparePlayers = []) {
     const xLabels = [startDate, chartEndDate].map((d, i) => {
         const x = i === 0 ? left : width - right;
         const anchor = i === 0 ? 'start' : 'end';
-        return `<text x="${x}" y="${height - 15}" text-anchor="${anchor}" fill="var(--text-color)" font-size="12" font-family="Inter, sans-serif">${d.toLocaleDateString('en-US')}</text>`;
+        return `<text x="${x}" y="${height - 15}" text-anchor="${anchor}" fill="var(--text-color)" font-size="12" font-family="Inter, sans-serif">${d.toLocaleDateString('en-US', { timeZone: 'UTC' })}</text>`;
     }).join('');
 
     const buttons = ['3m', '6m', '1y', 'all'].map(k => {
