@@ -349,6 +349,22 @@ function clearTable() {
     if (summary) summary.textContent = '';
 }
 
+function clearInputs() {
+    const dateInput = document.getElementById('rr-date');
+    if (dateInput) dateInput.value = new Date().toLocaleDateString('en-CA');
+
+    const inputs = ['rr-location', 'rr-layout', 'rr-rating-adjust', 'rr-player-input', 'rr-score', 'rr-initial-rating'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'rr-rating-adjust') {
+            el.value = '0';
+        } else {
+            el.value = '';
+        }
+    });
+}
+
 function renderTable() {
     const tbody = document.querySelector('#rr-table tbody');
     if (!tbody) return;
@@ -591,6 +607,10 @@ async function pushRoundToDatabase() {
         });
 
         await batch.commit();
+        clearTable();
+        clearInputs();
+        loadLatestRoundDate();
+        window.alert('Round successfully pushed to the database.');
         if (summary) summary.textContent = 'Round pushed to database successfully.';
     } catch (err) {
         console.error(err);
