@@ -27,7 +27,6 @@ export function initAdminForm() {
     updateManagementUI();
     initLeagueAdminManager();
     initLeagueRoster();
-    initRoundDatabaseImport();
     initCollapsibleSections();
 }
 
