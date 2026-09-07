@@ -661,20 +661,31 @@ async function pushRoundToDatabase() {
                     history: newHistory
                 };
             } else {
-                const newHistory = [{ ...roundHistoryEntry, score: row.score, rating: row.finalRoundRating }];
-                const allScores = [row.score];
-                const allRatings = [row.finalRoundRating];
+                const seedRating = typeof row.preRoundRating === 'number' ? row.preRoundRating : row.finalRoundRating;
+                const seedEntry = {
+                    roundId: 'initial-rating',
+                    date: '1900-01-01',
+                    course: 'initial-rating',
+                    courseDisplay: 'Initial Rating',
+                    layout: '',
+                    score: null,
+                    rating: seedRating
+                };
+                const seedHistory = Array.from({ length: 5 }, () => ({ ...seedEntry }));
+                const newHistory = [...seedHistory, { ...roundHistoryEntry, score: row.score, rating: row.finalRoundRating }];
+                const allScores = newHistory.map(h => h.score).filter(n => typeof n === 'number');
+                const allRatings = newHistory.map(h => h.rating).filter(n => typeof n === 'number');
                 playerData = {
                     playerId: pid,
                     name,
-                    initialRating: newHistory[0].rating,
+                    initialRating: seedRating,
                     currentRating: calculateCurrentRating(newHistory),
                     stats: {
-                        roundsPlayed: 1,
-                        averageScore: Number(row.score.toFixed(2)),
-                        bestScore: row.score,
-                        averageRating: Number(row.finalRoundRating.toFixed(2)),
-                        bestRating: row.finalRoundRating
+                        roundsPlayed: newHistory.length,
+                        averageScore: allScores.length ? Number((allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(2)) : null,
+                        bestScore: allScores.length ? Math.min(...allScores) : null,
+                        averageRating: allRatings.length ? Number((allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(2)) : null,
+                        bestRating: allRatings.length ? Math.max(...allRatings) : null
                     },
                     history: newHistory
                 };
