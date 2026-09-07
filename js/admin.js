@@ -3,7 +3,7 @@ import {
     doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, deleteDoc,
     collection, addDoc, serverTimestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { isAdmin, getRoster } from './firestore.js?v=147';
+import { isAdmin, getRoster } from './firestore.js?v=148';
 import { LOCATIONS, COURSE_NAME_OVERRIDES, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
 
 // State and Cache

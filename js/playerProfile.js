@@ -1,5 +1,4 @@
-import { db } from './firebase-config.js?v=100';
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getPlayers } from './firestore.js?v=148';
 
 let playerCache = null;
 let isLoading = false;
@@ -60,8 +59,8 @@ function formatDate(dateStr) {
     return d.toLocaleDateString('en-US', { timeZone: 'UTC' });
 }
 
-async function loadPlayers(force = false) {
-    if (!force && playerCache) return playerCache;
+async function loadPlayers() {
+    if (playerCache) return playerCache;
     if (isLoading) return playerCache;
     isLoading = true;
 
@@ -69,15 +68,7 @@ async function loadPlayers(force = false) {
     if (status) status.textContent = 'Loading players...';
 
     try {
-        const snapshot = await getDocs(collection(db, 'players'));
-        const players = [];
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            if (data && data.name) {
-                players.push({ id: docSnap.id, ...data });
-            }
-        });
-        players.sort((a, b) => a.name.localeCompare(b.name));
+        const { players } = await getPlayers();
         playerCache = players;
         if (status) status.textContent = '';
         return players;
@@ -534,7 +525,7 @@ function removeCompareRow(btn) {
 
 function handleHash() {
     if (window.location.hash === '#player-profile') {
-        loadPlayers(true).then(() => updateProfileFromInputs());
+        loadPlayers().then(() => updateProfileFromInputs());
     }
 }
 
@@ -562,7 +553,7 @@ function init() {
     window.addEventListener('roundPushed', () => {
         playerCache = null;
         if (window.location.hash === '#player-profile') {
-            loadPlayers(true).then(() => updateProfileFromInputs());
+            loadPlayers().then(() => updateProfileFromInputs());
         }
     });
 

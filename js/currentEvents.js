@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js?v=100';
 import { getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getCourseDisplayName } from './courseData.js?v=100';
-import { getCachedDoc, seedDocCache } from './firestore.js?v=147';
+import { getCachedDoc, seedDocCache } from './firestore.js?v=148';
 
 // 1. GLOBAL STATE & CACHE
 let viewDate = new Date();

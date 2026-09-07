@@ -121,39 +121,57 @@ function getLastSaturdayCutoff() {
     return cutoff;
 }
 
-export async function getRoster(force = false) {
-    const local = getLocalRoster();
-    const lastSaturday = getLastSaturdayCutoff();
-    const localFresh = local && local.fetchedAt && new Date(local.fetchedAt) >= lastSaturday;
+let playersCache = null;
+let playersCacheUpdatedAt = null;
 
+export async function getPlayers(force = false) {
     const lastUpdateSnap = await getDoc(doc(db, 'players', 'lastUpdate'));
     const serverUpdatedAt = lastUpdateSnap.exists() ? lastUpdateSnap.data().updatedAt : null;
 
-    if (!force && localFresh && (!serverUpdatedAt || local.importedAt === serverUpdatedAt)) {
-        return { roster: local, source: 'local' };
+    if (!force && playersCache && playersCacheUpdatedAt === serverUpdatedAt) {
+        return { players: playersCache, updatedAt: serverUpdatedAt };
     }
 
     const snap = await getDocs(collection(db, 'players'));
     const players = [];
     snap.forEach(docSnap => {
         if (docSnap.id === 'roster' || docSnap.id === 'lastImport' || docSnap.id === 'lastUpdate') return;
-        const data = docSnap.data() || {};
-        const rating = typeof data.currentRating === 'number' ? data.currentRating : (typeof data.initialRating === 'number' ? data.initialRating : null);
-        const rawHdcp = rating != null ? (1005 - rating) / 12 : null;
-        const hdcp = rawHdcp != null ? Math.ceil(rawHdcp * 2) / 2 : null;
-        players.push({
-            name: data.name || docSnap.id,
-            currentRating: rating,
-            hdcp,
-            stats: data.stats || null
-        });
+        const data = docSnap.data();
+        if (data && data.name) players.push({ id: docSnap.id, ...data });
     });
 
     players.sort((a, b) => a.name.localeCompare(b.name));
+    playersCache = players;
+    playersCacheUpdatedAt = serverUpdatedAt;
+    return { players, updatedAt: serverUpdatedAt };
+}
+
+export async function getRoster(force = false) {
+    const local = getLocalRoster();
+    const lastSaturday = getLastSaturdayCutoff();
+    const localFresh = local && local.fetchedAt && new Date(local.fetchedAt) >= lastSaturday;
+
+    const { players, updatedAt } = await getPlayers(force);
+
+    if (!force && localFresh && (!updatedAt || local.importedAt === updatedAt)) {
+        return { roster: local, source: 'local' };
+    }
+
+    const rosterPlayers = players.map(p => {
+        const rating = typeof p.currentRating === 'number' ? p.currentRating : (typeof p.initialRating === 'number' ? p.initialRating : null);
+        const rawHdcp = rating != null ? (1005 - rating) / 12 : null;
+        const hdcp = rawHdcp != null ? Math.ceil(rawHdcp * 2) / 2 : null;
+        return {
+            name: p.name,
+            currentRating: rating,
+            hdcp,
+            stats: p.stats || null
+        };
+    });
 
     const roster = {
-        players,
-        importedAt: serverUpdatedAt || new Date().toISOString(),
+        players: rosterPlayers,
+        importedAt: updatedAt || new Date().toISOString(),
         fetchedAt: new Date().toISOString()
     };
     saveLocalRoster(roster);
