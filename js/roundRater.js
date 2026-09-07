@@ -236,12 +236,45 @@ async function importXlsx(file) {
             return;
         }
 
+        const parsedEntries = [];
         for (const row of parsedRows) {
             const name = String(row[nameKey] || '').trim();
             const rawScore = row[scoreKey];
             const score = typeof rawScore === 'number' ? rawScore : Number(String(rawScore).trim());
             if (!name || Number.isNaN(score)) continue;
-            addRaterRow(name, score, null, { skipDuplicate: true });
+            parsedEntries.push({ name, score });
+        }
+
+        const known = [];
+        for (const entry of parsedEntries) {
+            const player = findPlayerByName(entry.name);
+            if (!player) continue;
+            const rating = computePreRoundRating(player, null);
+            if (typeof rating === 'number') known.push({ score: entry.score, rating });
+        }
+        known.sort((a, b) => a.score - b.score);
+
+        function estimateInitialRating(score) {
+            if (known.length === 0) return null;
+            const exact = known.find(k => k.score === score);
+            if (exact) return exact.rating;
+            if (score <= known[0].score) return known[0].rating;
+            if (score >= known[known.length - 1].score) return known[known.length - 1].rating;
+            for (let i = 0; i < known.length - 1; i++) {
+                const a = known[i];
+                const b = known[i + 1];
+                if (score > a.score && score < b.score) {
+                    const t = (score - a.score) / (b.score - a.score);
+                    return Math.ceil(a.rating + (b.rating - a.rating) * t);
+                }
+            }
+            return known[known.length - 1].rating;
+        }
+
+        for (const entry of parsedEntries) {
+            const player = findPlayerByName(entry.name);
+            const manualInitial = player ? null : estimateInitialRating(entry.score);
+            addRaterRow(entry.name, entry.score, manualInitial, { skipDuplicate: true });
         }
 
         if (summary) {
@@ -280,8 +313,8 @@ function addRaterRow(name, score, manualInitial, options = {}) {
 
     const history = player?.history || [];
     const roundsPlayed = player?.stats?.roundsPlayed ?? history.length;
-    const qualified = roundsPlayed > 14;
     const preRoundRatingNum = typeof preRoundRating === 'number' ? preRoundRating : null;
+    const qualified = player ? (roundsPlayed > 14) : (preRoundRatingNum !== null);
 
     rows.push({
         id: Math.random().toString(36).slice(2),
@@ -384,10 +417,9 @@ function updateRow(id, field, value) {
             row.handicap = computeHandicap(row.preRoundRating);
         } else {
             row.player = null;
-            row.preRoundRating = null;
             row.roundsPlayed = 0;
-            row.qualified = 'No';
-            row.handicap = null;
+            row.qualified = typeof row.preRoundRating === 'number' ? 'Yes' : 'No';
+            row.handicap = computeHandicap(row.preRoundRating);
         }
         row.initialEstimate = null;
         row.diff = null;
