@@ -464,9 +464,9 @@ function renderTable() {
     tbody.innerHTML = rows.map(row => `
         <tr style="${row.eliminated ? 'background: rgba(255,105,180,0.25);' : ''}">
             <td><input type="text" class="rr-edit-name${row.player ? '' : ' rr-new-player'}" data-id="${row.id}" value="${escapeAttr(row.name)}" size="${maxNameLength + 2}" style="width: auto !important; min-width: ${maxNameLength + 2}ch; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
-            <td><input type="number" class="rr-edit-score" data-id="${row.id}" value="${row.score ?? ''}" style="width: 5rem !important; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
+            <td><input type="text" inputmode="numeric" pattern="[0-9]*" class="rr-edit-score" data-id="${row.id}" value="${row.score ?? ''}" style="width: 5rem !important; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
             <td>${row.qualified}</td>
-            <td>${row.player ? formatRating(row.preRoundRating) : `<input type="number" class="rr-edit-rating" data-id="${row.id}" value="${row.preRoundRating ?? ''}" style="width: 5.5rem !important; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;">`}</td>
+            <td>${row.player ? formatRating(row.preRoundRating) : `<input type="text" inputmode="numeric" pattern="[0-9]*" class="rr-edit-rating" data-id="${row.id}" value="${row.preRoundRating ?? ''}" style="width: 5.5rem !important; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;">`}</td>
             <td>${row.handicap !== null ? row.handicap.toFixed(1) : '—'}</td>
             <td>${formatRating(row.initialEstimate)}</td>
             <td>${formatRating(row.diff)}</td>
@@ -480,6 +480,11 @@ function renderTable() {
     tbody.querySelectorAll('.rr-edit-name').forEach(input => {
         input.addEventListener('change', (e) => {
             updateRow(e.target.dataset.id, 'name', e.target.value);
+        });
+    });
+    tbody.querySelectorAll('.rr-edit-score, .rr-edit-rating').forEach(input => {
+        input.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
     });
     tbody.querySelectorAll('.rr-edit-score').forEach(input => {
