@@ -433,6 +433,18 @@ function updateRow(id, field, value) {
         row.initialEstimate = null;
         row.diff = null;
         row.finalRoundRating = null;
+    } else if (field === 'preRoundRating') {
+        if (row.player) return;
+        const rating = value === '' ? null : Number(value);
+        row.preRoundRating = rating !== null && Number.isNaN(rating) ? null : rating;
+        row.qualified = typeof row.preRoundRating === 'number' ? 'Yes' : 'No';
+        row.handicap = computeHandicap(row.preRoundRating);
+        row.initialEstimate = null;
+        row.diff = null;
+        row.stdDev = null;
+        row.finalRoundRating = null;
+        row.eliminated = false;
+        row.eliminationReason = null;
     }
 
     renderTable();
@@ -454,7 +466,7 @@ function renderTable() {
             <td><input type="text" class="rr-edit-name${row.player ? '' : ' rr-new-player'}" data-id="${row.id}" value="${escapeAttr(row.name)}" size="${maxNameLength + 2}" style="width: auto !important; min-width: ${maxNameLength + 2}ch; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
             <td><input type="number" class="rr-edit-score" data-id="${row.id}" value="${row.score ?? ''}" style="width: 5rem !important; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
             <td>${row.qualified}</td>
-            <td>${formatRating(row.preRoundRating)}</td>
+            <td>${row.player ? formatRating(row.preRoundRating) : `<input type="number" class="rr-edit-rating" data-id="${row.id}" value="${row.preRoundRating ?? ''}" style="width: 5.5rem !important; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;">`}</td>
             <td>${row.handicap !== null ? row.handicap.toFixed(1) : '—'}</td>
             <td>${formatRating(row.initialEstimate)}</td>
             <td>${formatRating(row.diff)}</td>
@@ -473,6 +485,11 @@ function renderTable() {
     tbody.querySelectorAll('.rr-edit-score').forEach(input => {
         input.addEventListener('change', (e) => {
             updateRow(e.target.dataset.id, 'score', e.target.value);
+        });
+    });
+    tbody.querySelectorAll('.rr-edit-rating').forEach(input => {
+        input.addEventListener('change', (e) => {
+            updateRow(e.target.dataset.id, 'preRoundRating', e.target.value);
         });
     });
 }
