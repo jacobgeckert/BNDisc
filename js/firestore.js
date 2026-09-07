@@ -110,13 +110,26 @@ export function getLocalRoster() {
     }
 }
 
+function getLastSaturdayCutoff() {
+    const now = new Date();
+    const day = now.getDay();
+    const daysBack = (day - 6 + 7) % 7;
+    const cutoff = new Date(now);
+    cutoff.setDate(now.getDate() - daysBack);
+    cutoff.setHours(23, 59, 59, 999);
+    if (cutoff > now) cutoff.setDate(cutoff.getDate() - 7);
+    return cutoff;
+}
+
 export async function getRoster(force = false) {
     const local = getLocalRoster();
+    const lastSaturday = getLastSaturdayCutoff();
+    const localFresh = local && local.fetchedAt && new Date(local.fetchedAt) >= lastSaturday;
 
     const lastUpdateSnap = await getDoc(doc(db, 'players', 'lastUpdate'));
     const serverUpdatedAt = lastUpdateSnap.exists() ? lastUpdateSnap.data().updatedAt : null;
 
-    if (!force && local && serverUpdatedAt && local.importedAt === serverUpdatedAt) {
+    if (!force && localFresh && (!serverUpdatedAt || local.importedAt === serverUpdatedAt)) {
         return { roster: local, source: 'local' };
     }
 
@@ -140,7 +153,8 @@ export async function getRoster(force = false) {
 
     const roster = {
         players,
-        importedAt: serverUpdatedAt || new Date().toISOString()
+        importedAt: serverUpdatedAt || new Date().toISOString(),
+        fetchedAt: new Date().toISOString()
     };
     saveLocalRoster(roster);
     return { roster, source: 'firestore' };

@@ -8,7 +8,7 @@ import {
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { isLeagueAdmin, checkLeagueAdminEligibility, getLocalRoster, getRoster, getCachedDoc, refreshCachedDoc } from './firestore.js?v=146';
+import { isLeagueAdmin, checkLeagueAdminEligibility, getLocalRoster, getRoster, getCachedDoc, refreshCachedDoc } from './firestore.js?v=147';
 import { bindFirstTimeSetup } from './authSetup.js?v=100';
 import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
 
