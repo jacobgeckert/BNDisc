@@ -59,6 +59,15 @@ function playerId(name) {
     return String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+function escapeAttr(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function populationStdDev(values) {
     if (!values || values.length === 0) return 0;
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
@@ -227,22 +236,16 @@ async function importXlsx(file) {
             return;
         }
 
-        let added = 0;
-        let skipped = 0;
         for (const row of parsedRows) {
             const name = String(row[nameKey] || '').trim();
             const rawScore = row[scoreKey];
             const score = typeof rawScore === 'number' ? rawScore : Number(String(rawScore).trim());
-            if (!name || Number.isNaN(score)) {
-                skipped++;
-                continue;
-            }
-            const success = addRaterRow(name, score, null, { skipDuplicate: true });
-            if (success) added++; else skipped++;
+            if (!name || Number.isNaN(score)) continue;
+            addRaterRow(name, score, null, { skipDuplicate: true });
         }
 
         if (summary) {
-            summary.textContent = `Imported ${added} player${added === 1 ? '' : 's'}${skipped > 0 ? `; ${skipped} skipped` : ''}.`;
+            summary.textContent = '';
         }
     } catch (err) {
         console.error(err);
@@ -365,6 +368,44 @@ function clearInputs() {
     });
 }
 
+function updateRow(id, field, value) {
+    const row = rows.find(r => r.id === id);
+    if (!row) return;
+
+    if (field === 'name') {
+        const name = String(value).trim();
+        if (!name) return;
+        row.name = name;
+        row.player = findPlayerByName(name);
+        if (row.player) {
+            row.preRoundRating = computePreRoundRating(row.player, null);
+            row.roundsPlayed = row.player?.stats?.roundsPlayed ?? (row.player?.history || []).length;
+            row.qualified = row.roundsPlayed > 14 ? 'Yes' : 'No';
+            row.handicap = computeHandicap(row.preRoundRating);
+        } else {
+            row.player = null;
+            row.preRoundRating = null;
+            row.roundsPlayed = 0;
+            row.qualified = 'No';
+            row.handicap = null;
+        }
+        row.initialEstimate = null;
+        row.diff = null;
+        row.stdDev = null;
+        row.finalRoundRating = null;
+        row.eliminated = false;
+        row.eliminationReason = null;
+    } else if (field === 'score') {
+        const score = value === '' ? null : Number(value);
+        row.score = score !== null && Number.isNaN(score) ? null : score;
+        row.initialEstimate = null;
+        row.diff = null;
+        row.finalRoundRating = null;
+    }
+
+    renderTable();
+}
+
 function renderTable() {
     const tbody = document.querySelector('#rr-table tbody');
     if (!tbody) return;
@@ -376,8 +417,8 @@ function renderTable() {
 
     tbody.innerHTML = rows.map(row => `
         <tr style="${row.eliminated ? 'background: rgba(255,105,180,0.25);' : ''}">
-            <td>${row.name}</td>
-            <td>${row.score}</td>
+            <td><input type="text" class="rr-edit-name" data-id="${row.id}" value="${escapeAttr(row.name)}" style="width: 100%; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
+            <td><input type="number" class="rr-edit-score" data-id="${row.id}" value="${row.score ?? ''}" style="width: 5rem; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
             <td>${row.qualified}</td>
             <td>${formatRating(row.preRoundRating)}</td>
             <td>${row.handicap !== null ? row.handicap.toFixed(1) : '—'}</td>
@@ -389,6 +430,17 @@ function renderTable() {
             <td><button type="button" class="rr-remove-btn" data-id="${row.id}" style="padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); cursor: pointer;">×</button></td>
         </tr>
     `).join('');
+
+    tbody.querySelectorAll('.rr-edit-name').forEach(input => {
+        input.addEventListener('change', (e) => {
+            updateRow(e.target.dataset.id, 'name', e.target.value);
+        });
+    });
+    tbody.querySelectorAll('.rr-edit-score').forEach(input => {
+        input.addEventListener('change', (e) => {
+            updateRow(e.target.dataset.id, 'score', e.target.value);
+        });
+    });
 }
 
 function rateRound() {
