@@ -1624,6 +1624,12 @@ COURSE LISTING (Reusing about us layout with minor tweaks)
     min-width: 0;
 }
 
+#round-rater-form .rr-edit-name.rr-new-player {
+    border: 2px solid #f59e0b !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
 #round-rater-form .player-profile-table th,
 #round-rater-form .player-profile-table td {
     white-space: nowrap;
