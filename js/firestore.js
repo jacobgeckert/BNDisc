@@ -121,8 +121,30 @@ function getLastSaturdayCutoff() {
     return cutoff;
 }
 
+const PLAYERS_CACHE_KEY = 'bndisc_players_cache';
 let playersCache = null;
 let playersCacheUpdatedAt = null;
+
+function readPlayersCache() {
+    try {
+        const raw = localStorage.getItem(PLAYERS_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.players)) return null;
+        return parsed;
+    } catch (e) {
+        console.warn('Could not read players cache:', e);
+        return null;
+    }
+}
+
+function writePlayersCache(players, updatedAt) {
+    try {
+        localStorage.setItem(PLAYERS_CACHE_KEY, JSON.stringify({ players, updatedAt, fetchedAt: Date.now() }));
+    } catch (e) {
+        console.warn('Could not write players cache:', e);
+    }
+}
 
 export async function getPlayers(force = false) {
     const lastUpdateSnap = await getDoc(doc(db, 'players', 'lastUpdate'));
@@ -130,6 +152,13 @@ export async function getPlayers(force = false) {
 
     if (!force && playersCache && playersCacheUpdatedAt === serverUpdatedAt) {
         return { players: playersCache, updatedAt: serverUpdatedAt };
+    }
+
+    const local = readPlayersCache();
+    if (!force && local && local.updatedAt === serverUpdatedAt) {
+        playersCache = local.players;
+        playersCacheUpdatedAt = serverUpdatedAt;
+        return { players: local.players, updatedAt: serverUpdatedAt };
     }
 
     const snap = await getDocs(collection(db, 'players'));
@@ -143,6 +172,7 @@ export async function getPlayers(force = false) {
     players.sort((a, b) => a.name.localeCompare(b.name));
     playersCache = players;
     playersCacheUpdatedAt = serverUpdatedAt;
+    writePlayersCache(players, serverUpdatedAt);
     return { players, updatedAt: serverUpdatedAt };
 }
 

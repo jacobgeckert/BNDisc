@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js?v=100';
 import { collection, getDocs, getDoc, doc, setDoc, writeBatch, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getPlayers } from './firestore.js?v=148';
+import { getPlayers } from './firestore.js?v=149';
 import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseStorageName, getCourseDisplayName } from './courseData.js?v=100';
 
 const PPS_DEFAULTS = [
