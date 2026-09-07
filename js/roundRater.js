@@ -415,9 +415,11 @@ function renderTable() {
         return;
     }
 
+    const maxNameLength = rows.reduce((max, r) => Math.max(max, (r.name || '').length), 12);
+
     tbody.innerHTML = rows.map(row => `
         <tr style="${row.eliminated ? 'background: rgba(255,105,180,0.25);' : ''}">
-            <td><input type="text" class="rr-edit-name" data-id="${row.id}" value="${escapeAttr(row.name)}" style="width: 100%; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
+            <td><input type="text" class="rr-edit-name" data-id="${row.id}" value="${escapeAttr(row.name)}" size="${maxNameLength + 2}" style="padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
             <td><input type="number" class="rr-edit-score" data-id="${row.id}" value="${row.score ?? ''}" style="width: 5rem; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); box-sizing: border-box;"></td>
             <td>${row.qualified}</td>
             <td>${formatRating(row.preRoundRating)}</td>
