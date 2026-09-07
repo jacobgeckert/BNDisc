@@ -3,7 +3,7 @@ import {
     doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, deleteDoc,
     collection, addDoc, serverTimestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { isAdmin, getRoster, saveLocalRoster } from './firestore.js?v=100';
+import { isAdmin, getRoster } from './firestore.js?v=146';
 import { LOCATIONS, COURSE_NAME_OVERRIDES, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
 
 // State and Cache
@@ -1129,11 +1129,8 @@ function initLeagueAdminManager() {
     loadLeagueAdmins();
 }
 
-const LEAGUE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1iC87kWr4spJBhu4vLJNQanl6KzZrI9BLjBH4ZZ9NljI/export?format=csv&gid=0';
-
 function initLeagueRoster() {
     const loadBtn = document.getElementById('load-league-roster');
-    const importBtn = document.getElementById('import-league-roster');
     const list = document.getElementById('league-roster-list');
     const status = document.getElementById('league-roster-status');
     const lastLoaded = document.getElementById('league-roster-last-loaded');
@@ -1147,13 +1144,13 @@ function initLeagueRoster() {
 
             const current = p.currentRating ?? '';
             const hdcp = typeof p.hdcp === 'number' ? p.hdcp.toFixed(1) : (p.hdcp ?? '');
-            const speed = p.speed ?? '';
+            const rounds = p.stats?.roundsPlayed ?? '';
 
             item.innerHTML = `
                 <div class="admin-event-info">
                     <strong>${p.name}</strong>
                     <span style="display:block; font-size:0.75rem; opacity:0.6;">
-                        Rating: ${current} • HDCP: ${hdcp} • Speed: ${speed}
+                        Rating: ${current} • HDCP: ${hdcp} • Rounds: ${rounds}
                     </span>
                 </div>
             `;
@@ -1167,19 +1164,18 @@ function initLeagueRoster() {
             return;
         }
         const date = new Date(timestamp);
-        lastLoaded.textContent = `Last loaded: ${date.toLocaleString()}`;
+        lastLoaded.textContent = `Last updated: ${date.toLocaleString()}`;
     }
 
     async function loadRosterData(force = false) {
         loadBtn.disabled = true;
-        if (importBtn) importBtn.disabled = true;
         status.textContent = 'Loading...';
         list.innerHTML = '';
 
         try {
             const result = await getRoster(force);
             if (!result || !result.roster) {
-                status.textContent = 'No players found. Import the roster first.';
+                status.textContent = 'No players found in the player database.';
                 updateLastLoaded(null);
                 return;
             }
@@ -1195,60 +1191,10 @@ function initLeagueRoster() {
             alert('Failed to load roster. Check console for details.');
         } finally {
             loadBtn.disabled = false;
-            if (importBtn) importBtn.disabled = false;
         }
     }
 
     loadBtn.onclick = () => loadRosterData(true);
-
-    if (importBtn) {
-        importBtn.onclick = async () => {
-            const currentUser = auth.currentUser;
-            if (!currentUser || !(await isAdmin(currentUser.email))) {
-                alert('Only club admins can import players.');
-                return;
-            }
-
-            loadBtn.disabled = true;
-            importBtn.disabled = true;
-            status.textContent = 'Importing players to Firestore...';
-            list.innerHTML = '';
-
-            try {
-                const response = await fetch(LEAGUE_SHEET_CSV_URL);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const csv = await response.text();
-                const players = parsePlayerRows(csv);
-
-                const rosterData = {
-                    players: players.map(player => player.data),
-                    importedAt: new Date().toISOString()
-                };
-
-                // One setDoc = 1 Firestore write regardless of player count
-                await setDoc(doc(db, 'players', 'roster'), rosterData);
-
-                // Tiny timestamp doc lets clients skip the full roster read when nothing changed
-                await setDoc(doc(db, 'players', 'lastImport'), { importedAt: rosterData.importedAt });
-
-                // Cache the imported data so the next Load doesn't re-read Firestore
-                playersCache = { players: rosterData.players, importedAt: rosterData.importedAt };
-                saveLocalRoster(playersCache);
-
-                updateLastLoaded(playersCache.importedAt);
-                status.textContent = `Imported ${players.length} players to Firestore.`;
-                alert(`Imported ${players.length} players.`);
-                renderRoster(playersCache.players);
-            } catch (error) {
-                console.error('Roster import error:', error);
-                status.textContent = `Error: ${error.message}`;
-                alert('Failed to import players. Check console for details.');
-            } finally {
-                loadBtn.disabled = false;
-                importBtn.disabled = false;
-            }
-        };
-    }
 
     // Auto-load roster when admin page initializes (use cache, no Firestore read if local exists)
     loadRosterData(false);

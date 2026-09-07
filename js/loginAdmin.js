@@ -1,6 +1,6 @@
 import { auth } from './firebase-config.js?v=100';
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { isAdmin, checkAdminEligibility } from './firestore.js?v=100';
+import { isAdmin, checkAdminEligibility } from './firestore.js?v=146';
 import { bindFirstTimeSetup } from './authSetup.js?v=100';
 
 const provider = new GoogleAuthProvider();

@@ -113,25 +113,34 @@ export function getLocalRoster() {
 export async function getRoster(force = false) {
     const local = getLocalRoster();
 
-    // If we have a cached roster and aren't forcing a refresh, return it without any Firestore call
-    if (!force && local) {
+    const lastUpdateSnap = await getDoc(doc(db, 'players', 'lastUpdate'));
+    const serverUpdatedAt = lastUpdateSnap.exists() ? lastUpdateSnap.data().updatedAt : null;
+
+    if (!force && local && serverUpdatedAt && local.importedAt === serverUpdatedAt) {
         return { roster: local, source: 'local' };
     }
 
-    const lastImportSnap = await getDoc(doc(db, 'players', 'lastImport'));
-    const serverImportedAt = lastImportSnap.exists() ? lastImportSnap.data().importedAt : null;
+    const snap = await getDocs(collection(db, 'players'));
+    const players = [];
+    snap.forEach(docSnap => {
+        if (docSnap.id === 'roster' || docSnap.id === 'lastImport' || docSnap.id === 'lastUpdate') return;
+        const data = docSnap.data() || {};
+        const rating = typeof data.currentRating === 'number' ? data.currentRating : (typeof data.initialRating === 'number' ? data.initialRating : null);
+        const rawHdcp = rating != null ? (1005 - rating) / 12 : null;
+        const hdcp = rawHdcp != null ? Math.ceil(rawHdcp * 2) / 2 : null;
+        players.push({
+            name: data.name || docSnap.id,
+            currentRating: rating,
+            hdcp,
+            stats: data.stats || null
+        });
+    });
 
-    if (local && serverImportedAt && local.importedAt === serverImportedAt) {
-        return { roster: local, source: 'local' };
-    }
+    players.sort((a, b) => a.name.localeCompare(b.name));
 
-    const rosterSnap = await getDoc(doc(db, 'players', 'roster'));
-    if (!rosterSnap.exists()) return null;
-
-    const snapData = rosterSnap.data();
     const roster = {
-        players: snapData.players || [],
-        importedAt: snapData.importedAt || null
+        players,
+        importedAt: serverUpdatedAt || new Date().toISOString()
     };
     saveLocalRoster(roster);
     return { roster, source: 'firestore' };

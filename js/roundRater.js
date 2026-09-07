@@ -605,6 +605,7 @@ async function pushRoundToDatabase() {
             playerIds,
             scores
         });
+        batch.set(doc(db, 'players', 'lastUpdate'), { updatedAt: new Date().toISOString() });
 
         await batch.commit();
         clearTable();
