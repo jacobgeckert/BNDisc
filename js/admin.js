@@ -281,11 +281,45 @@ function initMinutesForm() {
 // creating a duplicate.
 let editingEvent = null; // { monthId, event }
 
+function formatTime12Hour(timeString) {
+    const [hPart, mPart] = String(timeString || '').split(':');
+    const h = parseInt(hPart, 10);
+    const m = parseInt(mPart ?? '0', 10);
+    if (isNaN(h) || isNaN(m)) return '';
+    const period = h >= 12 ? 'PM' : 'AM';
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+// Check-in window runs from 15 minutes before tee time to 5 minutes before.
+function getCheckInWindow(teeTime) {
+    const [hPart, mPart] = String(teeTime || '').split(':');
+    const h = parseInt(hPart, 10);
+    const m = parseInt(mPart ?? '0', 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    const tee = h * 60 + m;
+    const fmt = mins => {
+        mins = Math.max(0, mins);
+        return formatTime12Hour(`${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`);
+    };
+    return `${fmt(tee - 15)} – ${fmt(tee - 5)}`;
+}
+
 function initEventForm() {
     const form = document.getElementById('event-form');
     if (!form) return;
 
     initEventLayoutSuggestions();
+
+    const timeInput = document.getElementById('event-time');
+    const checkinDisplay = document.getElementById('event-checkin-display');
+    if (timeInput && checkinDisplay) {
+        const updateCheckin = () => {
+            const window = getCheckInWindow(timeInput.value);
+            checkinDisplay.textContent = window ? `Check In: ${window}` : 'Check In: —';
+        };
+        timeInput.addEventListener('input', updateCheckin);
+        updateCheckin();
+    }
 
     const cancelBtn = document.getElementById('cancel-edit-event');
     if (cancelBtn) {
@@ -334,6 +368,7 @@ function initEventForm() {
 
                 alert("Event saved!");
                 form.reset();
+                document.getElementById('event-time').dispatchEvent(new Event('input'));
             }
 
             updateManagementUI();
@@ -436,6 +471,7 @@ function startEditEvent(monthId, event) {
     document.getElementById('event-category').value = event.category;
     document.getElementById('event-date').value = `${year}-${month}-${String(event.day).padStart(2, '0')}`;
     document.getElementById('event-time').value = event.time;
+    document.getElementById('event-time').dispatchEvent(new Event('input'));
     document.getElementById('event-loc').value = event.location;
     document.getElementById('event-league-type').value = event.leagueType || '';
     document.getElementById('event-layout').value = event.layout || '';
@@ -475,7 +511,10 @@ function cancelEditEvent() {
     editingEvent = null;
 
     const form = document.getElementById('event-form');
-    if (form) form.reset();
+    if (form) {
+        form.reset();
+        document.getElementById('event-time').dispatchEvent(new Event('input'));
+    }
 
     const heading = document.getElementById('event-form-heading');
     if (heading) heading.textContent = 'Add New Event';
