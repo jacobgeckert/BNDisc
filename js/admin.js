@@ -1081,32 +1081,25 @@ function initLeagueAdminManager() {
                 const adminItem = document.createElement('div');
                 adminItem.className = 'admin-event-item';
                 adminItem.style.flexDirection = 'column';
-                adminItem.style.alignItems = 'flex-start';
+                adminItem.style.alignItems = 'stretch';
                 adminItem.style.justifyContent = 'flex-start';
                 adminItem.style.gap = '0.5rem';
 
-                let leaguesHtml = '';
-                if (leagues.length === 0) {
-                    leaguesHtml = '<p style="opacity:0.5; font-size:0.8rem; margin:0;">No leagues assigned.</p>';
-                } else {
-                    leaguesHtml = `<div style="width:100%; display:flex; flex-direction:column; gap:0.5rem;">` +
-                        leagues.map(l => `
-                            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                                <span style="font-size:0.85rem;">${l.year} • ${l.season} • ${l.leagueType}</span>
-                                <button type="button" class="btn-delete" data-email="${data.email || d.id}" data-league='${JSON.stringify(l)}'>Remove</button>
-                            </div>
-                        `).join('') +
-                    `</div>`;
-                }
+                const leaguesHtml = leagues.length === 0
+                    ? '<p style="opacity:0.5; font-size:0.8rem; margin:0;">No leagues assigned.</p>'
+                    : leagues.map(l => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
+                            <span style="font-size:0.85rem; min-width:0;">${l.year} • ${l.season} • ${l.leagueType}</span>
+                            <button type="button" class="btn-delete" style="min-width:110px;" data-email="${data.email || d.id}" data-league='${JSON.stringify(l)}'>Remove</button>
+                        </div>
+                    `).join('');
 
                 adminItem.innerHTML = `
-                    <div class="admin-event-info" style="width:100%;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                            <strong>${data.email || d.id}</strong>
-                            <button type="button" class="btn-delete" data-admin-id="${d.id}">Remove Admin</button>
-                        </div>
-                        ${leaguesHtml}
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
+                        <strong style="color: var(--accent-color); overflow-wrap: break-word; min-width:0;">${data.email || d.id}</strong>
+                        <button type="button" class="btn-delete" style="min-width:110px;" data-admin-id="${d.id}">Remove Admin</button>
                     </div>
+                    ${leaguesHtml}
                 `;
                 list.appendChild(adminItem);
             });
