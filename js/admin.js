@@ -435,7 +435,7 @@ function startEditEvent(monthId, event) {
     const [year, month] = monthId.split('-');
     document.getElementById('event-category').value = event.category;
     document.getElementById('event-date').value = `${year}-${month}-${String(event.day).padStart(2, '0')}`;
-    document.getElementById('event-time').value = event.teeOffTime || event.time;
+    document.getElementById('event-time').value = event.time;
     document.getElementById('event-loc').value = event.location;
     document.getElementById('event-league-type').value = event.leagueType || '';
     document.getElementById('event-layout').value = event.layout || '';
@@ -705,7 +705,7 @@ function renderEventList(monthId, events) {
         const item = document.createElement('div');
         item.className = 'admin-event-item';
         const details = [
-            event.teeOffTime || event.time,
+            event.time,
             event.location,
             event.layout,
             event.leagueType
