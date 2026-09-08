@@ -23,32 +23,6 @@ function formatTime12Hour(timeString) {
     return `${h}:${m} ${period}`;
 }
 
-function parseTimeToMinutes(timeString) {
-    if (!timeString) return null;
-    const str = String(timeString).trim();
-    const ampmMatch = str.match(/([AaPp])[Mm]/);
-    const [hPart, mPart] = str.split(':');
-    let h = parseInt(hPart, 10);
-    const m = parseInt(mPart, 10);
-    if (isNaN(h) || isNaN(m)) return null;
-    if (ampmMatch) {
-        h = (h % 12) + (ampmMatch[1].toLowerCase() === 'p' ? 12 : 0);
-    }
-    return h * 60 + m;
-}
-
-function getCheckInWindow(teeTime) {
-    const tee = parseTimeToMinutes(teeTime);
-    if (tee === null) return null;
-    const fmt = mins => {
-        mins = Math.max(0, mins);
-        const hh = Math.floor(mins / 60);
-        const mm = mins % 60;
-        return formatTime12Hour(`${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`);
-    };
-    return `${fmt(tee - 15)} – ${fmt(tee - 5)}`;
-}
-
 export async function loadCurrentEvents() {
     const grid = document.getElementById('calendar-grid');
     const monthDisplay = document.getElementById('current-month-display');
@@ -124,7 +98,7 @@ export async function loadCurrentEvents() {
 
             const timeSpan = document.createElement('strong');
             timeSpan.className = 'pill-time';
-            timeSpan.textContent = formatTime12Hour(event.teeOffTime || event.time);
+            timeSpan.textContent = formatTime12Hour(event.time);
 
             const categorySpan = document.createElement('span');
             categorySpan.className = 'pill-category';
@@ -167,7 +141,6 @@ export async function loadCurrentEvents() {
 function showEventModal(event) {
     const modal = document.getElementById('event-modal');
     const title = document.getElementById('event-modal-title');
-    const checkin = document.getElementById('event-modal-checkin');
     const time = document.getElementById('event-modal-time');
     const location = document.getElementById('event-modal-location');
     const layout = document.getElementById('event-modal-layout');
@@ -175,12 +148,8 @@ function showEventModal(event) {
 
     if (!modal || !title) return;
 
-    const teeTime = event.teeOffTime || event.time;
-    const checkInWindow = getCheckInWindow(teeTime);
-
     title.textContent = event.category;
-    if (checkin) checkin.textContent = checkInWindow ? `Check In Time: ${checkInWindow}` : '';
-    time.textContent = `Tee Time: ${formatTime12Hour(teeTime)}`;
+    time.textContent = `Tee Time: ${formatTime12Hour(event.time)}`;
     location.textContent = `Location: ${event.location || 'TBD'}`;
     if (layout) layout.textContent = event.layout ? `Layout: ${event.layout}` : '';
     if (leagueType) leagueType.textContent = event.leagueType ? `League Type: ${event.leagueType}` : '';
@@ -264,9 +233,8 @@ function renderLeagueSchedule(group) {
     const rows = group.events.map(ev => {
         const dateStr = ev.date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
         const course = getCourseDisplayName(ev.location) || ev.location;
-        const teeTime = ev.teeOffTime || ev.time;
-        const checkIn = getCheckInWindow(teeTime) || formatTime12Hour(ev.time);
-        const teeOff = formatTime12Hour(teeTime);
+        const checkIn = formatTime12Hour(ev.time);
+        const teeOff = formatTime12Hour(ev.teeOffTime);
         const notes = ev.notes || ev.layout || '';
         return `
             <tr>
