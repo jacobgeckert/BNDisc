@@ -1404,6 +1404,10 @@ COURSE LISTING (Reusing about us layout with minor tweaks)
     word-break: break-word;
 }
 
+#event-modal-checkin {
+    margin-top: 0.5rem;
+}
+
 /* League Central: remove card look, place info on glass background */
 #league .admin-card {
     background: transparent !important;
