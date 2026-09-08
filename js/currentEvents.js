@@ -124,7 +124,7 @@ export async function loadCurrentEvents() {
 
             const timeSpan = document.createElement('strong');
             timeSpan.className = 'pill-time';
-            timeSpan.textContent = formatTime12Hour(event.time);
+            timeSpan.textContent = formatTime12Hour(event.teeOffTime || event.time);
 
             const categorySpan = document.createElement('span');
             categorySpan.className = 'pill-category';
@@ -264,8 +264,9 @@ function renderLeagueSchedule(group) {
     const rows = group.events.map(ev => {
         const dateStr = ev.date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
         const course = getCourseDisplayName(ev.location) || ev.location;
-        const checkIn = formatTime12Hour(ev.time);
-        const teeOff = formatTime12Hour(ev.teeOffTime);
+        const teeTime = ev.teeOffTime || ev.time;
+        const checkIn = getCheckInWindow(teeTime) || formatTime12Hour(ev.time);
+        const teeOff = formatTime12Hour(teeTime);
         const notes = ev.notes || ev.layout || '';
         return `
             <tr>
