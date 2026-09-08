@@ -1101,11 +1101,28 @@ function initLeagueAdminManager() {
 
                 adminItem.innerHTML = `
                     <div class="admin-event-info" style="width:100%;">
-                        <strong>${data.email || d.id}</strong>
+                        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                            <strong>${data.email || d.id}</strong>
+                            <button type="button" class="btn-delete" data-admin-id="${d.id}">Remove Admin</button>
+                        </div>
                         ${leaguesHtml}
                     </div>
                 `;
                 list.appendChild(adminItem);
+            });
+
+            list.querySelectorAll('[data-admin-id]').forEach(btn => {
+                btn.onclick = async () => {
+                    const adminId = btn.dataset.adminId;
+                    if (!confirm(`Remove ${adminId} as a league admin entirely? This deletes all their assigned leagues.`)) return;
+                    try {
+                        await deleteDoc(doc(db, "league_admins", adminId));
+                        loadLeagueAdmins();
+                    } catch (error) {
+                        console.error("Error removing league admin:", error);
+                        alert("Error removing league admin.");
+                    }
+                };
             });
 
             list.querySelectorAll('[data-league]').forEach(btn => {
