@@ -829,6 +829,15 @@
                             <h3>Manage Events</h3>
                             <p class="subtitle">Edit or delete an existing event.</p>
                             <div class="admin-card">
+                                <div class="form-group" style="margin-bottom: 0.75rem;">
+                                    <label for="admin-event-league-filter">Filter by League</label>
+                                    <select id="admin-event-league-filter" style="width: 100%;">
+                                        <option value="" selected>All Leagues</option>
+                                        <option value="Doubles">Doubles</option>
+                                        <option value="Handicap">Handicap</option>
+                                        <option value="Scratch">Scratch</option>
+                                    </select>
+                                </div>
                                 <div class="admin-carousel-header">
                                     <button id="prev-month" class="btn-nav">
                                         <i class="ph ph-caret-left"></i>
@@ -1398,12 +1407,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
-    <script type="module" src="js/theme.js?v=151"></script>
+    <script type="module" src="js/theme.js?v=152"></script>
     <script type="module" src="js/firebase-config.js?v=143"></script>
     <script type="module" src="js/firestore.js?v=149"></script>
     <script type="module" src="js/nav.js?v=145"></script>
     <script type="module" src="js/loginAdmin.js?v=148"></script>
-    <script type="module" src="js/admin.js?v=157"></script>
+    <script type="module" src="js/admin.js?v=158"></script>
     <script type="module" src="js/roundRater.js?v=25"></script>
     <script type="module" src="js/currentEvents.js?v=148"></script>
     <script type="module" src="js/aces.js?v=143"></script>

@@ -649,8 +649,10 @@ function initCourseRecordForm() {
 function setupEventCarousel() {
     const prevBtn = document.getElementById('prev-month');
     const nextBtn = document.getElementById('next-month');
+    const leagueFilter = document.getElementById('admin-event-league-filter');
     if (prevBtn) prevBtn.onclick = () => changeMonth(-1);
     if (nextBtn) nextBtn.onclick = () => changeMonth(1);
+    if (leagueFilter) leagueFilter.onchange = () => updateManagementUI();
 }
 
 function changeMonth(offset) {
@@ -682,12 +684,14 @@ async function updateManagementUI() {
 
 function renderEventList(monthId, events) {
     const listContainer = document.getElementById('admin-event-list');
-    listContainer.innerHTML = events.length === 0 
-        ? '<p style="opacity:0.5; padding: 1.5rem; text-align:center;">No events found.</p>' 
+    const leagueFilter = document.getElementById('admin-event-league-filter')?.value || '';
+    const filtered = leagueFilter ? events.filter(e => e.leagueType === leagueFilter) : events;
+    listContainer.innerHTML = filtered.length === 0
+        ? '<p style="opacity:0.5; padding: 1.5rem; text-align:center;">No events found.</p>'
         : '';
 
     const shortMonth = viewDate.toLocaleString('default', { month: 'short' });
-    [...events].sort((a, b) => a.day - b.day).forEach(event => {
+    [...filtered].sort((a, b) => a.day - b.day).forEach(event => {
         const item = document.createElement('div');
         item.className = 'admin-event-item';
         const details = [
