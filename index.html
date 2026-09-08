@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="css/variables.css?v=145">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css?v=155">
-    <link rel="stylesheet" href="css/calendar.css?v=143">
+    <link rel="stylesheet" href="css/calendar.css?v=144">
     <link rel="stylesheet" href="css/aces.css">
     <link rel="stylesheet" href="css/records.css">
     <link rel="stylesheet" href="css/governance.css?v=143">
@@ -828,31 +828,32 @@
                         <div class="admin-card">
                             <h3>Manage Events</h3>
                             <p class="subtitle">Edit or delete an existing event.</p>
-                            <div class="admin-card">
-                                <div class="form-group" style="margin-bottom: 0.75rem;">
-                                    <label for="admin-event-league-filter">Filter by League</label>
-                                    <select id="admin-event-league-filter" style="width: 100%;">
+                            <div class="admin-card" style="padding: 0; overflow: hidden;">
+                                <div class="calendar-header-container">
+                                    <select id="admin-event-league-filter" class="calendar-view-toggle" title="Filter by league">
                                         <option value="" selected>All Leagues</option>
                                         <option value="Doubles">Doubles</option>
                                         <option value="Handicap">Handicap</option>
                                         <option value="Scratch">Scratch</option>
                                     </select>
-                                </div>
-                                <div class="admin-carousel-header">
-                                    <button id="prev-month" class="btn-nav">
-                                        <i class="ph ph-caret-left"></i>
-                                    </button>
-                                    
-                                    <div class="current-view-info">
-                                        <h3 id="display-month-year">Month Year</h3>
-                                    </div>
 
-                                    <button id="next-month" class="btn-nav">
-                                        <i class="ph ph-caret-right"></i>
-                                    </button>
+                                    <div class="month-nav">
+                                        <button id="prev-month" class="nav-arrow" title="Previous Month">
+                                            <i class="ph ph-caret-left"></i>
+                                        </button>
+
+                                        <div class="month-title-wrap">
+                                            <h2 id="display-month-year">Month Year</h2>
+                                            <div class="accent-underline"></div>
+                                        </div>
+
+                                        <button id="next-month" class="nav-arrow" title="Next Month">
+                                            <i class="ph ph-caret-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                
-                                <div id="admin-event-list" class="admin-event-list">
+
+                                <div id="admin-event-list" class="admin-event-list" style="padding: 1rem;">
                                 </div>
                             </div>
                         </div>

@@ -72,7 +72,8 @@
     text-align: center;
 }
 
-#current-month-display {
+#current-month-display,
+#display-month-year {
     font-size: 1.8rem;
     font-weight: 800;
     margin: 0;
@@ -357,7 +358,8 @@
         flex: 0 1 auto;  /* Prevents the title from pushing arrows away */
     }
 
-    #current-month-display { 
+    #current-month-display,
+    #display-month-year { 
         font-size: 1.2rem; 
         white-space: nowrap;
     }
