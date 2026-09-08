@@ -452,6 +452,16 @@ function startEditEvent(monthId, event) {
     const cancelBtn = document.getElementById('cancel-edit-event');
     if (cancelBtn) cancelBtn.style.display = '';
 
+    // Switch to the tab containing the event form so the populated form is
+    // actually visible (the form lives in a different admin tab than the
+    // Manage Events list).
+    const formPanel = document.getElementById('event-form').closest('.admin-tab-panel');
+    if (formPanel) {
+        const tabBtn = document.querySelector(`.admin-tab-btn[data-panel="${formPanel.id}"]`);
+        if (tabBtn) tabBtn.click();
+        else formPanel.classList.add('active');
+    }
+
     // On mobile, the "Add New Event" section may be collapsed; expand it and
     // scroll it into view so the populated form is visible.
     const eventCard = document.getElementById('event-form').closest('.admin-card');
