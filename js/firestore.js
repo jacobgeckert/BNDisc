@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js?v=100';
-import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Firestore read counter — logs document reads to the console for debugging.
 let firestoreReadCount = 0;
@@ -286,4 +286,10 @@ export async function refreshCachedDoc(collection, docId, ttlMs = DEFAULT_DOC_TT
 
 export function seedDocCache(collection, docId, data) {
     writeDocCache(collection, docId, data);
+}
+
+export async function getRounds() {
+    const snap = await getDocs(query(collection(db, 'rounds'), orderBy('date', 'desc')));
+    trackRead(snap.size, 'rounds (collection)');
+    return snap;
 }

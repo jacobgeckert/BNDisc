@@ -1,6 +1,4 @@
-import { db } from './firebase-config.js?v=100';
-import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getPlayers } from './firestore.js?v=151';
+import { getPlayers, getRounds } from './firestore.js?v=152';
 
 let roundsData = [];
 let roundsById = {};
@@ -250,7 +248,7 @@ async function loadData() {
 
     try {
         const [roundsSnap, playersResult] = await Promise.all([
-            getDocs(query(collection(db, 'rounds'), orderBy('date', 'desc'))),
+            getRounds(),
             getPlayers()
         ]);
 
