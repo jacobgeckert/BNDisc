@@ -591,6 +591,42 @@ async function loadCourseSuggestions() {
             recPark.addEventListener('change', updateLayoutList);
         }
         updateLayoutList();
+
+        // Custom dropdown of park names that exist in the course_records
+        // collection (plus defaults), matching the event form's style.
+        const recLocSuggestions = document.getElementById('rec-location-suggestions');
+        if (recLocSuggestions && recPark) {
+            const parks = [...suggestedParks].sort((a, b) => a.localeCompare(b));
+            const updateParkSuggestions = () => {
+                const term = (recPark.value || '').toLowerCase();
+                const matches = parks.filter(p => p.toLowerCase().includes(term));
+                recLocSuggestions.innerHTML = '';
+                if (matches.length === 0) {
+                    recLocSuggestions.style.display = 'none';
+                    return;
+                }
+                matches.forEach(p => {
+                    const div = document.createElement('div');
+                    div.textContent = p;
+                    div.style.cssText = 'padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--glass-border);';
+                    div.onmousedown = (e) => {
+                        e.preventDefault();
+                        recPark.value = p;
+                        recLocSuggestions.style.display = 'none';
+                        updateLayoutList();
+                    };
+                    div.onmouseenter = () => div.style.background = 'var(--hover-bg, rgba(255,255,255,0.1))';
+                    div.onmouseleave = () => div.style.background = '';
+                    recLocSuggestions.appendChild(div);
+                });
+                recLocSuggestions.style.display = 'block';
+            };
+            recPark.addEventListener('input', updateParkSuggestions);
+            recPark.addEventListener('focus', updateParkSuggestions);
+            recPark.addEventListener('blur', () => {
+                setTimeout(() => { recLocSuggestions.style.display = 'none'; }, 150);
+            });
+        }
     } catch (error) {
         console.error('Error loading course suggestions:', error);
     }
