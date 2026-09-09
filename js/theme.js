@@ -5,7 +5,7 @@ import { auth } from './firebase-config.js?v=100';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { checkAdminAccess } from './loginAdmin.js?v=151';
 import { checkLeagueAccess } from './loginLeague.js?v=151';
-import { loadCurrentEvents } from './currentEvents.js?v=153'; 
+import { loadCurrentEvents } from './currentEvents.js?v=154'; 
 import { initAdminForm } from './admin.js?v=166'; // Ensure this is imported
 
 // --- 1. Theme Initialization ---

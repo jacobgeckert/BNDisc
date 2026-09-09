@@ -233,18 +233,8 @@ function getSeasonFromMonth(month) {
     return 'Winter';
 }
 
-function getCheckInEndTime(checkInTime, teeOffTime) {
-    if (!checkInTime || !teeOffTime) return null;
-    const [ch, cm] = String(checkInTime).split(':').map(Number);
-    const [th, tm] = String(teeOffTime).split(':').map(Number);
-    if (isNaN(ch) || isNaN(th)) return null;
-    const startMinutes = ch * 60 + cm;
-    let endMinutes = th * 60 + tm - 5;
-    if (endMinutes < startMinutes) endMinutes = startMinutes;
-    const eh = Math.floor(endMinutes / 60);
-    const em = endMinutes % 60;
-    return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
-}
+// The event `time` field is the tee time. Check-in runs from 15 minutes
+// before tee time to 5 minutes before (see getCheckInWindow above).
 
 function renderLeagueSchedule(group) {
     const container = document.getElementById('league-schedule-table');
@@ -263,8 +253,8 @@ function renderLeagueSchedule(group) {
     const rows = group.events.map(ev => {
         const dateStr = ev.date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
         const course = getCourseDisplayName(ev.location) || ev.location;
-        const checkIn = formatTime12Hour(ev.time);
-        const teeOff = formatTime12Hour(ev.teeOffTime);
+        const checkIn = getCheckInWindow(ev.time) || '';
+        const teeOff = formatTime12Hour(ev.time);
         const notes = ev.notes || ev.layout || '';
         return `
             <tr>
