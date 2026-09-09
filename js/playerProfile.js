@@ -1,4 +1,11 @@
-import { getPlayers } from './firestore.js?v=149';
+import { getPlayers, getFirestoreReadCount, READ_COUNT_EVENT } from './firestore.js?v=150';
+
+function updateReadCountDisplay() {
+    const el = document.getElementById('player-profile-reads');
+    if (el) el.textContent = `Firestore reads: ${getFirestoreReadCount()}`;
+}
+window.addEventListener(READ_COUNT_EVENT, updateReadCountDisplay);
+updateReadCountDisplay();
 
 let playerCache = null;
 let isLoading = false;

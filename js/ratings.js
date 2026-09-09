@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js?v=100';
 import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getPlayers } from './firestore.js?v=149';
+import { getPlayers } from './firestore.js?v=150';
 
 let roundsData = [];
 let roundsById = {};
