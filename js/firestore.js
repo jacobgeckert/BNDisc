@@ -1,18 +1,11 @@
 import { db } from './firebase-config.js?v=100';
 import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Firestore read counter — counts document reads made through this module so
-// screens can display how expensive their data fetches are.
+// Firestore read counter — logs document reads to the console for debugging.
 let firestoreReadCount = 0;
-export const READ_COUNT_EVENT = 'bndisc:firestore-reads';
-export function getFirestoreReadCount() { return firestoreReadCount; }
-export function resetFirestoreReadCount() {
-    firestoreReadCount = 0;
-    window.dispatchEvent(new CustomEvent(READ_COUNT_EVENT, { detail: firestoreReadCount }));
-}
-function trackRead(n = 1) {
+function trackRead(n = 1, label = '') {
     firestoreReadCount += n;
-    window.dispatchEvent(new CustomEvent(READ_COUNT_EVENT, { detail: firestoreReadCount }));
+    console.debug(`[Firestore] ${label ? label + ' ' : ''}+${n} read${n === 1 ? '' : 's'} (total: ${firestoreReadCount})`);
 }
 
 export async function isLeagueAdmin(email) {
@@ -26,14 +19,14 @@ export async function isLeagueAdmin(email) {
         // 1. Try matching document ID first (lowercase email as ID)
         const leagueAdminDocRef = doc(db, "league_admins", cleanEmail);
         const docSnap = await getDoc(leagueAdminDocRef);
-        trackRead();
+        trackRead(1, `league_admins/${cleanEmail}`);
         if (docSnap.exists()) {
             return { isAdmin: true, leagues: docSnap.data().leagues || [] };
         }
 
         // 2. Fallback: scan collection for a matching 'email' field or case-insensitive doc ID
         const snap = await getDocs(collection(db, "league_admins"));
-        trackRead(snap.size);
+        trackRead(snap.size, 'league_admins (scan)');
         const match = snap.docs.find(d => {
             const id = d.id.toLowerCase().trim();
             const field = (d.data().email || '').toString().toLowerCase().trim();
@@ -64,7 +57,7 @@ export async function checkLeagueAdminEligibility(email) {
 
     const leagueAdminDocRef = doc(db, "league_admins", cleanEmail);
     const docSnap = await getDoc(leagueAdminDocRef);
-    trackRead();
+    trackRead(1, `league_admins/${cleanEmail}`);
     if (docSnap.exists()) {
         return { isAdmin: true, leagues: docSnap.data().leagues || [] };
     }
@@ -79,7 +72,7 @@ export async function checkAdminEligibility(email) {
 
     const adminDocRef = doc(db, "admins", cleanEmail);
     const docSnap = await getDoc(adminDocRef);
-    trackRead();
+    trackRead(1, `admins/${cleanEmail}`);
     return docSnap.exists();
 }
 
@@ -94,7 +87,7 @@ export async function isAdmin(email) {
         
         const adminDocRef = doc(db, "admins", cleanEmail);
         const docSnap = await getDoc(adminDocRef);
-        trackRead();
+        trackRead(1, `admins/${cleanEmail}`);
         
         if (docSnap.exists()) {
             console.log("✅ Admin match found in Firestore!");
@@ -167,7 +160,7 @@ function writePlayersCache(players, updatedAt) {
 
 export async function getPlayers(force = false) {
     const lastUpdateSnap = await getDoc(doc(db, 'players', 'lastUpdate'));
-    trackRead();
+    trackRead(1, 'players/lastUpdate');
     const serverUpdatedAt = lastUpdateSnap.exists() ? lastUpdateSnap.data().updatedAt : null;
 
     if (!force && playersCache && playersCacheUpdatedAt === serverUpdatedAt) {
@@ -182,7 +175,7 @@ export async function getPlayers(force = false) {
     }
 
     const snap = await getDocs(collection(db, 'players'));
-    trackRead(snap.size);
+    trackRead(snap.size, 'players (collection)');
     const players = [];
     snap.forEach(docSnap => {
         if (docSnap.id === 'roster' || docSnap.id === 'lastImport' || docSnap.id === 'lastUpdate') return;
@@ -266,7 +259,7 @@ async function fetchDocAndCache(collection, docId) {
     const promise = (async () => {
         try {
             const snap = await getDoc(doc(db, collection, docId));
-            trackRead();
+            trackRead(1, `${collection}/${docId}`);
             const data = snap.exists() ? snap.data() : null;
             writeDocCache(collection, docId, data);
             return data;
