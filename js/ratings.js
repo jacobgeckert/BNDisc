@@ -53,10 +53,17 @@ function buildRoundTable(round) {
 
         if (player && player.history) {
             const history = player.history.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
-            const idx = history.findIndex(h => h.roundId === round.id);
+            let idx = history.findIndex(h => h.roundId === round.id);
+            // History entries pushed before roundId was stored won't match by ID;
+            // fall back to matching by round date so the previous rating isn't
+            // mistaken for the player's initial rating.
+            if (idx < 0) idx = history.findIndex(h => h.date === round.date && typeof h.rating === 'number');
             if (idx >= 0) {
                 previousRating = idx > 0 ? calculateCurrentRating(history.slice(0, idx)) : (player.initialRating ?? null);
                 newRating = calculateCurrentRating(history.slice(0, idx + 1));
+            } else {
+                const prior = history.filter(h => (h.date || '') < (round.date || ''));
+                if (prior.length) previousRating = calculateCurrentRating(prior);
             }
         }
 
