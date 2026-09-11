@@ -4,6 +4,16 @@ import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/fireba
 const yearSelect = document.getElementById('bag-tag-year');
 const list = document.getElementById('bag-tags-list');
 
+function toProperCase(name) {
+    const s = String(name);
+    // Leave already mixed-case names untouched (e.g. "DeVito"); only
+    // normalize names stored in all-upper or all-lower case.
+    if (s !== s.toUpperCase() && s !== s.toLowerCase()) return s;
+    return s.toLowerCase()
+        .replace(/(^|[\s\-'])([a-z])/g, (_, sep, ch) => sep + ch.toUpperCase())
+        .replace(/\bMc([a-z])/g, (_, ch) => 'Mc' + ch.toUpperCase());
+}
+
 async function loadBagTags(year) {
     if (!list) return;
     if (!year) {
@@ -46,7 +56,8 @@ async function loadBagTags(year) {
                 </tr>
             </thead>
         `;
-        const IGNORED_OWNERS = new Set(['Unknown', 'League Box']);
+        const IGNORED_OWNERS = new Set(['unknown', 'league box']);
+        const isIgnored = owner => IGNORED_OWNERS.has(String(owner).toLowerCase());
 
         // Determine, for each owner appearing on more than one tag, the most
         // recent date they were seen on. Any tag entry for that owner with an
@@ -55,20 +66,22 @@ async function loadBagTags(year) {
         entries.forEach(([, info]) => {
             const owner = info.lastReportedOwner;
             const date = info.lastReportedDateSeen;
-            if (!owner || !date || IGNORED_OWNERS.has(owner)) return;
-            if (!latestDateByOwner[owner] || date > latestDateByOwner[owner]) {
-                latestDateByOwner[owner] = date;
+            if (!owner || !date || isIgnored(owner)) return;
+            const key = String(owner).toLowerCase();
+            if (!latestDateByOwner[key] || date > latestDateByOwner[key]) {
+                latestDateByOwner[key] = date;
             }
         });
 
         const tbody = document.createElement('tbody');
         entries.forEach(([tagNum, info], i) => {
-            const owner = info.lastReportedOwner || 'Unknown';
+            const rawOwner = info.lastReportedOwner || 'Unknown';
+            const owner = toProperCase(rawOwner);
             const date = info.lastReportedDateSeen || '—';
-            const isSuperseded = !IGNORED_OWNERS.has(owner) &&
+            const isSuperseded = !isIgnored(rawOwner) &&
                 info.lastReportedDateSeen &&
-                latestDateByOwner[owner] &&
-                info.lastReportedDateSeen < latestDateByOwner[owner];
+                latestDateByOwner[rawOwner.toLowerCase()] &&
+                info.lastReportedDateSeen < latestDateByOwner[rawOwner.toLowerCase()];
             const ownerHtml = isSuperseded ? `<s>${owner}</s>` : owner;
             const row = document.createElement('tr');
             row.style.cssText = `border-bottom: 1px solid var(--glass-border); background: ${i % 2 === 0 ? 'var(--bg-color)' : 'var(--sidebar-bg)'};`;
