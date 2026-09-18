@@ -170,6 +170,52 @@ function buildLeadersTable(year) {
     `;
 }
 
+function buildMostImproved(year) {
+    const eligibleRounds = roundsData.filter(r => getRoundYear(r) === year && isScratchOrHandicap(r));
+    const totalRounds = eligibleRounds.length;
+    const threshold = totalRounds > 0 ? Math.ceil(totalRounds * 0.25) : 0;
+    const eligibleRoundIds = new Set(eligibleRounds.map(r => r.id));
+
+    let best = null;
+    Object.values(playersById).forEach(player => {
+        const history = (player.history || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.roundId || '').localeCompare(b.roundId || ''));
+        const yearIndices = [];
+        history.forEach((h, i) => {
+            const roundYear = h.date ? new Date(h.date).getUTCFullYear() : null;
+            if (roundYear === year && eligibleRoundIds.has(h.roundId) && typeof h.rating === 'number') {
+                yearIndices.push(i);
+            }
+        });
+        if (yearIndices.length === 0 || yearIndices.length < threshold) return;
+
+        const startRating = calculateCurrentRating(history.slice(0, yearIndices[0] + 1));
+        const endRating = calculateCurrentRating(history);
+        if (typeof startRating !== 'number' || typeof endRating !== 'number') return;
+
+        const delta = endRating - startRating;
+        if (!best || delta > best.delta || (delta === best.delta && (player.name || '') < best.name)) {
+            best = { name: player.name || 'Unknown', startRating, endRating, delta };
+        }
+    });
+
+    const body = best && best.delta > 0 ? `
+        <p style="margin: 0; font-size: 1.25rem; font-weight: 700;">${best.name}</p>
+        <p style="margin: 0.25rem 0 0; opacity: 0.85;">
+            ${formatRating(best.startRating)} &rarr; ${formatRating(best.endRating)}
+            <span style="color: var(--accent-color); font-weight: 700;">(+${Math.round(best.delta)})</span>
+        </p>
+    ` : `
+        <p style="margin: 0; opacity: 0.6; font-size: 0.9rem;">No qualifying player has improved their rating yet in ${year}.</p>
+    `;
+
+    return `
+        <div style="margin-top: 1.5rem; text-align: center; border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem;">
+            <h3 style="margin: 0 0 0.5rem; font-size: 1rem; font-weight: 700; color: var(--accent-color);">Most Improved</h3>
+            ${body}
+        </div>
+    `;
+}
+
 function render(container) {
     if (roundsData.length === 0) {
         container.innerHTML = '<p style="opacity: 0.7;">No rated rounds in the database yet.</p>';
@@ -208,7 +254,7 @@ function render(container) {
             </div>
             <button type="button" id="ratings-leaders" class="calendar-view-toggle">${isRound ? `${year} League Leaders` : 'Round Results'}</button>
         </div>
-        ${isRound ? buildRoundTable(round) : buildLeadersTable(year)}
+        ${isRound ? buildRoundTable(round) : buildLeadersTable(year) + buildMostImproved(year)}
     `;
 
     const leadersBtn = container.querySelector('#ratings-leaders');
