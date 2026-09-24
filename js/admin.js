@@ -1082,8 +1082,9 @@ function getSeasonFromMonth(month) {
     return 'Winter';
 }
 
-// Returns display names (falling back to emails) for league admins whose
-// assignments include the given year/season/leagueType.
+// Returns display names for league admins whose assignments include the
+// given year/season/leagueType. Admins without a name are skipped so their
+// email is never shown publicly.
 function leagueDirectorsFor(admins, year, season, leagueType) {
     const names = [];
     admins.forEach(a => {
@@ -1092,7 +1093,7 @@ function leagueDirectorsFor(admins, year, season, leagueType) {
             l.season === season &&
             l.leagueType === leagueType
         );
-        if (match) names.push(a.name || a.email || a.id);
+        if (match && a.name) names.push(a.name);
     });
     return names.sort();
 }

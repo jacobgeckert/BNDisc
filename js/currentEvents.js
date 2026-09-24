@@ -185,7 +185,8 @@ function showEventModal(event) {
     if (layout) layout.textContent = event.layout ? `Layout: ${event.layout}` : '';
     if (leagueType) leagueType.textContent = event.leagueType ? `League Type: ${event.leagueType}` : '';
     if (directors) {
-        const names = Array.isArray(event.directors) ? event.directors : [];
+        const names = (Array.isArray(event.directors) ? event.directors : [])
+            .filter(n => typeof n === 'string' && n.trim() && !n.includes('@'));
         directors.textContent = names.length
             ? `League Director${names.length > 1 ? 's' : ''}: ${names.join(', ')}`
             : '';
