@@ -1208,14 +1208,14 @@ function initLeagueAdminManager() {
                     : leagues.map(l => `
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
                             <span style="font-size:0.85rem; min-width:0;">${l.year} • ${l.season} • ${l.leagueType}</span>
-                            <button type="button" class="btn-delete" style="min-width:110px;" data-email="${data.email || d.id}" data-league='${JSON.stringify(l)}'>Remove</button>
+                            <button type="button" class="btn-delete" style="width:120px;" data-email="${data.email || d.id}" data-league='${JSON.stringify(l)}'>Remove</button>
                         </div>
                     `).join('');
 
                 adminItem.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
                         <strong style="color: var(--accent-color); overflow-wrap: break-word; min-width:0;">${data.name ? `${data.name} — ` : ''}${data.email || d.id}</strong>
-                        <button type="button" class="btn-delete" style="min-width:110px;" data-admin-id="${d.id}">Remove Admin</button>
+                        <button type="button" class="btn-delete" style="width:120px;" data-admin-id="${d.id}">Remove Admin</button>
                     </div>
                     ${leaguesHtml}
                 `;

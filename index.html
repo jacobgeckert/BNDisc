@@ -1249,13 +1249,15 @@
                                     <label for="league-admin-name">Director Name</label>
                                     <input type="text" id="league-admin-name" required placeholder="Shown on calendar event popups">
                                 </div>
-                                <button type="submit" id="submit-league-admin" class="btn-primary" style="margin-top: 1rem;">
-                                    <span>Add League Admin</span>
-                                </button>
+                                <div style="display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem;">
+                                    <button type="submit" id="submit-league-admin" class="btn-primary">
+                                        <span>Add League Admin</span>
+                                    </button>
+                                    <button type="button" id="sync-directors-btn" class="btn-primary">
+                                        <span>Sync Calendar Directors</span>
+                                    </button>
+                                </div>
                             </form>
-                            <button type="button" id="sync-directors-btn" class="btn-primary" style="margin-top: 0.75rem;">
-                                <span>Sync Calendar Directors</span>
-                            </button>
                             <p id="sync-directors-status" style="margin: 0.5rem 0 0; font-size: 0.85rem; opacity: 0.7;"></p>
 
                             <div id="league-admin-list" class="admin-event-list" style="margin-top: 1.5rem;"></div>
@@ -1426,7 +1428,7 @@
     <script type="module" src="js/firestore.js?v=152"></script>
     <script type="module" src="js/nav.js?v=145"></script>
     <script type="module" src="js/loginAdmin.js?v=151"></script>
-    <script type="module" src="js/admin.js?v=168"></script>
+    <script type="module" src="js/admin.js?v=169"></script>
     <script type="module" src="js/roundRater.js?v=28"></script>
     <script type="module" src="js/currentEvents.js?v=156"></script>
     <script type="module" src="js/aces.js?v=143"></script>
