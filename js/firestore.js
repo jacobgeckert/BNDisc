@@ -288,6 +288,14 @@ export function seedDocCache(collection, docId, data) {
     writeDocCache(collection, docId, data);
 }
 
+export function clearDocCache(collection, docId) {
+    try {
+        localStorage.removeItem(docCacheKey(collection, docId));
+    } catch (e) {
+        console.warn('Could not clear doc cache:', e);
+    }
+}
+
 export async function getRounds() {
     const snap = await getDocs(query(collection(db, 'rounds'), orderBy('date', 'desc')));
     trackRead(snap.size, 'rounds (collection)');

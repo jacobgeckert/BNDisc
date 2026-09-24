@@ -1,4 +1,4 @@
-import { getPlayers } from './firestore.js?v=152';
+import { getPlayers } from './firestore.js?v=153';
 
 let playerCache = null;
 let isLoading = false;

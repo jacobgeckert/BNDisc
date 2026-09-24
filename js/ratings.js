@@ -1,4 +1,4 @@
-import { getPlayers, getRounds } from './firestore.js?v=152';
+import { getPlayers, getRounds } from './firestore.js?v=153';
 
 let roundsData = [];
 let roundsById = {};
