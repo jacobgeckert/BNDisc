@@ -275,7 +275,17 @@ function renderLeagueSchedule(group) {
         `;
     }).join('');
 
+    const directors = [...new Set(
+        group.events.flatMap(ev => Array.isArray(ev.directors) ? ev.directors : [])
+    )].filter(n => typeof n === 'string' && n.trim() && !n.includes('@'));
+
+    const directorsHtml = directors.length
+        ? `<p style="margin: 0 0 0.5rem;">League Director${directors.length > 1 ? 's' : ''}:</p>
+           <ul style="margin: 0 0 1rem; padding-left: 1.25rem;">${directors.map(n => `<li>${n}</li>`).join('')}</ul>`
+        : '';
+
     container.innerHTML = `
+        ${directorsHtml}
         <div class="league-schedule-wrapper" style="overflow-x: auto;">
             <table class="league-schedule-table">
                 <thead>
