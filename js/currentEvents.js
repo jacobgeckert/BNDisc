@@ -172,6 +172,7 @@ function showEventModal(event) {
     const location = document.getElementById('event-modal-location');
     const layout = document.getElementById('event-modal-layout');
     const leagueType = document.getElementById('event-modal-league-type');
+    const directors = document.getElementById('event-modal-directors');
 
     if (!modal || !title) return;
 
@@ -183,6 +184,12 @@ function showEventModal(event) {
     location.textContent = `Location: ${event.location || 'TBD'}`;
     if (layout) layout.textContent = event.layout ? `Layout: ${event.layout}` : '';
     if (leagueType) leagueType.textContent = event.leagueType ? `League Type: ${event.leagueType}` : '';
+    if (directors) {
+        const names = Array.isArray(event.directors) ? event.directors : [];
+        directors.textContent = names.length
+            ? `League Director${names.length > 1 ? 's' : ''}: ${names.join(', ')}`
+            : '';
+    }
 
     modal.classList.add('active');
     modal.setAttribute('aria-hidden', 'false');

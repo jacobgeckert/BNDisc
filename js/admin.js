@@ -314,6 +314,16 @@ function initEventForm() {
                 createdAt: editingEvent ? editingEvent.event.createdAt : new Date().toISOString()
             };
 
+            // Stamp the league director names onto the event so the public
+            // calendar popup can show them without reading league_admins
+            // (which is not publicly listable).
+            if (category === 'League' && newEvent.leagueType) {
+                const season = getSeasonFromMonth(parseInt(month, 10));
+                const adminsSnap = await getDocs(collection(db, 'league_admins'));
+                const admins = adminsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                newEvent.directors = leagueDirectorsFor(admins, year, season, newEvent.leagueType);
+            }
+
             if (editingEvent) {
                 // Remove the original event (possibly from a different month's bundle)
                 // and add the updated version.
@@ -1064,6 +1074,61 @@ function renderRandomizerResults(generated, container) {
     });
 }
 
+// Same season mapping as currentEvents.js (month is 1-12).
+function getSeasonFromMonth(month) {
+    if (month >= 3 && month <= 5) return 'Spring';
+    if (month >= 6 && month <= 8) return 'Summer';
+    if (month >= 9 && month <= 11) return 'Fall';
+    return 'Winter';
+}
+
+// Returns display names (falling back to emails) for league admins whose
+// assignments include the given year/season/leagueType.
+function leagueDirectorsFor(admins, year, season, leagueType) {
+    const names = [];
+    admins.forEach(a => {
+        const match = (a.leagues || []).some(l =>
+            String(l.year) === String(year) &&
+            l.season === season &&
+            l.leagueType === leagueType
+        );
+        if (match) names.push(a.name || a.email || a.id);
+    });
+    return names.sort();
+}
+
+// Rewrites the `directors` array on every League event in event_bundles so
+// existing calendar events pick up current league admin assignments.
+async function syncEventDirectors(statusEl) {
+    const adminsSnap = await getDocs(collection(db, 'league_admins'));
+    const admins = adminsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const bundlesSnap = await getDocs(collection(db, 'event_bundles'));
+    let updated = 0;
+
+    for (const docSnap of bundlesSnap.docs) {
+        const monthId = docSnap.id;
+        const [year, month] = monthId.split('-').map(Number);
+        if (!year || !month) continue;
+        const season = getSeasonFromMonth(month);
+
+        const events = docSnap.data().events || [];
+        for (const ev of events) {
+            if (ev.category !== 'League' || !ev.leagueType) continue;
+            const directors = leagueDirectorsFor(admins, year, season, ev.leagueType);
+            if (JSON.stringify(ev.directors || []) === JSON.stringify(directors)) continue;
+
+            const ref = doc(db, 'event_bundles', monthId);
+            await setDoc(ref, { events: arrayRemove(ev) }, { merge: true });
+            await setDoc(ref, { events: arrayUnion({ ...ev, directors }) }, { merge: true });
+            delete eventCache[monthId];
+            updated++;
+        }
+    }
+
+    if (statusEl) statusEl.textContent = `Synced directors on ${updated} event${updated === 1 ? '' : 's'}.`;
+}
+
 /**
  * League Admin Manager
  * Add/remove league admins from the 'league_admins' collection.
@@ -1082,6 +1147,7 @@ function initLeagueAdminManager() {
         const year = document.getElementById('league-admin-year').value;
         const season = document.getElementById('league-admin-season').value;
         const leagueType = document.getElementById('league-admin-type').value;
+        const name = document.getElementById('league-admin-name').value.trim();
 
         try {
             const cleanEmail = email.toLowerCase();
@@ -1094,11 +1160,16 @@ function initLeagueAdminManager() {
                 createdAt: new Date().toISOString()
             };
 
-            // Store each league inside a 'leagues' array on the admin doc
-            await setDoc(doc(db, "league_admins", cleanEmail), {
-                email,
-                leagues: arrayUnion(newLeague)
-            }, { merge: true });
+            // Drop any existing assignment for the same league so re-adding
+            // updates it (e.g. to set the director name) instead of duplicating.
+            const adminRef = doc(db, "league_admins", cleanEmail);
+            const existingSnap = await getDoc(adminRef);
+            const kept = (existingSnap.exists() ? existingSnap.data().leagues || [] : [])
+                .filter(l => !(String(l.year) === String(newLeague.year) && l.season === season && l.leagueType === leagueType));
+
+            const payload = { email, leagues: [...kept, newLeague] };
+            if (name) payload.name = name;
+            await setDoc(adminRef, payload, { merge: true });
 
             alert(`League added for ${email}`);
             form.reset();
@@ -1142,7 +1213,7 @@ function initLeagueAdminManager() {
 
                 adminItem.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
-                        <strong style="color: var(--accent-color); overflow-wrap: break-word; min-width:0;">${data.email || d.id}</strong>
+                        <strong style="color: var(--accent-color); overflow-wrap: break-word; min-width:0;">${data.name ? `${data.name} — ` : ''}${data.email || d.id}</strong>
                         <button type="button" class="btn-delete" style="min-width:110px;" data-admin-id="${d.id}">Remove Admin</button>
                     </div>
                     ${leaguesHtml}
@@ -1184,6 +1255,23 @@ function initLeagueAdminManager() {
             console.error("Error loading league admins:", error);
             list.innerHTML = '<p style="color: #e74c3c; text-align:center;">Unable to load league admins.</p>';
         }
+    }
+
+    const syncBtn = document.getElementById('sync-directors-btn');
+    const syncStatus = document.getElementById('sync-directors-status');
+    if (syncBtn) {
+        syncBtn.onclick = async () => {
+            syncBtn.disabled = true;
+            if (syncStatus) syncStatus.textContent = 'Syncing directors to calendar events...';
+            try {
+                await syncEventDirectors(syncStatus);
+            } catch (error) {
+                console.error('Error syncing directors:', error);
+                if (syncStatus) syncStatus.textContent = 'Sync failed. See console for details.';
+            } finally {
+                syncBtn.disabled = false;
+            }
+        };
     }
 
     loadLeagueAdmins();
