@@ -187,8 +187,8 @@ function showEventModal(event) {
     if (directors) {
         const names = (Array.isArray(event.directors) ? event.directors : [])
             .filter(n => typeof n === 'string' && n.trim() && !n.includes('@'));
-        directors.textContent = names.length
-            ? `League Director${names.length > 1 ? 's' : ''}: ${names.join(', ')}`
+        directors.innerHTML = names.length
+            ? `League Director${names.length > 1 ? 's' : ''}:<ul style="margin: 0.25rem 0 0; padding-left: 1.25rem;">${names.map(n => `<li>${n}</li>`).join('')}</ul>`
             : '';
     }
 
