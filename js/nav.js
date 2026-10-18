@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Map Hashes to their Background Element IDs
         const bgMap = {
+            '#club-challenge': 'club-challenge-bg',
             '#events': 'upcoming-bg',
             '#courses': 'courses-bg',
             '#ratings': 'ratings-bg',

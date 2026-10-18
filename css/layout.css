@@ -188,6 +188,41 @@
     .content { padding: 5rem 1.5rem; }
 }
 
+/* Special Event nav link (matches the purple "Special Event" calendar legend) */
+.nav-links a[href="#club-challenge"] {
+    color: #c4b5fd;
+}
+
+.nav-links a[href="#club-challenge"]:hover,
+.nav-links li.active a[href="#club-challenge"] {
+    color: #a78bfa;
+}
+
+/* Gold sparkles pinned to both edges of the link, label centered */
+.cc-sparkle {
+    color: #fbbf24;
+}
+
+.cc-label {
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Club Challenge schedule image */
+.club-challenge-content {
+    display: flex;
+    justify-content: center;
+}
+
+.club-challenge-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+}
+
 /* 1. Hide the admin link by default */
 .nav-links a[href="#admin"] {
     display: none !important;

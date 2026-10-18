@@ -8,8 +8,8 @@
     <meta http-equiv="Expires" content="0">
     <title>BNDisc</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
-    <link rel="stylesheet" href="css/variables.css?v=145">
-    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/variables.css?v=146">
+    <link rel="stylesheet" href="css/layout.css?v=146">
     <link rel="stylesheet" href="css/components.css?v=156">
     <link rel="stylesheet" href="css/calendar.css?v=144">
     <link rel="stylesheet" href="css/aces.css">
@@ -31,6 +31,7 @@
             </div>
             
             <ul class="nav-links">
+                <li><a href="#club-challenge" data-link><i class="ph ph-sparkle cc-sparkle"></i><span class="cc-label"><i class="ph ph-swords"></i> Club Challenge</span><i class="ph ph-sparkle cc-sparkle"></i></a></li>
                 <li class="active"><a href="#events" data-link><i class="ph ph-calendar-check"></i> <span>Current Events</span></a></li>
                 <li><a href="#courses" data-link><i class="ph ph-map-trifold"></i> <span>Local Courses</span></a></li>
                 <li><a href="#league" data-link><i class="ph ph-users"></i> <span>League Central</span></a></li>
@@ -47,7 +48,21 @@
     </nav>
 
     <main class="content">
-        
+
+        <div id="club-challenge-bg" class="challenge-bg-overlay"></div>
+        <section id="club-challenge" class="content-section">
+            <div class="about-container">
+                <div class="about-header">
+                    <h1>Club Challenge</h1>
+                    <div class="accent-underline"></div>
+                </div>
+
+                <div class="about-content club-challenge-content">
+                    <img src="assets/club-challenge.png" alt="Club Challenge match schedule — Round 1 and Round 2 singles and doubles tee assignments">
+                </div>
+            </div>
+        </section>
+
         <div id="upcoming-bg" class="upcoming-bg-overlay"></div>
         <section id="events" class="content-section">
             <div class="about-container">
@@ -1426,7 +1441,7 @@
     <script type="module" src="js/theme.js?v=163"></script>
     <script type="module" src="js/firebase-config.js?v=143"></script>
     <script type="module" src="js/firestore.js?v=153"></script>
-    <script type="module" src="js/nav.js?v=145"></script>
+    <script type="module" src="js/nav.js?v=146"></script>
     <script type="module" src="js/loginAdmin.js?v=151"></script>
     <script type="module" src="js/admin.js?v=170"></script>
     <script type="module" src="js/roundRater.js?v=28"></script>

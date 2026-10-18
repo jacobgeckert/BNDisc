@@ -41,7 +41,8 @@ body {
 .records-bg-overlay,
 .about-bg-overlay,
 .league-bg-overlay,
-.profile-bg-overlay {
+.profile-bg-overlay,
+.challenge-bg-overlay {
     position: fixed;
     top: 0;
     left: 260px; /* Offset for 260px sidebar */
@@ -113,6 +114,13 @@ body {
     background-position: 50% center;
 }
 
+/* 9. Club Challenge (6.jpg) */
+.challenge-bg-overlay {
+    background: linear-gradient(var(--overlay-color), var(--overlay-color)), url('../assets/6.jpg');
+    background-size: 110% auto;
+    background-position: 50% center;
+}
+
 /* ==========================================================================
    MOBILE BACKGROUND FIXES
    ========================================================================== */
@@ -124,7 +132,8 @@ body {
     .records-bg-overlay,
     .about-bg-overlay,
     .league-bg-overlay,
-    .profile-bg-overlay {
+    .profile-bg-overlay,
+    .challenge-bg-overlay {
         left: 0;
         width: 100%;
         /* 'scroll' works better than 'fixed' on mobile to prevent tiling/zoom bugs */
