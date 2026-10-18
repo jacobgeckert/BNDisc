@@ -188,8 +188,9 @@
     .content { padding: 5rem 1.5rem; }
 }
 
-/* Special Event nav link (matches the purple "Special Event" calendar legend) */
+/* Special Event nav link — hidden from sidebar; page still reachable via #club-challenge */
 .nav-links a[href="#club-challenge"] {
+    display: none !important;
     color: #c4b5fd;
 }
 
