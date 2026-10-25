@@ -1,6 +1,6 @@
 import { db, auth } from './firebase-config.js?v=100';
 import { 
-    doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, deleteDoc,
+    doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, deleteDoc, deleteField,
     collection, addDoc, serverTimestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin, getRoster, clearDocCache } from './firestore.js?v=153';
@@ -27,6 +27,7 @@ export function initAdminForm() {
     updateManagementUI();
     initLeagueAdminManager();
     initLeagueRoster();
+    initFreeRoundsManager();
     initCollapsibleSections();
 }
 
@@ -1348,6 +1349,245 @@ function initLeagueRoster() {
 
     // Auto-load roster when admin page initializes (use cache, no Firestore read if local exists)
     loadRosterData(false);
+}
+
+/**
+ * Free Round Allotments
+ * Admins grant players N free league entries per season (shared across
+ * league types). League Central auto-applies one at check-in and
+ * decrements `used` when the round is finalized.
+ * Doc shape: free_rounds/{playerSlug} = { name, seasons: { "2026Spring": { allotted, used } }, ace: { allotted, used } }
+ * `ace` is a running balance of comped ace-pot entries — not seasonal,
+ * and opt-in only (never auto-applied at check-in).
+ */
+function playerSlug(name) {
+    return String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function initFreeRoundsManager() {
+    const form = document.getElementById('free-round-form');
+    const list = document.getElementById('free-rounds-list');
+    if (!form || !list) return;
+
+    const nameInput = document.getElementById('fr-player');
+    const yearInput = document.getElementById('fr-year');
+    const seasonInput = document.getElementById('fr-season');
+    const countInput = document.getElementById('fr-count');
+    const suggestions = document.getElementById('fr-player-suggestions');
+    const submitBtn = document.getElementById('submit-free-round');
+
+    const aceForm = document.getElementById('free-ace-form');
+    const aceNameInput = document.getElementById('fa-player');
+    const aceCountInput = document.getElementById('fa-count');
+    const aceSuggestions = document.getElementById('fa-player-suggestions');
+    const aceSubmitBtn = document.getElementById('submit-free-ace');
+
+    const listToggle = document.getElementById('free-rounds-toggle');
+    const listToggleIcon = document.getElementById('free-rounds-toggle-icon');
+    const listToggleCount = document.getElementById('free-rounds-toggle-count');
+    if (listToggle) {
+        listToggle.onclick = () => {
+            const open = list.style.display !== 'none';
+            list.style.display = open ? 'none' : '';
+            if (listToggleIcon) listToggleIcon.textContent = open ? '+' : '−';
+        };
+    }
+
+    const setDefaults = () => {
+        const now = new Date();
+        if (yearInput) yearInput.value = String(now.getFullYear());
+        if (seasonInput) seasonInput.value = getSeasonFromMonth(now.getMonth() + 1);
+    };
+    setDefaults();
+
+    // Autocomplete player names from the imported roster.
+    let rosterNames = [];
+    getRoster().then(result => {
+        rosterNames = (result?.roster?.players || []).map(p => p.name);
+    }).catch(() => {});
+
+    const buildSuggestions = (inputEl, containerEl) => () => {
+        if (!containerEl || !inputEl) return;
+        const term = inputEl.value.toLowerCase().trim();
+        const matches = term ? rosterNames.filter(n => n.toLowerCase().includes(term)).slice(0, 15) : [];
+        containerEl.innerHTML = '';
+        if (matches.length === 0) {
+            containerEl.style.display = 'none';
+            return;
+        }
+        matches.forEach(n => {
+            const div = document.createElement('div');
+            div.textContent = n;
+            div.style.cssText = 'padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--glass-border);';
+            div.onmousedown = (e) => {
+                e.preventDefault();
+                inputEl.value = n;
+                containerEl.style.display = 'none';
+            };
+            div.onmouseenter = () => div.style.background = 'var(--hover-bg, rgba(255,255,255,0.1))';
+            div.onmouseleave = () => div.style.background = '';
+            containerEl.appendChild(div);
+        });
+        containerEl.style.display = 'block';
+    };
+
+    const bindAutocomplete = (inputEl, containerEl) => {
+        if (!inputEl || inputEl.dataset.bound) return;
+        inputEl.dataset.bound = '1';
+        const update = buildSuggestions(inputEl, containerEl);
+        inputEl.addEventListener('input', update);
+        inputEl.addEventListener('focus', update);
+        inputEl.addEventListener('blur', () => {
+            setTimeout(() => { if (containerEl) containerEl.style.display = 'none'; }, 150);
+        });
+    };
+
+    bindAutocomplete(nameInput, suggestions);
+    bindAutocomplete(aceNameInput, aceSuggestions);
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        const year = yearInput.value.trim();
+        const season = seasonInput.value;
+        const count = parseInt(countInput.value, 10);
+        if (!name || !year || !season || !(count > 0)) return;
+
+        const pid = playerSlug(name);
+        const seasonKey = `${year}${season}`;
+
+        try {
+            if (submitBtn) submitBtn.disabled = true;
+            const ref = doc(db, 'free_rounds', pid);
+            const snap = await getDoc(ref);
+            const existingUsed = snap.exists() ? Number(snap.data().seasons?.[seasonKey]?.used) || 0 : 0;
+            await setDoc(ref, {
+                name,
+                seasons: { [seasonKey]: { allotted: count, used: existingUsed } }
+            }, { merge: true });
+            alert(`Saved ${count} free rounds for ${name} (${year} ${season}).`);
+            form.reset();
+            setDefaults();
+            loadFreeRounds();
+        } catch (error) {
+            console.error('Error saving free round allotment:', error);
+            alert('Error saving free round allotment.');
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    };
+
+    if (aceForm) {
+        aceForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const name = aceNameInput.value.trim();
+            const count = parseInt(aceCountInput.value, 10);
+            if (!name || !(count > 0)) return;
+
+            const pid = playerSlug(name);
+            try {
+                if (aceSubmitBtn) aceSubmitBtn.disabled = true;
+                const ref = doc(db, 'free_rounds', pid);
+                const snap = await getDoc(ref);
+                const existingUsed = snap.exists() ? Number(snap.data().ace?.used) || 0 : 0;
+                await setDoc(ref, {
+                    name,
+                    ace: { allotted: count, used: existingUsed }
+                }, { merge: true });
+                alert(`Saved ${count} free ace entries for ${name}.`);
+                aceForm.reset();
+                loadFreeRounds();
+            } catch (error) {
+                console.error('Error saving free ace allotment:', error);
+                alert('Error saving free ace allotment.');
+            } finally {
+                if (aceSubmitBtn) aceSubmitBtn.disabled = false;
+            }
+        };
+    }
+
+    async function loadFreeRounds() {
+        try {
+            const snap = await getDocs(collection(db, 'free_rounds'));
+            const allotmentDocs = snap.docs.filter(d => {
+                const data = d.data();
+                return Object.keys(data.seasons || {}).length > 0 || data.ace;
+            });
+            if (listToggleCount) {
+                listToggleCount.textContent = allotmentDocs.length ? `(${allotmentDocs.length})` : '';
+            }
+            if (allotmentDocs.length === 0) {
+                list.innerHTML = '<p style="opacity:0.5; text-align:center;">No free round allotments.</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            allotmentDocs.forEach(d => {
+                const data = d.data();
+                const seasons = Object.entries(data.seasons || {});
+                if (seasons.length === 0 && !data.ace) return;
+
+                const item = document.createElement('div');
+                item.className = 'admin-event-item';
+                item.style.flexDirection = 'column';
+                item.style.alignItems = 'stretch';
+                item.style.justifyContent = 'flex-start';
+                item.style.gap = '0.5rem';
+
+                let rowsHtml = seasons
+                    .sort(([a], [b]) => b.localeCompare(a))
+                    .map(([key, s]) => {
+                        const m = key.match(/^(\d{4})(Winter|Spring|Summer|Fall)$/);
+                        const label = m ? `${m[1]} ${m[2]}` : key;
+                        return `
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
+                                <span style="font-size:0.85rem; min-width:0;">${label} — ${Number(s.used) || 0} of ${Number(s.allotted) || 0} used</span>
+                                <button type="button" class="btn-delete" style="width:120px;" data-fr-pid="${d.id}" data-fr-season="${key}">Remove</button>
+                            </div>`;
+                    }).join('');
+
+                if (data.ace) {
+                    rowsHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
+                            <span style="font-size:0.85rem; min-width:0;">Ace Pot — ${Number(data.ace.used) || 0} of ${Number(data.ace.allotted) || 0} used</span>
+                            <button type="button" class="btn-delete" style="width:120px;" data-fr-pid="${d.id}" data-fr-ace="1">Remove</button>
+                        </div>`;
+                }
+
+                item.innerHTML = `<strong style="color: var(--accent-color); overflow-wrap: break-word; min-width:0;">${data.name || d.id}</strong>${rowsHtml}`;
+                list.appendChild(item);
+            });
+
+            if (list.innerHTML === '') {
+                list.innerHTML = '<p style="opacity:0.5; text-align:center;">No free round allotments.</p>';
+                return;
+            }
+
+            list.querySelectorAll('[data-fr-pid]').forEach(btn => {
+                btn.onclick = async () => {
+                    const pid = btn.dataset.frPid;
+                    const seasonKey = btn.dataset.frSeason;
+                    const isAce = btn.dataset.frAce === '1';
+                    const label = isAce ? 'ace-pot credit balance' : `${seasonKey} free-round allotment`;
+                    if (!confirm(`Remove the ${label} for this player?`)) return;
+                    try {
+                        await updateDoc(doc(db, 'free_rounds', pid), isAce
+                            ? { ace: deleteField() }
+                            : { [`seasons.${seasonKey}`]: deleteField() });
+                        loadFreeRounds();
+                    } catch (error) {
+                        console.error('Error removing free round allotment:', error);
+                        alert('Error removing allotment.');
+                    }
+                };
+            });
+        } catch (error) {
+            console.error('Error loading free round allotments:', error);
+            list.innerHTML = '<p style="color: #e74c3c; text-align:center;">Unable to load free round allotments.</p>';
+        }
+    }
+
+    loadFreeRounds();
 }
 
 /**

@@ -7,7 +7,7 @@ import {
     getRedirectResult,
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, setDoc, getDocs, collection, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isLeagueAdmin, checkLeagueAdminEligibility, getLocalRoster, getRoster, getCachedDoc, refreshCachedDoc } from './firestore.js?v=153';
 import { bindFirstTimeSetup } from './authSetup.js?v=100';
 import { LOCATIONS, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
@@ -25,11 +25,14 @@ const CHECKIN_TAGS_ORIGINAL_KEY = 'bndisc_checkin_tags_original';
 const ROUND_SCORES_KEY = 'bndisc_round_scores';
 const LEAGUE_HASH_KEY = 'bndisc_league_hash';
 const TAGS_ASSIGNED_KEY = 'bndisc_tags_assigned';
+const FREE_PLAYERS_KEY = 'bndisc_free_players';
+const FREE_ACE_KEY = 'bndisc_free_ace';
 
 const EVENT_CACHE_TTL_MS = 15 * 60 * 1000;
 const COURSE_RECORD_CACHE_TTL_MS = 60 * 60 * 1000;
 
 let tagsAssigned = false;
+let freeRoundDocs = {};
 let userLeagues = [];
 let isFinalizing = false;
 
@@ -188,6 +191,91 @@ function saveRoundScores(scores) {
     localStorage.setItem(ROUND_SCORES_KEY, JSON.stringify(scores));
 }
 
+function getFreePlayers() {
+    try {
+        return JSON.parse(localStorage.getItem(FREE_PLAYERS_KEY)) || [];
+    } catch (e) {
+        console.warn('Could not read free players from localStorage:', e);
+        return [];
+    }
+}
+
+function saveFreePlayers(players) {
+    localStorage.setItem(FREE_PLAYERS_KEY, JSON.stringify(players));
+}
+
+function getFreeAce() {
+    try {
+        return JSON.parse(localStorage.getItem(FREE_ACE_KEY)) || [];
+    } catch (e) {
+        console.warn('Could not read free ace players from localStorage:', e);
+        return [];
+    }
+}
+
+function saveFreeAce(players) {
+    localStorage.setItem(FREE_ACE_KEY, JSON.stringify(players));
+}
+
+function leaguePlayerId(name) {
+    return String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Same season mapping used elsewhere (month is 1-12).
+function getSeasonFromMonth(month) {
+    if (month >= 3 && month <= 5) return 'Spring';
+    if (month >= 6 && month <= 8) return 'Summer';
+    if (month >= 9 && month <= 11) return 'Fall';
+    return 'Winter';
+}
+
+// Free-round allotments are keyed by year + season (shared across league
+// types), matching the leagues/{year}{season}{leagueType} doc the round is
+// finalized under. Falls back to the round date when no league is selected.
+function getSeasonKey() {
+    if (selectedLeague && selectedLeague.year && selectedLeague.season) {
+        return `${selectedLeague.year}${selectedLeague.season}`;
+    }
+    const dateVal = document.getElementById('league-round-date')?.value || new Date().toISOString().split('T')[0];
+    const [y, m] = dateVal.split('-');
+    return `${y}${getSeasonFromMonth(Number(m))}`;
+}
+
+function getFreeRemaining(name, seasonKey = getSeasonKey()) {
+    const allot = freeRoundDocs[leaguePlayerId(name)]?.seasons?.[seasonKey];
+    if (!allot) return 0;
+    return Math.max(0, (Number(allot.allotted) || 0) - (Number(allot.used) || 0));
+}
+
+// Free players who will actually be comped this round: flagged at check-in,
+// still checked in, and with remaining uses for the resolved season.
+function getEffectiveFreePlayers(seasonKey = getSeasonKey()) {
+    const checkins = getCheckins();
+    return getFreePlayers().filter(n =>
+        checkins.some(c => c.toLowerCase() === n.toLowerCase()) &&
+        getFreeRemaining(n, seasonKey) > 0
+    );
+}
+
+// Ace-pot credits are a running balance, not tied to a season.
+function getAceRemaining(name) {
+    const ace = freeRoundDocs[leaguePlayerId(name)]?.ace;
+    if (!ace) return 0;
+    return Math.max(0, (Number(ace.allotted) || 0) - (Number(ace.used) || 0));
+}
+
+// Free ace entries that will actually be comped: flagged, still checked in,
+// still in the ace pot, and with credits remaining. Opt-in only.
+function getEffectiveFreeAce() {
+    const checkins = getCheckins();
+    const acePayers = getAcePayers();
+    return getFreeAce().filter(n =>
+        checkins.some(c => c.toLowerCase() === n.toLowerCase()) &&
+        acePayers.some(c => c.toLowerCase() === n.toLowerCase()) &&
+        getAceRemaining(n) > 0
+    );
+}
+
 async function loadLeagueCheckin() {
     const cached = getLocalRoster();
     const rosterResult = cached ? { roster: cached } : await getRoster();
@@ -195,6 +283,15 @@ async function loadLeagueCheckin() {
     const allPlayers = roster?.players || [];
     currentRoster = allPlayers;
     tagsAssigned = getTagsAssigned();
+
+    try {
+        const freeSnap = await getDocs(collection(db, 'free_rounds'));
+        freeRoundDocs = {};
+        freeSnap.forEach(d => { freeRoundDocs[d.id] = d.data(); });
+    } catch (e) {
+        console.warn('Could not load free round allotments:', e);
+        freeRoundDocs = {};
+    }
     const isScratch = selectedLeague?.leagueType?.toLowerCase() === 'scratch';
 
     const suggestions = document.getElementById('league-checkin-suggestions');
@@ -378,8 +475,17 @@ async function loadLeagueCheckin() {
             const current = player?.currentRating ?? '';
             const hdcp = typeof player?.hdcp === 'number' ? player.hdcp.toFixed(1) : (player?.hdcp ?? '');
             const isAce = acePayers.some(n => n.toLowerCase() === name.toLowerCase());
-            const ace = isAce ? ' • Ace' : '';
+            const isFreeAce = getFreeAce().some(n => n.toLowerCase() === name.toLowerCase());
+            const ace = isFreeAce ? ' • Free Ace' : (isAce ? ' • Ace' : '');
             const tag = tags[name] ? ` • Tag: ${tags[name]}` : '';
+            const isFree = getFreePlayers().some(n => n.toLowerCase() === name.toLowerCase());
+            const free = isFree ? ' • Free' : '';
+            const freeRemaining = getFreeRemaining(name);
+            const freeLeft = Math.max(0, freeRemaining - (isFree ? 1 : 0));
+            const hasAllotment = freeRemaining > 0 || isFree || !!freeRoundDocs[leaguePlayerId(name)]?.seasons?.[getSeasonKey()];
+            const aceRemaining = getAceRemaining(name);
+            const aceLeft = Math.max(0, aceRemaining - (isFreeAce ? 1 : 0));
+            const hasAceAllotment = aceRemaining > 0 || isFreeAce || !!freeRoundDocs[leaguePlayerId(name)]?.ace;
 
             item.dataset.index = i;
             item.style.position = 'relative';
@@ -392,10 +498,14 @@ async function loadLeagueCheckin() {
                     <div class="admin-event-info">
                         <strong>${name}</strong>
                         <span style="display:block; font-size:0.75rem; opacity:0.6;">
-                            Rating: ${current} • HDCP: ${hdcp}${ace}${tag}
+                            Rating: ${current} • HDCP: ${hdcp}${ace}${tag}${free}
                         </span>
                     </div>
-                    <button type="button" class="btn-ace" data-index="${i}" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid ${isAce ? '#22c55e' : 'var(--glass-border)'}; background: ${isAce ? '#22c55e' : 'var(--sidebar-bg)'}; color: ${isAce ? '#fff' : 'var(--text-color)'}; opacity: ${isAce ? '1' : '0.5'}; cursor: pointer; white-space: nowrap;">Ace</button>
+                    <div style="display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0;">
+                        ${hasAllotment ? `<button type="button" class="btn-free" data-index="${i}" title="Free rounds left for this season after this round" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid ${isFree ? '#22c55e' : 'var(--glass-border)'}; background: ${isFree ? '#22c55e' : 'var(--sidebar-bg)'}; color: ${isFree ? '#fff' : 'var(--text-color)'}; opacity: ${isFree || freeRemaining > 0 ? '1' : '0.5'}; cursor: pointer; white-space: nowrap;">Free (${freeLeft})</button>` : ''}
+                        <button type="button" class="btn-ace" data-index="${i}" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid ${isAce ? '#22c55e' : 'var(--glass-border)'}; background: ${isAce ? '#22c55e' : 'var(--sidebar-bg)'}; color: ${isAce ? '#fff' : 'var(--text-color)'}; opacity: ${isAce ? '1' : '0.5'}; cursor: pointer; white-space: nowrap;">Ace</button>
+                        ${hasAceAllotment ? `<button type="button" class="btn-free-ace" data-index="${i}" title="Free ace-pot entries left after this round" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid ${isFreeAce ? '#f59e0b' : 'var(--glass-border)'}; background: ${isFreeAce ? '#f59e0b' : 'var(--sidebar-bg)'}; color: ${isFreeAce ? '#fff' : 'var(--text-color)'}; opacity: ${isFreeAce || aceRemaining > 0 ? '1' : '0.5'}; cursor: pointer; white-space: nowrap;">Free A (${aceLeft})</button>` : ''}
+                    </div>
                 </div>
                 <button type="button" class="btn-delete" data-index="${i}" style="position: absolute; z-index: 2; right: 0; top: 0; bottom: 0; width: 80px; display: flex; align-items: center; justify-content: center; background: #d32f2f; color: #fff; border: none; cursor: pointer; transform: translateX(100%); transition: transform 0.2s;"><i class="ph ph-minus-circle" style="font-size: 1.5rem;"></i></button>
             `;
@@ -419,14 +529,74 @@ async function loadLeagueCheckin() {
                     e.stopPropagation();
                     const acePayers = getAcePayers();
                     const aceIdx = acePayers.findIndex(n => n.toLowerCase() === name.toLowerCase());
-                    if (aceIdx !== -1) acePayers.splice(aceIdx, 1); else acePayers.push(name);
+                    if (aceIdx !== -1) {
+                        acePayers.splice(aceIdx, 1);
+                        // Leaving the pot also clears a comped ace entry.
+                        const freeAce = getFreeAce();
+                        const faIdx = freeAce.findIndex(n => n.toLowerCase() === name.toLowerCase());
+                        if (faIdx !== -1) {
+                            freeAce.splice(faIdx, 1);
+                            saveFreeAce(freeAce);
+                        }
+                    } else {
+                        acePayers.push(name);
+                    }
                     saveAcePayers(acePayers);
                     renderCheckins();
                     renderTags();
                 };
             }
+            const freeBtn = item.querySelector('.btn-free');
+            if (freeBtn) {
+                freeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const freePlayers = getFreePlayers();
+                    const fIdx = freePlayers.findIndex(n => n.toLowerCase() === name.toLowerCase());
+                    if (fIdx !== -1) {
+                        freePlayers.splice(fIdx, 1);
+                        saveFreePlayers(freePlayers);
+                        if (status) status.textContent = '';
+                    } else {
+                        if (getFreeRemaining(name) <= 0) {
+                            if (status) status.textContent = `${name} has no free rounds remaining for this season.`;
+                            return;
+                        }
+                        freePlayers.push(name);
+                        saveFreePlayers(freePlayers);
+                        if (status) status.textContent = `${name} will use a free round this week.`;
+                    }
+                    renderCheckins();
+                };
+            }
+            const freeAceBtn = item.querySelector('.btn-free-ace');
+            if (freeAceBtn) {
+                freeAceBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const freeAce = getFreeAce();
+                    const faIdx = freeAce.findIndex(n => n.toLowerCase() === name.toLowerCase());
+                    if (faIdx !== -1) {
+                        freeAce.splice(faIdx, 1);
+                        saveFreeAce(freeAce);
+                        if (status) status.textContent = '';
+                    } else {
+                        if (getAceRemaining(name) <= 0) {
+                            if (status) status.textContent = `${name} has no free ace entries remaining.`;
+                            return;
+                        }
+                        const acePayers = getAcePayers();
+                        if (!acePayers.some(n => n.toLowerCase() === name.toLowerCase())) {
+                            acePayers.push(name);
+                            saveAcePayers(acePayers);
+                        }
+                        freeAce.push(name);
+                        saveFreeAce(freeAce);
+                        if (status) status.textContent = `${name}'s ace entry is free (${getAceRemaining(name) - 1} left after this one).`;
+                    }
+                    renderCheckins();
+                };
+            }
             item.onclick = (e) => {
-                if (e.target.closest('.btn-ace, .btn-delete')) return;
+                if (e.target.closest('.btn-ace, .btn-free, .btn-free-ace, .btn-delete')) return;
                 startEdit(i, name);
             };
             checkinList.appendChild(item);
@@ -448,7 +618,15 @@ async function loadLeagueCheckin() {
             const acePayers = getAcePayers();
             const aceIdx = acePayers.findIndex(n => n.toLowerCase() === targetName.toLowerCase());
             if (payAce && aceIdx === -1) acePayers.push(targetName);
-            if (!payAce && aceIdx !== -1) acePayers.splice(aceIdx, 1);
+            if (!payAce && aceIdx !== -1) {
+                acePayers.splice(aceIdx, 1);
+                const freeAce = getFreeAce();
+                const faIdx = freeAce.findIndex(n => n.toLowerCase() === targetName.toLowerCase());
+                if (faIdx !== -1) {
+                    freeAce.splice(faIdx, 1);
+                    saveFreeAce(freeAce);
+                }
+            }
             saveAcePayers(acePayers);
 
             if (!isDoubles) {
@@ -518,7 +696,19 @@ async function loadLeagueCheckin() {
             saveCheckinTagsOriginal(originalTags);
         }
 
-        if (status) status.textContent = '';
+        // Auto-apply a free round if the player has remaining uses this season.
+        let freeMsg = '';
+        const remainingFree = getFreeRemaining(rawName);
+        if (remainingFree > 0) {
+            const freePlayers = getFreePlayers();
+            if (!freePlayers.some(n => n.toLowerCase() === rawName.toLowerCase())) {
+                freePlayers.push(rawName);
+                saveFreePlayers(freePlayers);
+                freeMsg = `${rawName} checked in with a free round (${remainingFree - 1} left after this one).`;
+            }
+        }
+
+        if (status) status.textContent = freeMsg;
         input.value = '';
         if (tagInput) tagInput.value = '';
         if (aceSelect) aceSelect.value = 'yes';
@@ -677,6 +867,20 @@ async function loadLeagueCheckin() {
                 const originalTags = getCheckinTagsOriginal();
                 delete originalTags[removedName];
                 saveCheckinTagsOriginal(originalTags);
+
+                const freePlayers = getFreePlayers();
+                const fIdx = freePlayers.findIndex(n => n.toLowerCase() === removedName.toLowerCase());
+                if (fIdx !== -1) {
+                    freePlayers.splice(fIdx, 1);
+                    saveFreePlayers(freePlayers);
+                }
+
+                const freeAce = getFreeAce();
+                const faIdx = freeAce.findIndex(n => n.toLowerCase() === removedName.toLowerCase());
+                if (faIdx !== -1) {
+                    freeAce.splice(faIdx, 1);
+                    saveFreeAce(freeAce);
+                }
 
                 const scores = getRoundScores();
                 delete scores[removedName];
@@ -1218,10 +1422,14 @@ function renderRoundSummary() {
     const perPlayer = Number(perPlayerInput?.value) || 0;
     const acePayers = getAcePayers().length;
 
-    const totalCollected = numPlayers * roundCost;
-    const totalPaidOut = numPlayers * perPlayer;
-    const totalAcePot = acePayers * aceCost;
-    const totalClubFees = numPlayers * clubFees;
+    const freeCount = getEffectiveFreePlayers().length;
+    const freeAceCount = getEffectiveFreeAce().length;
+    const paidCount = Math.max(0, numPlayers - freeCount);
+
+    const totalCollected = paidCount * roundCost;
+    const totalPaidOut = paidCount * perPlayer;
+    const totalAcePot = Math.max(0, acePayers - freeAceCount) * aceCost;
+    const totalClubFees = paidCount * clubFees;
 
     summary.innerHTML = `
         <h5 style="margin: 1rem 0 0.5rem 0;">Round Summary</h5>
@@ -1241,6 +1449,14 @@ function renderRoundSummary() {
             <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px;">
                 <span>Total Club Fees</span>
                 <span>$${totalClubFees.toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px;">
+                <span>Free Rounds Used</span>
+                <span>${freeCount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px;">
+                <span>Free Ace Entries Used</span>
+                <span>${freeAceCount}</span>
             </div>
         </div>
     `;
@@ -1326,7 +1542,10 @@ function calculatePayouts() {
         return;
     }
 
-    const totalPayout = numPlayers * perPlayer;
+    // Free players are fully waived: they shrink the pool but still count
+    // as participants for payout positions.
+    const paidCount = Math.max(0, numPlayers - getEffectiveFreePlayers().length);
+    const totalPayout = paidCount * perPlayer;
     const numPaid = Math.max(1, Math.min(25, Math.round(numPlayers * pct / 100)));
     const row = PAYOUT_TABLE[numPaid - 1] || [];
 
@@ -1509,17 +1728,28 @@ async function finalizeRound() {
         });
     });
 
-    const totalCollected = numPlayers * roundCost;
-    const totalPaidOut = numPlayers * perPlayer;
-    const totalAcePot = acePayerCount * aceCost;
-    const totalClubFees = numPlayers * clubFees;
+    const seasonKey = getSeasonKey();
+    const effectiveFree = getEffectiveFreePlayers(seasonKey);
+    const effectiveFreeAce = getEffectiveFreeAce();
+    const freeCount = effectiveFree.length;
+    const freeAceCount = effectiveFreeAce.length;
+    const paidCount = Math.max(0, numPlayers - freeCount);
+
+    const totalCollected = paidCount * roundCost;
+    const totalPaidOut = paidCount * perPlayer;
+    const totalAcePot = Math.max(0, acePayerCount - freeAceCount) * aceCost;
+    const totalClubFees = paidCount * clubFees;
 
     const roundData = {
         date,
         location,
         layout,
+        freePlayers: effectiveFree,
+        freeAcePlayers: effectiveFreeAce,
         roundFinances: {
             numPlayers,
+            freePlayerCount: freeCount,
+            freeAceCount,
             acePayerCount,
             roundCost,
             clubFees,
@@ -1573,12 +1803,50 @@ async function finalizeRound() {
         const director = auth.currentUser?.email || 'Unknown';
         await setDoc(doc(db, 'leagues', docId), { [weekField]: roundData, director }, { merge: true });
 
+        // Record each comped player's free round usage on their allotment.
+        for (const name of effectiveFree) {
+            const pid = leaguePlayerId(name);
+            try {
+                await updateDoc(doc(db, 'free_rounds', pid), {
+                    [`seasons.${seasonKey}.used`]: increment(1)
+                });
+                const cached = freeRoundDocs[pid];
+                if (cached?.seasons?.[seasonKey]) {
+                    cached.seasons[seasonKey].used = (Number(cached.seasons[seasonKey].used) || 0) + 1;
+                }
+            } catch (err) {
+                console.warn(`Could not record free round use for ${name}:`, err);
+            }
+        }
+
+        // Record each comped ace-pot entry (running balance, not seasonal).
+        for (const name of effectiveFreeAce) {
+            const pid = leaguePlayerId(name);
+            try {
+                await updateDoc(doc(db, 'free_rounds', pid), {
+                    'ace.used': increment(1)
+                });
+                const cached = freeRoundDocs[pid];
+                if (cached?.ace) {
+                    cached.ace.used = (Number(cached.ace.used) || 0) + 1;
+                }
+            } catch (err) {
+                console.warn(`Could not record free ace use for ${name}:`, err);
+            }
+        }
+
         const year = String(selectedLeague.year);
         if (Object.keys(tagsData).length > 0) {
             await setDoc(doc(db, 'tags', year), tagsData, { merge: true });
         }
 
-        alert(`Round finalized under ${docId} -> ${weekField}`);
+        const flagged = getFreePlayers().filter(n => getCheckins().some(c => c.toLowerCase() === n.toLowerCase()));
+        const countedPaid = flagged.filter(n => !effectiveFree.some(f => f.toLowerCase() === n.toLowerCase()));
+        const flaggedAce = getFreeAce().filter(n => getCheckins().some(c => c.toLowerCase() === n.toLowerCase()));
+        const countedPaidAce = flaggedAce.filter(n => !effectiveFreeAce.some(f => f.toLowerCase() === n.toLowerCase()));
+        alert(`Round finalized under ${docId} -> ${weekField}` +
+            (countedPaid.length ? `\nNote: ${countedPaid.join(', ')} had no free rounds left and was counted as paid.` : '') +
+            (countedPaidAce.length ? `\nNote: ${countedPaidAce.join(', ')} had no free ace entries left and was counted as paid.` : ''));
 
         resetRound();
     } catch (e) {
@@ -1593,6 +1861,8 @@ function resetRound() {
     saveCheckinTags({});
     saveCheckinTagsOriginal({});
     saveRoundScores({});
+    saveFreePlayers([]);
+    saveFreeAce([]);
     tagsAssigned = false;
     saveTagsAssigned(false);
     cardsVisible = false;

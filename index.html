@@ -1296,6 +1296,70 @@
 
                     <div class="admin-grid-wide" style="margin-top: 2rem;">
                         <div class="admin-card">
+                            <h3>Free Round Allotments</h3>
+                            <p class="subtitle">Grant players free league entries per season (shared across league types). One is used automatically at League Central check-in.</p>
+                            <form id="free-round-form" class="admin-form">
+                                <div class="form-group" style="position: relative;">
+                                    <label for="fr-player">Player Name</label>
+                                    <input type="text" id="fr-player" required autocomplete="off" placeholder="Type a player name...">
+                                    <div id="fr-player-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                </div>
+                                <div class="form-row-triple">
+                                    <div class="form-group">
+                                        <label for="fr-year">Year</label>
+                                        <input type="text" inputmode="numeric" pattern="[0-9]*" id="fr-year" required placeholder="2026" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="fr-season">Season</label>
+                                        <select id="fr-season" required>
+                                            <option value="" disabled selected>Select season...</option>
+                                            <option value="Winter">Winter</option>
+                                            <option value="Spring">Spring</option>
+                                            <option value="Summer">Summer</option>
+                                            <option value="Fall">Fall</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="fr-count">Free Rounds</label>
+                                        <input type="number" id="fr-count" min="1" step="1" required placeholder="e.g., 4">
+                                    </div>
+                                </div>
+                                <button type="submit" id="submit-free-round" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                                    <span>Save Allotment</span>
+                                </button>
+                            </form>
+
+                            <hr style="border: none; border-top: 1px solid var(--glass-border); margin: 1.5rem 0;">
+                            <h4 style="margin: 0 0 0.5rem 0;">Free Ace Pot Entries</h4>
+                            <p class="subtitle">A running balance of comped ace-pot buy-ins (not tied to a season). Opt-in only at check-in — never auto-used.</p>
+                            <form id="free-ace-form" class="admin-form">
+                                <div class="form-row">
+                                    <div class="form-group" style="position: relative;">
+                                        <label for="fa-player">Player Name</label>
+                                        <input type="text" id="fa-player" required autocomplete="off" placeholder="Type a player name...">
+                                        <div id="fa-player-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="fa-count">Free Entries</label>
+                                        <input type="number" id="fa-count" min="1" step="1" required placeholder="e.g., 3">
+                                    </div>
+                                </div>
+                                <button type="submit" id="submit-free-ace" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                                    <span>Save Ace Credits</span>
+                                </button>
+                            </form>
+                            <div id="free-rounds-wrap" style="margin-top: 1.5rem;">
+                                <div id="free-rounds-toggle" style="cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-top: 1px solid var(--glass-border);">
+                                    <span style="font-weight: 600;">Current Allotments <span id="free-rounds-toggle-count" style="opacity: 0.6; font-weight: 400;"></span></span>
+                                    <span id="free-rounds-toggle-icon" style="color: var(--accent-color); font-weight: 800; font-size: 1.2rem; line-height: 1;">+</span>
+                                </div>
+                                <div id="free-rounds-list" class="admin-event-list" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-grid-wide" style="margin-top: 2rem;">
+                        <div class="admin-card">
                             <h3>Rate a Round</h3>
                             <p id="rr-latest-round-date" class="subtitle" style="font-size: 0.85rem; opacity: 0.7; margin-bottom: 1rem;">Loading latest round date...</p>
                             <form id="round-rater-form" class="admin-form" onsubmit="return false;">
@@ -1438,12 +1502,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
-    <script type="module" src="js/theme.js?v=163"></script>
+    <script type="module" src="js/theme.js?v=167"></script>
     <script type="module" src="js/firebase-config.js?v=143"></script>
     <script type="module" src="js/firestore.js?v=153"></script>
     <script type="module" src="js/nav.js?v=146"></script>
     <script type="module" src="js/loginAdmin.js?v=151"></script>
-    <script type="module" src="js/admin.js?v=170"></script>
+    <script type="module" src="js/admin.js?v=174"></script>
     <script type="module" src="js/roundRater.js?v=28"></script>
     <script type="module" src="js/currentEvents.js?v=158"></script>
     <script type="module" src="js/aces.js?v=143"></script>
