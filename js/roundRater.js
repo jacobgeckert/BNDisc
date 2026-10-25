@@ -308,7 +308,9 @@ function addRaterRow(name, score, manualInitial, options = {}) {
     const history = player?.history || [];
     const roundsPlayed = player?.stats?.roundsPlayed ?? history.length;
     const preRoundRatingNum = typeof preRoundRating === 'number' ? preRoundRating : null;
-    const qualified = player ? (roundsPlayed > 14) : (preRoundRatingNum !== null);
+    // Only players in the database with 15+ recorded rounds qualify; a manual
+    // initial rating seeds a new player's doc but must not feed the benchmark.
+    const qualified = !!player && roundsPlayed > 14;
 
     rows.push({
         id: Math.random().toString(36).slice(2),
@@ -412,7 +414,7 @@ function updateRow(id, field, value) {
         } else {
             row.player = null;
             row.roundsPlayed = 0;
-            row.qualified = typeof row.preRoundRating === 'number' ? 'Yes' : 'No';
+            row.qualified = 'No';
             row.handicap = computeHandicap(row.preRoundRating);
         }
         row.initialEstimate = null;
@@ -431,7 +433,7 @@ function updateRow(id, field, value) {
         if (row.player) return;
         const rating = value === '' ? null : Number(value);
         row.preRoundRating = rating !== null && Number.isNaN(rating) ? null : rating;
-        row.qualified = typeof row.preRoundRating === 'number' ? 'Yes' : 'No';
+        row.qualified = 'No';
         row.handicap = computeHandicap(row.preRoundRating);
         row.initialEstimate = null;
         row.diff = null;
