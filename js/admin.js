@@ -285,6 +285,75 @@ let editingEvent = null; // { monthId, event }
 // Concrete weekly styles for league events (a Mixed league cycles through these).
 const LEAGUE_STYLES = ['Doubles', 'Handicap', 'Scratch'];
 
+// Finds the league assignment an event belongs to. Exact year/season/type
+// matches win; otherwise a Mixed assignment for that season absorbs the
+// event (its weeks can be any style).
+function leagueAssignmentFor(admins, year, season, leagueType) {
+    const norm = String(year);
+    for (const a of admins) {
+        const exact = (a.leagues || []).find(l =>
+            String(l.year) === norm && l.season === season && l.leagueType === leagueType);
+        if (exact) return { year: exact.year, season: exact.season, leagueType: exact.leagueType };
+    }
+    for (const a of admins) {
+        const mixed = (a.leagues || []).find(l =>
+            String(l.year) === norm && l.season === season && l.leagueType === 'Mixed');
+        if (mixed) return { year: mixed.year, season: mixed.season, leagueType: 'Mixed' };
+    }
+    return null;
+}
+
+// All distinct league assignments across league_admins docs (deduped by
+// year|season|type), sorted newest season first for the picker.
+function distinctLeagueAssignments(admins) {
+    const seen = new Map();
+    admins.forEach(a => (a.leagues || []).forEach(l => {
+        const key = `${l.year}|${l.season}|${l.leagueType}`;
+        if (!seen.has(key)) seen.set(key, { year: l.year, season: l.season, leagueType: l.leagueType });
+    }));
+    const order = { Winter: 0, Spring: 1, Summer: 2, Fall: 3 };
+    return [...seen.values()].sort((a, b) =>
+        (Number(b.year) - Number(a.year)) || ((order[b.season] ?? -1) - (order[a.season] ?? -1)));
+}
+
+// Populates the event form's League picker from league_admins assignments.
+async function populateEventLeagueSelect() {
+    const select = document.getElementById('event-league');
+    if (!select) return;
+    const current = select.dataset.selected || select.value;
+    select.innerHTML = '<option value="">Unassigned</option>';
+    try {
+        const snap = await getDocs(collection(db, 'league_admins'));
+        const admins = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        let wanted = null;
+        try { wanted = current ? JSON.parse(current) : null; } catch (e) { wanted = null; }
+        distinctLeagueAssignments(admins).forEach(l => {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify(l);
+            opt.textContent = `${l.year} ${l.season} ${l.leagueType}`;
+            if (wanted && String(l.year) === String(wanted.year) &&
+                l.season === wanted.season && l.leagueType === wanted.leagueType) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        console.warn('Could not load league assignments:', e);
+    }
+}
+
+// Picking a league locks the event's type to the league's own type.
+function syncEventLeagueSelect() {
+    const leagueSelect = document.getElementById('event-league');
+    const typeSelect = document.getElementById('event-league-type');
+    if (!leagueSelect || !typeSelect) return;
+    const league = leagueSelect.value ? JSON.parse(leagueSelect.value) : null;
+    typeSelect.disabled = !!league;
+    typeSelect.style.opacity = league ? '0.7' : '1';
+    if (league) typeSelect.value = league.leagueType;
+    syncEventRoundTypeVisibility();
+}
+
 // Mixed league events need a per-week style; show the Round Style select
 // only when the event's league type is Mixed.
 function syncEventRoundTypeVisibility() {
@@ -305,6 +374,10 @@ function initEventForm() {
     const leagueTypeSelect = document.getElementById('event-league-type');
     leagueTypeSelect?.addEventListener('change', syncEventRoundTypeVisibility);
     syncEventRoundTypeVisibility();
+
+    const leagueSelect = document.getElementById('event-league');
+    leagueSelect?.addEventListener('change', syncEventLeagueSelect);
+    populateEventLeagueSelect();
 
     const cancelBtn = document.getElementById('cancel-edit-event');
     if (cancelBtn) {
@@ -345,12 +418,21 @@ function initEventForm() {
 
             // Stamp the league director names onto the event so the public
             // calendar popup can show them without reading league_admins
-            // (which is not publicly listable).
+            // (which is not publicly listable). Also stamp which league the
+            // event belongs to so the schedule groups by league, not style.
             if (category === 'League' && newEvent.leagueType) {
                 const season = getSeasonFromMonth(parseInt(month, 10));
                 const adminsSnap = await getDocs(collection(db, 'league_admins'));
                 const admins = adminsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                newEvent.directors = leagueDirectorsFor(admins, year, season, newEvent.leagueType);
+                const picked = document.getElementById('event-league')?.value;
+                const league = picked ? JSON.parse(picked)
+                    : leagueAssignmentFor(admins, year, season, newEvent.leagueType);
+                if (league) {
+                    newEvent.league = league;
+                    newEvent.leagueType = league.leagueType;
+                }
+                newEvent.directors = leagueDirectorsFor(admins, league ? league.year : year,
+                    league ? league.season : season, newEvent.leagueType);
             }
 
             if (editingEvent) {
@@ -479,7 +561,13 @@ function startEditEvent(monthId, event) {
     document.getElementById('event-league-type').value = event.leagueType || '';
     const roundTypeSelect = document.getElementById('event-round-type');
     if (roundTypeSelect) roundTypeSelect.value = event.roundType || 'Handicap';
-    syncEventRoundTypeVisibility();
+    const leagueSelect = document.getElementById('event-league');
+    if (leagueSelect) {
+        leagueSelect.dataset.selected = event.league ? JSON.stringify(event.league) : '';
+        populateEventLeagueSelect().then(syncEventLeagueSelect);
+    } else {
+        syncEventRoundTypeVisibility();
+    }
     document.getElementById('event-layout').value = event.layout || '';
 
     const heading = document.getElementById('event-form-heading');
@@ -518,7 +606,9 @@ function cancelEditEvent() {
 
     const form = document.getElementById('event-form');
     if (form) form.reset();
-    syncEventRoundTypeVisibility();
+    const leagueSelect = document.getElementById('event-league');
+    if (leagueSelect) leagueSelect.dataset.selected = '';
+    syncEventLeagueSelect();
 
     const heading = document.getElementById('event-form-heading');
     if (heading) heading.textContent = 'Add New Event';
@@ -979,6 +1069,8 @@ function initLeagueRandomizer() {
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = 'Saving...';
                 try {
+                    const adminsSnap = await getDocs(collection(db, 'league_admins'));
+                    const admins = adminsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                     const eventsByMonth = {};
                     rows.forEach(row => {
                         const date = row.dataset.date;
@@ -1000,6 +1092,12 @@ function initLeagueRandomizer() {
                             createdAt: new Date().toISOString()
                         };
                         if (leagueType === 'Mixed') event.roundType = roundType;
+
+                        // Link the event to its league assignment so the
+                        // schedule groups by league rather than weekly style.
+                        const league = leagueAssignmentFor(admins, year,
+                            getSeasonFromMonth(parseInt(month, 10)), leagueType);
+                        if (league) event.league = league;
 
                         eventsByMonth[monthId] = eventsByMonth[monthId] || [];
                         eventsByMonth[monthId].push(event);
@@ -1125,6 +1223,11 @@ function getSeasonFromMonth(month) {
     return 'Winter';
 }
 
+function typedLeagueExists(admins, year, season, leagueType) {
+    return admins.some(a => (a.leagues || []).some(l =>
+        String(l.year) === String(year) && l.season === season && l.leagueType === leagueType));
+}
+
 // Returns display names for league admins whose assignments include the
 // given year/season/leagueType. Admins without a name are skipped so their
 // email is never shown publicly.
@@ -1134,7 +1237,9 @@ function leagueDirectorsFor(admins, year, season, leagueType) {
         const match = (a.leagues || []).some(l =>
             String(l.year) === String(year) &&
             l.season === season &&
-            (l.leagueType === leagueType || l.leagueType === 'Mixed')
+            (l.leagueType === leagueType ||
+                (l.leagueType === 'Mixed' && leagueType !== 'Mixed' &&
+                    !typedLeagueExists(admins, year, season, leagueType)))
         );
         if (match && a.name) names.push(a.name);
     });
@@ -1160,11 +1265,16 @@ async function syncEventDirectors(statusEl) {
         for (const ev of events) {
             if (ev.category !== 'League' || !ev.leagueType) continue;
             const directors = leagueDirectorsFor(admins, year, season, ev.leagueType);
-            if (JSON.stringify(ev.directors || []) === JSON.stringify(directors)) continue;
+            const league = leagueAssignmentFor(admins, year, season, ev.leagueType);
+            const sameLeague = JSON.stringify(ev.league || null) === JSON.stringify(league || null);
+            if (JSON.stringify(ev.directors || []) === JSON.stringify(directors) && sameLeague) continue;
+
+            const next = { ...ev, directors };
+            if (league) next.league = league; else delete next.league;
 
             const ref = doc(db, 'event_bundles', monthId);
             await setDoc(ref, { events: arrayRemove(ev) }, { merge: true });
-            await setDoc(ref, { events: arrayUnion({ ...ev, directors }) }, { merge: true });
+            await setDoc(ref, { events: arrayUnion(next) }, { merge: true });
             delete eventCache[monthId];
             clearDocCache('event_bundles', monthId);
             updated++;

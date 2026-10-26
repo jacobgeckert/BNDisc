@@ -351,16 +351,18 @@ export async function loadLeagueSchedule() {
 
         const groups = {};
         allEvents.forEach(ev => {
-            const key = `${ev.year}|${ev.leagueType}`;
+            // Events stamped with a league assignment group by the league,
+            // so Mixed weeks stay together regardless of their weekly style.
+            const gYear = ev.league?.year ?? ev.year;
+            const gSeason = ev.league?.season ?? ev.season;
+            const gType = ev.league?.leagueType ?? ev.leagueType;
+            const key = `${gYear}|${gSeason}|${gType}`;
             if (!groups[key]) groups[key] = [];
             groups[key].push(ev);
         });
 
         leagueScheduleGroups = Object.entries(groups).map(([key, events]) => {
-            const [year, leagueType] = key.split('|');
-            const seasonCounts = {};
-            events.forEach(ev => { seasonCounts[ev.season] = (seasonCounts[ev.season] || 0) + 1; });
-            const season = Object.entries(seasonCounts).sort((a, b) => b[1] - a[1])[0][0];
+            const [year, season, leagueType] = key.split('|');
             return {
                 year: parseInt(year, 10),
                 leagueType,
