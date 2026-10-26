@@ -56,6 +56,12 @@ function isMixedLeague() {
     return selectedLeague?.leagueType?.toLowerCase() === 'mixed';
 }
 
+// A Mixed calendar event's weekly style lives in event.roundType.
+function eventRoundStyle(ev) {
+    if (!ev || !ev.leagueType) return '';
+    return ev.leagueType === 'Mixed' ? (ev.roundType || '') : ev.leagueType;
+}
+
 function updateRoundTypeUI() {
     const show = isMixedLeague();
     const label = document.getElementById('league-round-type-label');
@@ -817,13 +823,13 @@ async function loadLeagueCheckin() {
                 if (match) {
                     const oldLocation = match.location || '';
                     const oldLayout = match.layout || '';
-                    const oldType = match.leagueType || '';
+                    const oldType = eventRoundStyle(match);
                     locationInput.value = oldLocation;
                     layoutInput.value = oldLayout;
 
                     // Mixed leagues take each week's style from the calendar event.
                     const roundTypeSelect = document.getElementById('league-round-type');
-                    if (isMixedLeague() && roundTypeSelect && oldType && oldType.toLowerCase() !== 'mixed') {
+                    if (isMixedLeague() && roundTypeSelect && oldType) {
                         roundTypeSelect.value = oldType;
                         applyRoundTypeUI();
                         updateTagControls();
@@ -846,8 +852,8 @@ async function loadLeagueCheckin() {
                                 updateFinalizeButton();
                                 renderLayoutRecords();
                             }
-                            const newType = newMatch.leagueType || '';
-                            if (isMixedLeague() && roundTypeSelect && newType && newType.toLowerCase() !== 'mixed' &&
+                            const newType = eventRoundStyle(newMatch);
+                            if (isMixedLeague() && roundTypeSelect && newType &&
                                 roundTypeSelect.value === oldType) {
                                 roundTypeSelect.value = newType;
                                 applyRoundTypeUI();

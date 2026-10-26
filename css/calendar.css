@@ -242,6 +242,7 @@
 .cat-league.type-doubles { background-color: #059669 !important; }
 .cat-league.type-handicap { background-color: #d97706 !important; }
 .cat-league.type-scratch { background-color: #0891b2 !important; }
+.cat-league.type-mixed { background-color: #7c3aed !important; }
 
 .event-pill:not([class*='cat-']) {
     background-color: var(--accent-color);

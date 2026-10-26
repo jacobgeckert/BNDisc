@@ -183,7 +183,9 @@ function showEventModal(event) {
     time.textContent = `Tee Time: ${formatTime12Hour(event.time)}`;
     location.textContent = `Location: ${event.location || 'TBD'}`;
     if (layout) layout.textContent = event.layout ? `Layout: ${event.layout}` : '';
-    if (leagueType) leagueType.textContent = event.leagueType ? `League Type: ${event.leagueType}` : '';
+    if (leagueType) leagueType.textContent = event.leagueType
+        ? `League Type: ${event.leagueType}${event.leagueType === 'Mixed' && event.roundType ? ` — ${event.roundType}` : ''}`
+        : '';
     if (directors) {
         const names = (Array.isArray(event.directors) ? event.directors : [])
             .filter(n => typeof n === 'string' && n.trim() && !n.includes('@'));
@@ -258,6 +260,8 @@ function renderLeagueSchedule(group) {
         title.textContent = `${group.year} ${group.season.toUpperCase()} ${group.leagueType.toUpperCase()}`;
     }
 
+    const isMixed = group.leagueType === 'Mixed';
+
     const rows = group.events.map(ev => {
         const dateStr = ev.date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
         const course = getCourseDisplayName(ev.location) || ev.location;
@@ -267,6 +271,7 @@ function renderLeagueSchedule(group) {
         return `
             <tr>
                 <td data-label="Date">${dateStr}</td>
+                ${isMixed ? `<td data-label="Type">${ev.roundType || ''}</td>` : ''}
                 <td data-label="Course">${course}</td>
                 <td data-label="Check-In">${checkIn}</td>
                 <td data-label="Tee Off">${teeOff}</td>
@@ -291,6 +296,7 @@ function renderLeagueSchedule(group) {
                 <thead>
                     <tr>
                         <th>DATE</th>
+                        ${isMixed ? '<th>TYPE</th>' : ''}
                         <th>COURSE</th>
                         <th>CHECK-IN</th>
                         <th>TEE OFF</th>

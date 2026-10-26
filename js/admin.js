@@ -282,11 +282,29 @@ function initMinutesForm() {
 // creating a duplicate.
 let editingEvent = null; // { monthId, event }
 
+// Concrete weekly styles for league events (a Mixed league cycles through these).
+const LEAGUE_STYLES = ['Doubles', 'Handicap', 'Scratch'];
+
+// Mixed league events need a per-week style; show the Round Style select
+// only when the event's league type is Mixed.
+function syncEventRoundTypeVisibility() {
+    const isMixed = document.getElementById('event-league-type')?.value === 'Mixed';
+    const label = document.getElementById('event-round-type-label');
+    const select = document.getElementById('event-round-type');
+    if (label) label.style.display = isMixed ? '' : 'none';
+    if (select) select.style.display = isMixed ? 'block' : 'none';
+}
+
 function initEventForm() {
     const form = document.getElementById('event-form');
     if (!form) return;
 
     initEventLayoutSuggestions();
+
+    // Mixed league events pick a per-week style (stored as event.roundType).
+    const leagueTypeSelect = document.getElementById('event-league-type');
+    leagueTypeSelect?.addEventListener('change', syncEventRoundTypeVisibility);
+    syncEventRoundTypeVisibility();
 
     const cancelBtn = document.getElementById('cancel-edit-event');
     if (cancelBtn) {
@@ -305,15 +323,25 @@ function initEventForm() {
             
             if (submitBtn) submitBtn.disabled = true;
 
+            const leagueType = document.getElementById('event-league-type').value;
             const newEvent = {
                 category,
                 day: parseInt(day),
                 time: document.getElementById('event-time').value,
                 location: document.getElementById('event-loc').value,
-                leagueType: document.getElementById('event-league-type').value,
+                leagueType,
                 layout: document.getElementById('event-layout').value,
                 createdAt: editingEvent ? editingEvent.event.createdAt : new Date().toISOString()
             };
+            if (category === 'League' && leagueType === 'Mixed') {
+                const roundType = document.getElementById('event-round-type')?.value;
+                if (!roundType) {
+                    if (submitBtn) submitBtn.disabled = false;
+                    alert('Pick a round style for this Mixed league event.');
+                    return;
+                }
+                newEvent.roundType = roundType;
+            }
 
             // Stamp the league director names onto the event so the public
             // calendar popup can show them without reading league_admins
@@ -449,6 +477,9 @@ function startEditEvent(monthId, event) {
     document.getElementById('event-time').value = event.time;
     document.getElementById('event-loc').value = event.location;
     document.getElementById('event-league-type').value = event.leagueType || '';
+    const roundTypeSelect = document.getElementById('event-round-type');
+    if (roundTypeSelect) roundTypeSelect.value = event.roundType || 'Handicap';
+    syncEventRoundTypeVisibility();
     document.getElementById('event-layout').value = event.layout || '';
 
     const heading = document.getElementById('event-form-heading');
@@ -487,6 +518,7 @@ function cancelEditEvent() {
 
     const form = document.getElementById('event-form');
     if (form) form.reset();
+    syncEventRoundTypeVisibility();
 
     const heading = document.getElementById('event-form-heading');
     if (heading) heading.textContent = 'Add New Event';
@@ -903,7 +935,15 @@ function initLeagueRandomizer() {
                 const location = getRandomUnusedLocation(used, selectedCourses, usedLayouts);
                 const layout = getRandomUnusedLayout(location, usedLayouts) || getRandomLayout(location);
                 const dateStr = formatLocal(current);
-                generated.push({ date: dateStr, location, layout, leagueType: document.getElementById('lr-league-type').value });
+                const leaguePick = document.getElementById('lr-league-type').value;
+                const isMixedLeague = leaguePick === 'Mixed';
+                generated.push({
+                    date: dateStr,
+                    location,
+                    layout,
+                    leagueType: leaguePick,
+                    style: isMixedLeague ? LEAGUE_STYLES[Math.floor(Math.random() * LEAGUE_STYLES.length)] : leaguePick
+                });
 
                 if (!usedCoursesByWeek[weekKey]) usedCoursesByWeek[weekKey] = used;
                 used.add(location);
@@ -943,7 +983,8 @@ function initLeagueRandomizer() {
                     rows.forEach(row => {
                         const date = row.dataset.date;
                         const location = row.querySelector('.lr-course-select').value;
-                        const leagueType = row.querySelector('.lr-league-type-select').value;
+                        const leagueType = row.dataset.league;
+                        const roundType = row.querySelector('.lr-league-type-select').value;
                         const layout = row.querySelector('.lr-layout-select').value;
                         const [year, month, day] = date.split('-');
                         const monthId = `${year}-${month}`;
@@ -958,6 +999,7 @@ function initLeagueRandomizer() {
                             layout,
                             createdAt: new Date().toISOString()
                         };
+                        if (leagueType === 'Mixed') event.roundType = roundType;
 
                         eventsByMonth[monthId] = eventsByMonth[monthId] || [];
                         eventsByMonth[monthId].push(event);
@@ -1027,10 +1069,10 @@ function renderRandomizerResults(generated, container) {
         return options.map(o => `<option value="${o}" ${o === selected ? 'selected' : ''}>${o}</option>`).join('');
     };
 
-    const LEAGUE_TYPES = ['Doubles', 'Handicap', 'Scratch'];
+    const LEAGUE_TYPES = LEAGUE_STYLES;
 
     const rows = generated.map(e => `
-        <tr class="lr-preview-row" data-date="${e.date}">
+        <tr class="lr-preview-row" data-date="${e.date}" data-league="${e.leagueType}">
             <td style="padding: 0.25rem 0.5rem;">${e.date}</td>
             <td style="padding: 0.25rem 0.5rem;">
                 <select class="lr-course-select" style="width: 100%;">
@@ -1039,7 +1081,7 @@ function renderRandomizerResults(generated, container) {
             </td>
             <td style="padding: 0.25rem 0.5rem;">
                 <select class="lr-league-type-select" style="width: 100%;">
-                    ${LEAGUE_TYPES.map(t => `<option value="${t}" ${t === e.leagueType ? 'selected' : ''}>${t}</option>`).join('')}
+                    ${LEAGUE_TYPES.map(t => `<option value="${t}" ${t === (e.style || e.leagueType) ? 'selected' : ''}>${t}</option>`).join('')}
                 </select>
             </td>
             <td style="padding: 0.25rem 0.5rem;">
