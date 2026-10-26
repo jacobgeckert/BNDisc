@@ -580,6 +580,14 @@
                                             <input type="text" id="league-round-layout" placeholder="S2S" autocomplete="off" style="width: 100%;">
                                             <div id="league-layout-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 6px; max-height: 150px; overflow-y: auto; z-index: 100; margin-top: 4px;"></div>
                                         </div>
+                                        <label for="league-round-type" id="league-round-type-label" style="display: none;">Type</label>
+                                        <div id="league-round-type-wrap" style="display: none;">
+                                            <select id="league-round-type" style="width: 100%;">
+                                                <option value="Handicap" selected>Handicap</option>
+                                                <option value="Doubles">Doubles</option>
+                                                <option value="Scratch">Scratch</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </form>
 
@@ -1257,6 +1265,7 @@
                                             <option value="Doubles">Doubles</option>
                                             <option value="Handicap">Handicap</option>
                                             <option value="Scratch">Scratch</option>
+                                            <option value="Mixed">Mixed</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1502,12 +1511,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
-    <script type="module" src="js/theme.js?v=167"></script>
+    <script type="module" src="js/theme.js?v=168"></script>
     <script type="module" src="js/firebase-config.js?v=143"></script>
     <script type="module" src="js/firestore.js?v=153"></script>
     <script type="module" src="js/nav.js?v=146"></script>
     <script type="module" src="js/loginAdmin.js?v=151"></script>
-    <script type="module" src="js/admin.js?v=174"></script>
+    <script type="module" src="js/admin.js?v=175"></script>
     <script type="module" src="js/roundRater.js?v=29"></script>
     <script type="module" src="js/currentEvents.js?v=158"></script>
     <script type="module" src="js/aces.js?v=143"></script>

@@ -1092,7 +1092,7 @@ function leagueDirectorsFor(admins, year, season, leagueType) {
         const match = (a.leagues || []).some(l =>
             String(l.year) === String(year) &&
             l.season === season &&
-            l.leagueType === leagueType
+            (l.leagueType === leagueType || l.leagueType === 'Mixed')
         );
         if (match && a.name) names.push(a.name);
     });

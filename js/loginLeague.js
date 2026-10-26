@@ -44,8 +44,28 @@ function saveTagsAssigned(val) {
     try { localStorage.setItem(TAGS_ASSIGNED_KEY, val ? 'true' : 'false'); } catch (e) {}
 }
 
+// Effective league type for the current round. Mixed leagues resolve it per
+// week from the Round Type select (auto-filled by the matched calendar event).
+function getRoundLeagueType() {
+    const base = selectedLeague?.leagueType;
+    if (base && base.toLowerCase() !== 'mixed') return base;
+    return document.getElementById('league-round-type')?.value || 'Handicap';
+}
+
+function isMixedLeague() {
+    return selectedLeague?.leagueType?.toLowerCase() === 'mixed';
+}
+
+function updateRoundTypeUI() {
+    const show = isMixedLeague();
+    const label = document.getElementById('league-round-type-label');
+    const wrap = document.getElementById('league-round-type-wrap');
+    if (label) label.style.display = show ? '' : 'none';
+    if (wrap) wrap.style.display = show ? 'block' : 'none';
+}
+
 function updateTagControls() {
-    const leagueType = selectedLeague?.leagueType?.toLowerCase();
+    const leagueType = getRoundLeagueType()?.toLowerCase();
     const isDoubles = leagueType === 'doubles';
     const tab = document.getElementById('league-tab-tags');
     const tagInput = document.getElementById('league-checkin-tag');
@@ -292,8 +312,6 @@ async function loadLeagueCheckin() {
         console.warn('Could not load free round allotments:', e);
         freeRoundDocs = {};
     }
-    const isScratch = selectedLeague?.leagueType?.toLowerCase() === 'scratch';
-
     const suggestions = document.getElementById('league-checkin-suggestions');
     const completeBtn = document.getElementById('league-complete-checkin');
     const tabCheckin = document.getElementById('league-tab-checkin');
@@ -383,6 +401,7 @@ async function loadLeagueCheckin() {
     function updateFinalizeButton() {
         if (!finalizeBtn) return;
         const valid = dateInput?.value && locationInput?.value?.trim() && layoutInput?.value?.trim();
+        updateRoundTypeUI();
         finalizeBtn.disabled = !valid;
         finalizeBtn.style.opacity = valid ? '1' : '0.5';
         finalizeBtn.style.cursor = valid ? 'pointer' : 'not-allowed';
@@ -459,7 +478,7 @@ async function loadLeagueCheckin() {
         const checkins = getCheckins();
         const acePayers = getAcePayers();
         const tags = getCheckinTags();
-        if (playersInput && !isScratch) playersInput.value = String(checkins.length);
+        if (playersInput && getRoundLeagueType()?.toLowerCase() !== 'scratch') playersInput.value = String(checkins.length);
         renderRoundSummary();
         checkinList.innerHTML = '';
         if (checkins.length === 0) {
@@ -607,7 +626,7 @@ async function loadLeagueCheckin() {
     function checkIn() {
         const rawName = input.value.trim();
         if (!rawName) return;
-        const isDoubles = selectedLeague?.leagueType?.toLowerCase() === 'doubles';
+        const isDoubles = getRoundLeagueType()?.toLowerCase() === 'doubles';
 
         if (editingIndex !== null) {
             const checkins = getCheckins();
@@ -798,8 +817,18 @@ async function loadLeagueCheckin() {
                 if (match) {
                     const oldLocation = match.location || '';
                     const oldLayout = match.layout || '';
+                    const oldType = match.leagueType || '';
                     locationInput.value = oldLocation;
                     layoutInput.value = oldLayout;
+
+                    // Mixed leagues take each week's style from the calendar event.
+                    const roundTypeSelect = document.getElementById('league-round-type');
+                    if (isMixedLeague() && roundTypeSelect && oldType && oldType.toLowerCase() !== 'mixed') {
+                        roundTypeSelect.value = oldType;
+                        applyRoundTypeUI();
+                        updateTagControls();
+                    }
+
                     updateFinalizeButton();
                     await renderLayoutRecords();
 
@@ -816,6 +845,13 @@ async function loadLeagueCheckin() {
                                 layoutInput.value = newMatch.layout || '';
                                 updateFinalizeButton();
                                 renderLayoutRecords();
+                            }
+                            const newType = newMatch.leagueType || '';
+                            if (isMixedLeague() && roundTypeSelect && newType && newType.toLowerCase() !== 'mixed' &&
+                                roundTypeSelect.value === oldType) {
+                                roundTypeSelect.value = newType;
+                                applyRoundTypeUI();
+                                updateTagControls();
                             }
                         }).catch(err => console.warn('Background event refresh failed:', err));
                     }
@@ -962,6 +998,27 @@ async function loadLeagueCheckin() {
     renderCheckins();
     renderTags();
     updateTagControls();
+    applyRoundTypeUI();
+
+    const roundTypeSelect = document.getElementById('league-round-type');
+    if (roundTypeSelect) {
+        roundTypeSelect.onchange = () => {
+            applyRoundTypeUI();
+            updateTagControls();
+        };
+    }
+    switchLeagueTab('round-info');
+}
+
+// Applies the scratch-vs-standard finance UI for the resolved round type.
+// Re-run when a Mixed league's round type changes.
+function applyRoundTypeUI() {
+    const isScratch = getRoundLeagueType()?.toLowerCase() === 'scratch';
+    const ctpInput = document.getElementById('league-ctp');
+    const playersInput = document.getElementById('league-payout-players');
+    const payoutForm = document.getElementById('league-payout-form');
+    const payoutSubtitle = document.getElementById('league-payout-subtitle');
+    const payoutResults = document.getElementById('league-payout-results');
 
     if (isScratch) {
         if (ctpInput) ctpInput.value = '0.50';
@@ -971,27 +1028,20 @@ async function loadLeagueCheckin() {
             playersInput.style.opacity = '1';
             playersInput.style.cursor = 'text';
         }
-        updatePayoutPerPlayer();
-    } else if (playersInput) {
-        playersInput.readOnly = true;
-        playersInput.style.opacity = '0.7';
-        playersInput.style.cursor = 'not-allowed';
-    }
-
-    const payoutForm = document.getElementById('league-payout-form');
-    const payoutSubtitle = document.getElementById('league-payout-subtitle');
-    const payoutResults = document.getElementById('league-payout-results');
-    if (isScratch) {
         if (payoutForm) payoutForm.style.display = 'none';
         if (payoutSubtitle) payoutSubtitle.style.display = 'none';
         if (payoutResults) payoutResults.innerHTML = getScratchPayoutTable();
     } else {
+        if (playersInput) {
+            playersInput.readOnly = true;
+            playersInput.style.opacity = '0.7';
+            playersInput.style.cursor = 'not-allowed';
+        }
         if (payoutForm) payoutForm.style.display = 'block';
         if (payoutSubtitle) payoutSubtitle.style.display = 'block';
-        if (payoutResults) payoutResults.innerHTML = '';
     }
+    updatePayoutPerPlayer();
     updateScratchFinancesVisibility();
-    switchLeagueTab('round-info');
 }
 
 function groupIntoCards(n) {
@@ -1028,7 +1078,7 @@ function completeCheckIn() {
     const status = document.getElementById('league-checkin-status');
     const cardsContainer = document.getElementById('league-cards-container');
 
-    const leagueType = selectedLeague?.leagueType?.toLowerCase();
+    const leagueType = getRoundLeagueType()?.toLowerCase();
     if (!leagueType || (leagueType !== 'handicap' && leagueType !== 'scratch' && leagueType !== 'doubles')) {
         if (status) status.textContent = 'Create Cards is only for Handicap, Scratch, or Doubles leagues.';
         return;
@@ -1344,7 +1394,7 @@ async function renderLayoutRecords() {
 }
 
 function switchLeagueTab(tab) {
-    if (tab === 'tags' && selectedLeague?.leagueType?.toLowerCase() === 'doubles') return;
+    if (tab === 'tags' && getRoundLeagueType()?.toLowerCase() === 'doubles') return;
     const roundInfoPanel = document.getElementById('league-round-info-panel');
     const checkinPanel = document.getElementById('league-checkin-panel');
     const tagsPanel = document.getElementById('league-tags-panel');
@@ -1483,7 +1533,7 @@ function updatePayoutPerPlayer() {
 }
 
 function updateScratchFinancesVisibility() {
-    const isScratch = selectedLeague?.leagueType?.toLowerCase() === 'scratch';
+    const isScratch = getRoundLeagueType()?.toLowerCase() === 'scratch';
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     const form = document.getElementById('league-round-finances-form');
     const staticTable = document.getElementById('league-round-finances-static');
@@ -1526,7 +1576,7 @@ function calculatePayouts() {
         return;
     }
 
-    if (selectedLeague?.leagueType?.toLowerCase() === 'scratch') {
+    if (getRoundLeagueType()?.toLowerCase() === 'scratch') {
         const scratch = SCRATCH_PAYOUTS[numPlayers];
         if (!scratch) {
             if (results) results.innerHTML = '<p class="loading-text">Scratch payouts support only 3, 4, or 5 players per card.</p>';
@@ -1744,6 +1794,7 @@ async function finalizeRound() {
         date,
         location,
         layout,
+        roundType: getRoundLeagueType(),
         freePlayers: effectiveFree,
         freeAcePlayers: effectiveFreeAce,
         roundFinances: {
@@ -1771,7 +1822,7 @@ async function finalizeRound() {
     const docId = `${selectedLeague.year}${selectedLeague.season}${selectedLeague.leagueType}`;
     const weekField = `week_${date}`;
 
-    const isDoubles = selectedLeague?.leagueType?.toLowerCase() === 'doubles';
+    const isDoubles = getRoundLeagueType()?.toLowerCase() === 'doubles';
     const tags = getCheckinTags();
     const originalTags = getCheckinTagsOriginal();
     if (!isDoubles && Object.keys(originalTags).length > 0 && !tagsAssigned) {
@@ -1906,7 +1957,7 @@ function resetRound() {
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
     if (locationInput) locationInput.value = '';
     if (layoutInput) layoutInput.value = '';
-    const isScratch = selectedLeague?.leagueType?.toLowerCase() === 'scratch';
+    const isScratch = getRoundLeagueType()?.toLowerCase() === 'scratch';
     if (roundCostInput) roundCostInput.value = '5.00';
     if (clubFeesInput) clubFeesInput.value = '0.50';
     if (ctpInput) ctpInput.value = isScratch ? '0.50' : '0.00';
