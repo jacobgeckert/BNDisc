@@ -27,6 +27,11 @@ const LEAGUE_HASH_KEY = 'bndisc_league_hash';
 const TAGS_ASSIGNED_KEY = 'bndisc_tags_assigned';
 const FREE_PLAYERS_KEY = 'bndisc_free_players';
 const FREE_ACE_KEY = 'bndisc_free_ace';
+const SELECTED_LEAGUE_KEY = 'bndisc_selected_league';
+const ROUND_INFO_KEY = 'bndisc_round_info';
+const FINANCES_KEY = 'bndisc_round_finances';
+const CARDS_KEY = 'bndisc_cards';
+const GUEST_PLAYERS_KEY = 'bndisc_guest_players';
 
 const EVENT_CACHE_TTL_MS = 15 * 60 * 1000;
 const COURSE_RECORD_CACHE_TTL_MS = 60 * 60 * 1000;
@@ -243,6 +248,88 @@ function saveFreeAce(players) {
     localStorage.setItem(FREE_ACE_KEY, JSON.stringify(players));
 }
 
+function getStoredLeague() {
+    try {
+        return JSON.parse(localStorage.getItem(SELECTED_LEAGUE_KEY));
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveSelectedLeague(league) {
+    if (league) localStorage.setItem(SELECTED_LEAGUE_KEY, JSON.stringify(league));
+    else localStorage.removeItem(SELECTED_LEAGUE_KEY);
+}
+
+// Two league entries are the same when they resolve to the same season doc.
+function sameLeague(a, b) {
+    return !!a && !!b && a.year === b.year && a.season === b.season && a.leagueType === b.leagueType;
+}
+
+function getRoundInfo() {
+    try {
+        return JSON.parse(localStorage.getItem(ROUND_INFO_KEY)) || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveRoundInfo() {
+    const val = (id) => document.getElementById(id)?.value || '';
+    localStorage.setItem(ROUND_INFO_KEY, JSON.stringify({
+        date: val('league-round-date'),
+        location: val('league-round-location'),
+        layout: val('league-round-layout'),
+        roundType: val('league-round-type')
+    }));
+}
+
+function getRoundFinances() {
+    try {
+        return JSON.parse(localStorage.getItem(FINANCES_KEY)) || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveRoundFinances() {
+    const val = (id) => document.getElementById(id)?.value || '';
+    localStorage.setItem(FINANCES_KEY, JSON.stringify({
+        roundCost: val('league-round-cost'),
+        clubFees: val('league-club-fees'),
+        ctp: val('league-ctp'),
+        aceCost: val('league-ace-cost'),
+        pct: val('league-payout-pct')
+    }));
+}
+
+function getSavedCards() {
+    try {
+        return JSON.parse(localStorage.getItem(CARDS_KEY));
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveCards(cards) {
+    if (cards) localStorage.setItem(CARDS_KEY, JSON.stringify(cards));
+    else localStorage.removeItem(CARDS_KEY);
+}
+
+// Guests are walk-ons missing from the roster; their prompted rating only
+// exists in memory unless mirrored here for the duration of the round.
+function getGuestPlayers() {
+    try {
+        return JSON.parse(localStorage.getItem(GUEST_PLAYERS_KEY)) || [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveGuestPlayers(players) {
+    localStorage.setItem(GUEST_PLAYERS_KEY, JSON.stringify(players));
+}
+
 function leaguePlayerId(name) {
     return String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
@@ -307,6 +394,12 @@ async function loadLeagueCheckin() {
     const rosterResult = cached ? { roster: cached } : await getRoster();
     const roster = rosterResult?.roster || cached;
     const allPlayers = roster?.players || [];
+    // Re-attach saved walk-on ratings so a reload doesn't drop them.
+    getGuestPlayers().forEach(g => {
+        if (g?.name && !allPlayers.some(p => p.name.toLowerCase() === String(g.name).toLowerCase())) {
+            allPlayers.push(g);
+        }
+    });
     currentRoster = allPlayers;
     tagsAssigned = getTagsAssigned();
 
@@ -331,6 +424,8 @@ async function loadLeagueCheckin() {
     const dateInput = document.getElementById('league-round-date');
     const locationInput = document.getElementById('league-round-location');
     const layoutInput = document.getElementById('league-round-layout');
+    const aceCostInput = document.getElementById('league-ace-cost');
+    const pctInput = document.getElementById('league-payout-pct');
     const finalizeBtn = document.getElementById('league-finalize-round');
     const resetBtn = document.getElementById('league-reset-round');
     let selectingSuggestion = false;
@@ -391,6 +486,24 @@ async function loadLeagueCheckin() {
             layoutSuggestions.appendChild(div);
         });
         layoutSuggestions.style.display = 'block';
+    }
+
+    // Restore round info and finance inputs saved from a previous session.
+    const savedInfo = getRoundInfo();
+    if (savedInfo) {
+        if (dateInput && savedInfo.date) dateInput.value = savedInfo.date;
+        if (locationInput) locationInput.value = savedInfo.location || '';
+        if (layoutInput) layoutInput.value = savedInfo.layout || '';
+        const roundTypeSelect = document.getElementById('league-round-type');
+        if (roundTypeSelect && savedInfo.roundType) roundTypeSelect.value = savedInfo.roundType;
+    }
+    const savedFin = getRoundFinances();
+    if (savedFin) {
+        if (roundCostInput && savedFin.roundCost) roundCostInput.value = savedFin.roundCost;
+        if (clubFeesInput && savedFin.clubFees) clubFeesInput.value = savedFin.clubFees;
+        if (ctpInput && savedFin.ctp) ctpInput.value = savedFin.ctp;
+        if (aceCostInput && savedFin.aceCost) aceCostInput.value = savedFin.aceCost;
+        if (pctInput && savedFin.pct) pctInput.value = savedFin.pct;
     }
 
     if (dateInput && !dateInput.value) {
@@ -687,11 +800,13 @@ async function loadLeagueCheckin() {
             const numericRating = Number(rating);
             const rawHdcp = (1005 - numericRating) / 12;
             const hdcpValue = Math.ceil(rawHdcp * 2) / 2;
-            allPlayers.push({
-                name: rawName,
-                currentRating: numericRating,
-                hdcp: hdcpValue
-            });
+            const guest = { name: rawName, currentRating: numericRating, hdcp: hdcpValue };
+            allPlayers.push(guest);
+            const guests = getGuestPlayers();
+            if (!guests.some(g => String(g.name).toLowerCase() === rawName.toLowerCase())) {
+                guests.push(guest);
+                saveGuestPlayers(guests);
+            }
         }
 
         const checkins = getCheckins();
@@ -802,11 +917,13 @@ async function loadLeagueCheckin() {
             }
         };
     }
-    if (roundCostInput) roundCostInput.addEventListener('input', updatePayoutPerPlayer);
-    if (clubFeesInput) clubFeesInput.addEventListener('input', updatePayoutPerPlayer);
-    if (ctpInput) ctpInput.addEventListener('input', updatePayoutPerPlayer);
+    if (roundCostInput) roundCostInput.addEventListener('input', () => { updatePayoutPerPlayer(); saveRoundFinances(); });
+    if (clubFeesInput) clubFeesInput.addEventListener('input', () => { updatePayoutPerPlayer(); saveRoundFinances(); });
+    if (ctpInput) ctpInput.addEventListener('input', () => { updatePayoutPerPlayer(); saveRoundFinances(); });
+    if (aceCostInput) aceCostInput.addEventListener('input', saveRoundFinances);
+    if (pctInput) pctInput.addEventListener('input', saveRoundFinances);
     if (dateInput) {
-        dateInput.addEventListener('input', updateFinalizeButton);
+        dateInput.addEventListener('input', () => { updateFinalizeButton(); saveRoundInfo(); });
         dateInput.addEventListener('change', async () => {
             if (!locationInput || !layoutInput) return;
             const date = dateInput.value;
@@ -859,16 +976,18 @@ async function loadLeagueCheckin() {
                                 applyRoundTypeUI();
                                 updateTagControls();
                             }
+                            saveRoundInfo();
                         }).catch(err => console.warn('Background event refresh failed:', err));
                     }
                 }
             } catch (error) {
                 console.warn('Could not load calendar event for date:', error);
             }
+            saveRoundInfo();
         });
     }
     if (locationInput) {
-        locationInput.addEventListener('input', () => { updateFinalizeButton(); updateLocationSuggestions(); });
+        locationInput.addEventListener('input', () => { updateFinalizeButton(); updateLocationSuggestions(); saveRoundInfo(); });
         locationInput.addEventListener('change', renderLayoutRecords);
         locationInput.addEventListener('focus', updateLocationSuggestions);
         locationInput.addEventListener('blur', () => {
@@ -876,7 +995,7 @@ async function loadLeagueCheckin() {
         });
     }
     if (layoutInput) {
-        layoutInput.addEventListener('input', () => { updateFinalizeButton(); updateLayoutSuggestions(); });
+        layoutInput.addEventListener('input', () => { updateFinalizeButton(); updateLayoutSuggestions(); saveRoundInfo(); });
         layoutInput.addEventListener('change', renderLayoutRecords);
         layoutInput.addEventListener('focus', updateLayoutSuggestions);
         layoutInput.addEventListener('blur', () => {
@@ -1011,8 +1130,14 @@ async function loadLeagueCheckin() {
         roundTypeSelect.onchange = () => {
             applyRoundTypeUI();
             updateTagControls();
+            saveRoundInfo();
         };
     }
+
+    // Re-show generated cards from the saved round state (switchLeagueTab
+    // re-renders layout records for the restored location/layout).
+    const savedCards = getSavedCards();
+    if (savedCards?.cards?.length) renderCards(savedCards);
     switchLeagueTab('round-info');
 }
 
@@ -1082,7 +1207,6 @@ function groupIntoCards(n) {
 
 function completeCheckIn() {
     const status = document.getElementById('league-checkin-status');
-    const cardsContainer = document.getElementById('league-cards-container');
 
     const leagueType = getRoundLeagueType()?.toLowerCase();
     if (!leagueType || (leagueType !== 'handicap' && leagueType !== 'scratch' && leagueType !== 'doubles')) {
@@ -1109,12 +1233,7 @@ function completeCheckIn() {
         return;
     }
 
-    const checkinList = document.getElementById('league-checkin-list');
-    if (checkinList) checkinList.style.display = 'none';
-    cardsContainer.style.display = 'block';
-    cardsContainer.style.marginTop = '0.5rem';
-    cardsContainer.innerHTML = '<div id="league-cards-grid" style="display: flex; flex-wrap: wrap; gap: 1rem;"></div>';
-    const grid = document.getElementById('league-cards-grid');
+    const cardsData = { leagueType, cards: [] };
 
     if (leagueType === 'doubles') {
         const teams = [];
@@ -1122,18 +1241,47 @@ function completeCheckIn() {
             if (i + 1 < checkins.length) teams.push([checkins[i], checkins[i + 1]]);
             else teams.push([checkins[i]]);
         }
-        const cards = [];
         for (let i = 0; i < teams.length; i += 2) {
             const card = [teams[i]];
             if (i + 1 < teams.length) card.push(teams[i + 1]);
-            cards.push(card);
+            cardsData.cards.push(card);
         }
-        if (cards.length > 1 && cards[cards.length - 1].length === 1) {
-            const orphan = cards.pop()[0];
-            cards[cards.length - 1].push(orphan);
+        if (cardsData.cards.length > 1 && cardsData.cards[cardsData.cards.length - 1].length === 1) {
+            const orphan = cardsData.cards.pop()[0];
+            cardsData.cards[cardsData.cards.length - 1].push(orphan);
         }
+    } else {
+        const groups = groupIntoCards(checkins.length);
+        let index = 0;
+        groups.forEach((size) => {
+            const card = [];
+            for (let i = 0; i < size && index < checkins.length; i++, index++) {
+                card.push(checkins[index]);
+            }
+            cardsData.cards.push(card);
+        });
+    }
 
-        cards.forEach((card, cardNo) => {
+    saveCards(cardsData);
+    renderCards(cardsData);
+}
+
+// Renders generated cards; also replays saved cards after a page reload so a
+// mid-round refresh doesn't reshuffle the groups.
+function renderCards(cardsData) {
+    const cardsContainer = document.getElementById('league-cards-container');
+    if (!cardsContainer || !cardsData?.cards?.length) return;
+
+    const checkinList = document.getElementById('league-checkin-list');
+    if (checkinList) checkinList.style.display = 'none';
+    cardsContainer.style.display = 'block';
+    cardsContainer.style.marginTop = '0.5rem';
+    cardsContainer.innerHTML = '<div id="league-cards-grid" style="display: flex; flex-wrap: wrap; gap: 1rem;"></div>';
+    const grid = document.getElementById('league-cards-grid');
+    const leagueType = cardsData.leagueType;
+
+    if (leagueType === 'doubles') {
+        cardsData.cards.forEach((card, cardNo) => {
             const cardDiv = document.createElement('div');
             cardDiv.style.cssText = 'background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; flex: 1; min-width: 220px; max-width: 320px;';
             cardDiv.innerHTML = `<h5 style="margin: 0 0 0.75rem 0; color: var(--accent-color);">Card ${cardNo + 1}</h5>`;
@@ -1149,25 +1297,21 @@ function completeCheckIn() {
             grid.appendChild(cardDiv);
         });
     } else {
-        const groups = groupIntoCards(checkins.length);
-
-        let index = 0;
-        groups.forEach((size, cardNo) => {
+        cardsData.cards.forEach((names, cardNo) => {
             const card = document.createElement('div');
             card.style.cssText = 'background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; flex: 1; min-width: 220px; max-width: 320px;';
             card.innerHTML = `<h5 style="margin: 0 0 0.75rem 0; color: var(--accent-color);">Card ${cardNo + 1}</h5>`;
             const list = document.createElement('ul');
             list.style.cssText = 'margin: 0; padding-left: 1.2rem;';
 
-            for (let i = 0; i < size && index < checkins.length; i++, index++) {
-                const name = checkins[index];
+            names.forEach((name) => {
                 const li = document.createElement('li');
                 li.style.cssText = 'margin-bottom: 0.4rem;';
                 const player = currentRoster.find(p => p.name.toLowerCase() === name.toLowerCase());
                 const rating = player?.currentRating ?? '';
                 li.textContent = leagueType === 'scratch' ? `${name} (${rating})` : name;
                 list.appendChild(li);
-            }
+            });
 
             card.appendChild(list);
             grid.appendChild(card);
@@ -1562,6 +1706,7 @@ if (staticCtpSelect) {
         if (clubFeesInput) clubFeesInput.value = yes ? '0.50' : '1.00';
         if (ctpInput) ctpInput.value = yes ? '0.50' : '0.00';
         updatePayoutPerPlayer();
+        saveRoundFinances();
     });
 }
 
@@ -1920,6 +2065,10 @@ function resetRound() {
     saveRoundScores({});
     saveFreePlayers([]);
     saveFreeAce([]);
+    localStorage.removeItem(ROUND_INFO_KEY);
+    localStorage.removeItem(FINANCES_KEY);
+    localStorage.removeItem(CARDS_KEY);
+    localStorage.removeItem(GUEST_PLAYERS_KEY);
     tagsAssigned = false;
     saveTagsAssigned(false);
     cardsVisible = false;
@@ -2021,6 +2170,7 @@ function setupLeagueActions() {
     if (switchBtn) {
         switchBtn.onclick = () => {
             selectedLeague = null;
+            saveSelectedLeague(null);
             initLeagueCentral(userLeagues);
         };
     }
@@ -2032,6 +2182,7 @@ function setupLeagueActions() {
 async function signOutLeagueAdmin() {
     selectedLeague = null;
     userLeagues = [];
+    saveSelectedLeague(null);
     hideLeagueActions();
     try { await signOut(auth); } catch (e) { console.error('League sign out error:', e); }
 }
@@ -2064,6 +2215,7 @@ async function initLeagueCentral(leagues) {
         showLeagueSelectorCard(false);
         showCheckinCard(true);
         selectedLeague = null;
+        saveSelectedLeague(null);
         await loadLeagueCheckin();
         setupLeagueActions();
         return;
@@ -2071,7 +2223,22 @@ async function initLeagueCentral(leagues) {
 
     if (leagues.length === 1) {
         selectedLeague = leagues[0];
+        saveSelectedLeague(selectedLeague);
         setLeagueTitle(formatLeagueTitle(leagues[0]));
+        showLeagueSelectorCard(false);
+        showCheckinCard(true);
+        await loadLeagueCheckin();
+        setupLeagueActions();
+        return;
+    }
+
+    // Multiple leagues — re-open the last selected one when it is still valid.
+    const stored = getStoredLeague();
+    const restored = stored ? leagues.find(l => sameLeague(l, stored)) : null;
+    if (restored) {
+        selectedLeague = restored;
+        saveSelectedLeague(restored);
+        setLeagueTitle(formatLeagueTitle(restored));
         showLeagueSelectorCard(false);
         showCheckinCard(true);
         await loadLeagueCheckin();
@@ -2102,6 +2269,7 @@ async function initLeagueCentral(leagues) {
         try {
             const league = JSON.parse(selected);
             selectedLeague = league;
+            saveSelectedLeague(league);
             setLeagueTitle(formatLeagueTitle(league));
             showLeagueSelectorCard(false);
             showCheckinCard(true);
