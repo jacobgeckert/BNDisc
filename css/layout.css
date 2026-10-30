@@ -241,6 +241,16 @@
 }
 .nav-links a[href="#vote"].unlocked {
     display: flex !important;
+    animation: vote-link-in 0.4s ease-out,
+               vote-link-glow 2.2s ease-in-out 0.4s infinite;
+}
+@keyframes vote-link-in {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+@keyframes vote-link-glow {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-color) 0%, transparent); }
+    50% { box-shadow: 0 0 14px 2px color-mix(in srgb, var(--accent-color) 45%, transparent); }
 }
 
 /* --- Mobile Toggle Button --- */
