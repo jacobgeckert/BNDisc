@@ -2290,7 +2290,12 @@ function initElections() {
                 localStorage.setItem(GMAIL_SENDER_KEY, s.allowedSender);
             }
             updateGmailStatus();
-        }).catch(e => console.warn('Could not load Gmail settings:', e));
+        }).catch(e => console.warn('Could not load Gmail settings:', e))
+        .finally(() => {
+            // Silent reconnect: if the Google session still holds the
+            // gmail.send grant, restore the connection without a popup.
+            ensureGmailToken(true).catch(() => { /* stay disconnected */ });
+        });
         const connectBtn = document.getElementById('gmail-connect');
         if (connectBtn) {
             connectBtn.onclick = async () => {
@@ -2729,7 +2734,7 @@ function loadGis() {
     return gisLoading;
 }
 
-function requestGmailToken() {
+function requestGmailToken(prompt) {
     return new Promise(async (resolve, reject) => {
         const clientId = localStorage.getItem(GMAIL_CLIENT_ID_KEY) || '';
         if (!clientId) return reject(new Error('Paste your Gmail OAuth Client ID first.'));
@@ -2745,18 +2750,19 @@ function requestGmailToken() {
             });
             // Explicit connects always show the account chooser so the admin
             // can pick the club account rather than a personal one; silent
-            // refreshes reuse the already-authorized account.
-            tc.requestAccessToken({ prompt: gmailToken ? '' : 'consent select_account' });
+            // refreshes reuse the already-authorized account via hidden iframe.
+            tc.requestAccessToken({ prompt });
         } catch (e) {
             reject(e);
         }
     });
 }
 
-async function ensureGmailToken() {
+async function ensureGmailToken(silent = false) {
     // Access tokens last ~1h; reuse for 50 min then re-request silently.
     if (gmailToken && Date.now() - gmailTokenAt < 50 * 60 * 1000) return gmailToken;
-    gmailToken = await requestGmailToken();
+    gmailToken = await requestGmailToken(
+        silent || gmailToken ? '' : 'consent select_account');
     gmailTokenAt = Date.now();
     try {
         const prof = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
