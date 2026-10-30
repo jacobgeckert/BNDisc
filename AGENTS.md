@@ -58,3 +58,65 @@ match /free_rounds/{playerId} {
 }
 ```
 
+## Elections & Voting — `elections` / `ballots` / `votes` collections
+
+Board elections (`#vote` page, "Elections & Voting" admin card) use three
+collections:
+
+```
+elections/{id}      = { title, positions: [{title, maxChoices, candidates[]}],
+                        open, navVisible, closesAt (Timestamp), createdAt, createdBy }
+ballots/{token}     = { electionId, email, used, usedAt, createdAt }
+                      // token = 128-bit url-safe random; the doc ID is the credential
+votes/{sha256(token)} = { electionId, selections, submittedAt }
+                      // doc ID is a one-way hash — a vote can't be tied to an email
+```
+
+The token's unguessability is what makes unauthenticated `get` safe on
+`ballots` — never allow `list` publicly (emails would be enumerable). Votes
+are create-only (`update: if false` makes double-voting structurally
+impossible); only admins can `delete` them for cleanup. `request.time`
+enforces the close date so a client clock can't reopen voting.
+
+The full ruleset — including the three `match` blocks for these collections —
+is versioned in `firestore.rules` at the repo root; paste its contents into
+the Firebase console when deploying.
+
+Caveat: `request.auth.token.email` may be mixed-case for Google sign-in;
+the `isClubAdmin()` `.lower()` call assumes `admins` doc IDs are stored
+lowercase (they are, per the existing auth code). If admin checks start
+failing, verify the doc ID casing matches `email.lower()`.
+
+## Gmail sender — OAuth setup for in-dashboard email blasts
+
+The Elections card can send ballot links straight from an admin's Gmail via
+the Gmail API (`gmail.send` scope, GIS token client — no backend). The OAuth
+client can live in ANY GCP project — it does not need to be the Firebase
+project, and it does not need to be owned by the sending account. The sender
+is whichever Google account authorizes in the Connect popup (must be a listed
+test user). To send as the club email from a personal-account project, just
+add the club email as a test user; or do the whole setup signed in as the
+club account for cleaner ownership.
+
+One-time setup in Google Cloud Console (any project, e.g. `bndisc-4de3e` or
+a club-owned project):
+
+1. APIs & Services → Library → enable **Gmail API**.
+2. OAuth consent screen → External → fill in app name + support email →
+   add the scope `.../auth/gmail.send` → add the sending Gmail(s) — e.g. the
+   club email — as **test users** (the app stays unverified, which is fine
+   for self-use — you'll get the "Google hasn't verified this app" warning
+   and click Advanced → Continue).
+3. Credentials → Create Credentials → **OAuth client ID** → Web application →
+   Authorized JavaScript origins: `https://bndisc.com` (plus
+   `http://localhost:8317` or whatever local port you test on).
+4. Paste the client ID (`….apps.googleusercontent.com`) into the Elections
+   card's "Gmail sender setup" box — it's stored in localStorage
+   (`bndisc_gmail_client_id`); it's a public identifier, not a secret.
+
+Notes: access tokens last ~1h (the code re-requests silently; occasionally
+it'll re-prompt). Consumer Gmail caps around ~500 sent emails/day. Ballot
+docs get a `sentAt` stamp after a successful send — that's why the
+`ballots` update rule is `isClubAdmin() || <used-flip>` rather than just
+the used-flip.
+

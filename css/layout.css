@@ -234,6 +234,15 @@
     display: flex !important;
 }
 
+/* The Vote link stays hidden until an open, navVisible election exists
+   (toggled by js/vote.js via the .unlocked class). */
+.nav-links a[href="#vote"] {
+    display: none !important;
+}
+.nav-links a[href="#vote"].unlocked {
+    display: flex !important;
+}
+
 /* --- Mobile Toggle Button --- */
 .mobile-toggle {
     display: none; /* Hidden on desktop */

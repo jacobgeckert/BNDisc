@@ -20,7 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
      * Main Routing Logic
      */
     async function handleRouting() {
-        const hash = window.location.hash || '#events';
+        // Ballot links carry a query string (#vote?t=TOKEN) — match on the
+        // section id only.
+        const hash = (window.location.hash || '#events').split('?')[0];
 
         // --- NEW: TRIGGER DATA LOADING ---
         // When the user hits the #aces hash, fire off the Firestore fetch

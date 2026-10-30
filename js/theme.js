@@ -6,7 +6,8 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/fi
 import { checkAdminAccess } from './loginAdmin.js?v=151';
 import { checkLeagueAccess } from './loginLeague.js?v=156';
 import { loadCurrentEvents } from './currentEvents.js?v=160'; 
-import { initAdminForm } from './admin.js?v=176'; // Ensure this is imported
+import { initAdminForm } from './admin.js?v=180'; // Ensure this is imported
+import { initVote, updateVoteNavLink } from './vote.js?v=100';
 
 // --- 1. Theme Initialization ---
 const initTheme = () => {
@@ -95,7 +96,9 @@ const handleMascotScatter = (isGovernance) => {
 // --- 3. SPA Navigation Engine ---
 const navigate = async (currentUser = null) => {
     const hash = window.location.hash;
-    const id = hash ? hash.substring(1) : 'events';
+    // Ballot links carry a query string (#vote?t=TOKEN) — the router only
+    // cares about the section id.
+    const id = hash ? hash.substring(1).split('?')[0] : 'events';
     const targetSection = document.getElementById(id);
 
     if (!targetSection) {
@@ -126,6 +129,10 @@ const navigate = async (currentUser = null) => {
         await checkLeagueAccess(currentUser);
     }
 
+    if (id === 'vote') {
+        await initVote();
+    }
+
     // B. UI Updates
     document.querySelectorAll('.nav-links a').forEach(link => {
         const isTarget = link.getAttribute('href') === `#${id}`;
@@ -142,6 +149,8 @@ const navigate = async (currentUser = null) => {
     if (id === 'events') {
         loadCurrentEvents(); 
     }
+
+    updateVoteNavLink();
 };
 
 // --- 4. Lifecycle Management ---

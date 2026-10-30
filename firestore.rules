@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isClubAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
+    }
+
+    match /admins/{email} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    match /league_admins/{email} {
+      allow get: if true;
+      allow list, create, update, delete: if isClubAdmin();
+    }
+
+    match /event_bundles/{monthId} {
+      allow read: if true;
+      allow write: if isClubAdmin();
+    }
+
+    match /ace_bundles/{courseName} {
+      allow read: if true;
+      allow write: if isClubAdmin();
+    }
+
+    match /course_records/{parkName} {
+      allow read: if true;
+      allow write: if isClubAdmin();
+    }
+
+    match /governance/{documentId} {
+      allow read: if true;
+      allow write: if isClubAdmin();
+    }
+
+    match /meeting_bundles/{yearId} {
+      allow read: if true;
+      allow write: if isClubAdmin();
+    }
+
+    match /finance_bundles/{yearId} {
+      allow read: if true;
+      allow write: if isClubAdmin();
+    }
+
+    match /players/{playerId} {
+      allow read: if true;
+      allow write: if isClubAdmin();
+    }
+
+    match /rounds/{roundId} {
+      allow read: if true;
+      allow write: if isClubAdmin();
+    }
+
+    match /leagues/{leagueId} {
+      allow read, write: if request.auth != null
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/league_admins/$(request.auth.token.email.lower()));
+    }
+
+    match /tags/{yearId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/league_admins/$(request.auth.token.email.lower()));
+    }
+
+    match /free_rounds/{playerId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // --- Elections & Voting ---------------------------------------------
+    // elections: public read (candidates/closing date are public anyway),
+    // club-admin write.
+    match /elections/{electionId} {
+      allow get, list: if true;
+      allow create, update, delete: if isClubAdmin();
+    }
+
+    // ballots: the unguessable token doc ID is the credential, so unauth get
+    // is safe — but list stays admin-only so emails can't be enumerated.
+    // Anyone holding the token may flip used false -> true before close;
+    // admins can update anything (e.g. stamping sentAt after emailing).
+    match /ballots/{token} {
+      allow get: if true;
+      allow list: if isClubAdmin();
+      allow create, delete: if isClubAdmin();
+      allow update: if isClubAdmin()
+        || (resource.data.used == false
+        && request.resource.data.used == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedAt'])
+        && request.resource.data.usedAt == request.time
+        && request.time < get(/databases/$(database)/documents/elections/$(resource.data.electionId)).data.closesAt);
+    }
+
+    // votes: doc ID is sha256(token) — one-way hash, so a stored vote can't be
+    // tied to an email. Public get lets a voter verify their own receipt.
+    // create-only means double-voting is structurally impossible; updates and
+    // public listing are denied outright.
+    match /votes/{hash} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.resource.data.keys().hasOnly(['electionId', 'selections', 'submittedAt'])
+        && request.resource.data.selections is list
+        && request.resource.data.submittedAt == request.time
+        && get(/databases/$(database)/documents/elections/$(request.resource.data.electionId)).data.open == true
+        && request.time < get(/databases/$(database)/documents/elections/$(request.resource.data.electionId)).data.closesAt;
+      allow update: if false;
+      allow delete: if isClubAdmin();
+    }
+  }
+}

@@ -1,9 +1,10 @@
 import { db, auth } from './firebase-config.js?v=100';
 import { 
     doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, deleteDoc, deleteField,
-    collection, addDoc, serverTimestamp, writeBatch
+    collection, addDoc, serverTimestamp, writeBatch, query, where, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { isAdmin, getRoster, clearDocCache } from './firestore.js?v=153';
+import { sha256Hex, makeBallotToken, makeVoteLink, updateVoteNavLink } from './vote.js?v=100';
 import { LOCATIONS, COURSE_NAME_OVERRIDES, LAYOUT_SUGGESTIONS, getCourseDisplayName, getCourseStorageName } from './courseData.js?v=100';
 
 // State and Cache
@@ -28,6 +29,7 @@ export function initAdminForm() {
     initLeagueAdminManager();
     initLeagueRoster();
     initFreeRoundsManager();
+    initElections();
     initCollapsibleSections();
 }
 
@@ -2156,4 +2158,572 @@ function setupAdminTabs() {
     if (tabsNav.firstElementChild) {
         tabsNav.firstElementChild.click();
     }
+}
+/**
+ * ELECTIONS & VOTING
+ * Creates elections, issues one unguessable ballot link per member email,
+ * exports link CSVs for the email blast, and tallies anonymous votes.
+ * Votes live at votes/{sha256(token)} — tally validates each vote by hashing
+ * issued ballot tokens, so a stored vote can't be tied back to an email.
+ */
+function initElections() {
+    const newBtn = document.getElementById('election-new-btn');
+    const createBox = document.getElementById('election-create');
+    const createForm = document.getElementById('election-create-form');
+    const addPosBtn = document.getElementById('election-add-position');
+    const positionsBox = document.getElementById('election-positions');
+    if (!newBtn || !createBox || !createForm || !positionsBox) return;
+
+    const clientIdInput = document.getElementById('gmail-client-id');
+    if (clientIdInput && !clientIdInput.dataset.bound) {
+        clientIdInput.dataset.bound = 'true';
+        clientIdInput.value = localStorage.getItem(GMAIL_CLIENT_ID_KEY) || '';
+        clientIdInput.onchange = () => {
+            localStorage.setItem(GMAIL_CLIENT_ID_KEY, clientIdInput.value.trim());
+            gmailToken = null;
+            gmailEmail = '';
+            updateGmailStatus();
+        };
+        const senderInput = document.getElementById('gmail-sender-email');
+        if (senderInput) {
+            senderInput.value = localStorage.getItem(GMAIL_SENDER_KEY) || '';
+            senderInput.onchange = () => {
+                localStorage.setItem(GMAIL_SENDER_KEY, senderInput.value.trim());
+                gmailToken = null;
+                gmailEmail = '';
+                updateGmailStatus();
+            };
+        }
+        const connectBtn = document.getElementById('gmail-connect');
+        if (connectBtn) {
+            connectBtn.onclick = async () => {
+                const status = document.getElementById('gmail-status');
+                if (status) status.textContent = 'Connecting…';
+                try {
+                    await ensureGmailToken();
+                } catch (e) {
+                    if (status) status.textContent = `Gmail: ${e.message}`;
+                }
+                updateGmailStatus();
+            };
+        }
+        updateGmailStatus();
+    }
+
+    const addPositionRow = () => {
+        const row = document.createElement('div');
+        row.className = 'election-position-row';
+        row.style.cssText = 'border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem;';
+        row.innerHTML = `
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <input type="text" class="ep-title" placeholder="Position (e.g., President)" style="flex: 1;">
+                <input type="number" class="ep-max" min="1" value="1" title="Max choices" style="width: 4.5rem;">
+                <button type="button" class="ep-remove" style="padding: 0 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: transparent; color: var(--text-color); cursor: pointer; line-height: 1.2;">×</button>
+            </div>
+            <textarea class="ep-candidates" rows="3" placeholder="One candidate per line" style="width: 100%;"></textarea>
+        `;
+        row.querySelector('.ep-remove').onclick = () => row.remove();
+        positionsBox.appendChild(row);
+    };
+
+    newBtn.onclick = () => {
+        const show = createBox.style.display !== 'block';
+        createBox.style.display = show ? 'block' : 'none';
+        if (show && !positionsBox.children.length) addPositionRow();
+    };
+    if (addPosBtn) addPosBtn.onclick = addPositionRow;
+
+    createForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('election-title-input').value.trim();
+        const closesRaw = document.getElementById('election-closes-input').value;
+        if (!title || !closesRaw) return;
+
+        const positions = [...positionsBox.querySelectorAll('.election-position-row')].map(row => ({
+            title: row.querySelector('.ep-title').value.trim(),
+            maxChoices: Math.max(1, Number(row.querySelector('.ep-max').value) || 1),
+            candidates: row.querySelector('.ep-candidates').value.split('\n').map(s => s.trim()).filter(Boolean)
+        })).filter(p => p.title && p.candidates.length > 0);
+
+        if (!positions.length) {
+            alert('Add at least one position with at least one candidate.');
+            return;
+        }
+
+        const submitBtn = document.getElementById('election-create-submit');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creating...'; }
+        try {
+            await addDoc(collection(db, 'elections'), {
+                title,
+                positions,
+                open: true,
+                navVisible: true,
+                closesAt: Timestamp.fromDate(new Date(closesRaw)),
+                createdAt: serverTimestamp(),
+                createdBy: auth.currentUser?.email || 'unknown'
+            });
+            createForm.reset();
+            positionsBox.innerHTML = '';
+            createBox.style.display = 'none';
+            await loadElections();
+            updateVoteNavLink(true);
+        } catch (err) {
+            console.error('Create election failed:', err);
+            alert('Could not create election. Check permissions.');
+        } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create Election'; }
+        }
+    };
+
+    loadElections();
+}
+
+async function loadElections() {
+    const list = document.getElementById('elections-list');
+    if (!list) return;
+    list.innerHTML = '<p style="opacity:0.5; text-align:center;">Loading elections...</p>';
+    try {
+        const snap = await getDocs(collection(db, 'elections'));
+        const elections = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        elections.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        list.innerHTML = elections.length ? '' : '<p style="opacity:0.5; text-align:center;">No elections yet.</p>';
+        elections.forEach(el => renderElectionItem(el, list));
+    } catch (e) {
+        console.error('Load elections failed:', e);
+        list.innerHTML = '<p style="opacity:0.5; text-align:center;">Could not load elections.</p>';
+    }
+}
+
+function renderElectionItem(election, list) {
+    const item = document.createElement('div');
+    item.className = 'admin-event-item';
+    item.style.cssText = 'padding: 1rem;';
+
+    const closes = election.closesAt?.toDate?.();
+    const pastClose = closes && closes.getTime() <= Date.now();
+    const isOpen = election.open !== false && !pastClose;
+    const stateLabel = election.open === false ? 'Closed' : (pastClose ? 'Ended' : 'Open');
+    const stateColor = isOpen ? '#22c55e' : '#f59e0b';
+
+    const info = document.createElement('div');
+    info.className = 'admin-event-info';
+    const strong = document.createElement('strong');
+    strong.textContent = election.title || 'Untitled Election';
+    const meta = document.createElement('span');
+    meta.style.cssText = 'display:block; font-size:0.75rem; opacity:0.6;';
+    meta.textContent = `closes ${closes ? closes.toLocaleString() : '—'}`;
+    const badge = document.createElement('span');
+    badge.style.cssText = `color:${stateColor}; font-weight:600;`;
+    badge.textContent = ` ● ${stateLabel}`;
+    meta.appendChild(badge);
+    info.appendChild(strong);
+    info.appendChild(meta);
+
+    const manageBtn = document.createElement('button');
+    manageBtn.type = 'button';
+    manageBtn.className = 'btn-primary';
+    manageBtn.style.marginTop = '0';
+    manageBtn.textContent = 'Manage';
+
+    const details = document.createElement('div');
+    details.style.cssText = 'display:none; margin-top:0.75rem; border-top:1px solid var(--glass-border); padding-top:0.75rem;';
+    details.innerHTML = `
+        <div class="el-turnout" style="font-size:0.85rem; opacity:0.8; margin-bottom:0.5rem;">Turnout: loading...</div>
+        <label style="display:flex; gap:0.5rem; align-items:center; font-size:0.85rem; margin-bottom:0.6rem; cursor:pointer;">
+            <input type="checkbox" class="el-navcheck" ${election.navVisible === false ? '' : 'checked'}> Show Vote link in nav
+        </label>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+            <button type="button" class="btn-primary el-toggle-open" style="flex:1; margin-top:0;">${election.open === false ? 'Re-open Voting' : 'Close Voting'}</button>
+            <button type="button" class="btn-primary el-send-unsent" style="flex:1; margin-top:0;">Send Blast (unsent)</button>
+            <button type="button" class="btn-primary el-send-remind" style="flex:1; margin-top:0;">Send Reminders (unused)</button>
+        </div>
+        <div class="el-send-status" style="font-size:0.85rem; margin-bottom:0.6rem;"></div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+            <button type="button" class="btn-primary el-csv-all" style="flex:1; margin-top:0; opacity:0.85;">Links CSV</button>
+            <button type="button" class="btn-primary el-csv-unused" style="flex:1; margin-top:0; opacity:0.85;">Reminder CSV</button>
+            <button type="button" class="btn-primary el-tally" style="flex:1; margin-top:0;">Tally</button>
+            <button type="button" class="btn-primary el-delete" style="flex:1; margin-top:0; background:#d32f2f;">Delete</button>
+        </div>
+        <label style="font-size:0.85rem; opacity:0.8; display:block; margin-bottom:0.25rem;">Member emails (one per line)</label>
+        <textarea class="el-emails" rows="4" placeholder="member1@example.com&#10;member2@example.com" style="width:100%; margin-bottom:0.5rem;"></textarea>
+        <button type="button" class="btn-primary el-generate" style="width:100%; margin-top:0;">Generate Ballot Links</button>
+        <div class="el-gen-status" style="font-size:0.85rem; margin-top:0.4rem;"></div>
+        <div class="el-results" style="margin-top:0.75rem;"></div>
+    `;
+
+    item.appendChild(info);
+    item.appendChild(manageBtn);
+    item.appendChild(details);
+    item.style.flexDirection = 'column';
+    item.style.alignItems = 'stretch';
+    info.style.marginBottom = '0.5rem';
+    manageBtn.style.alignSelf = 'flex-start';
+
+    const fetchBallots = async () => {
+        const snap = await getDocs(query(collection(db, 'ballots'), where('electionId', '==', election.id)));
+        return snap.docs;
+    };
+
+    const loadTurnout = async () => {
+        const turnoutEl = details.querySelector('.el-turnout');
+        try {
+            const docs = await fetchBallots();
+            const used = docs.filter(d => d.data().used).length;
+            const sent = docs.filter(d => d.data().sentAt).length;
+            turnoutEl.textContent = `Ballots: ${docs.length} issued · ${sent} emailed · ${used} voted`;
+            return docs;
+        } catch (e) {
+            console.error('Ballot load failed:', e);
+            turnoutEl.textContent = 'Could not load ballots.';
+            return [];
+        }
+    };
+
+    manageBtn.onclick = () => {
+        const show = details.style.display === 'none';
+        details.style.display = show ? 'block' : 'none';
+        if (show) loadTurnout();
+    };
+
+    details.querySelector('.el-navcheck').onchange = async (e) => {
+        try {
+            await updateDoc(doc(db, 'elections', election.id), { navVisible: e.target.checked });
+            updateVoteNavLink(true);
+        } catch (err) {
+            console.error('navVisible update failed:', err);
+            e.target.checked = !e.target.checked;
+        }
+    };
+
+    details.querySelector('.el-toggle-open').onclick = async () => {
+        try {
+            await updateDoc(doc(db, 'elections', election.id), { open: election.open === false });
+            await loadElections();
+            updateVoteNavLink(true);
+        } catch (err) {
+            console.error('Toggle open failed:', err);
+            alert('Could not update the election.');
+        }
+    };
+
+    const downloadCsv = (filename, rows) => {
+        const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    };
+
+    const exportCsv = async (unusedOnly) => {
+        const docs = await fetchBallots();
+        const rows = [['email', 'link']];
+        docs.forEach(d => {
+            const b = d.data();
+            if (unusedOnly && b.used) return;
+            rows.push([b.email, makeVoteLink(d.id)]);
+        });
+        if (rows.length === 1) { alert(unusedOnly ? 'No unused ballots.' : 'No ballots generated yet.'); return; }
+        const slug = (election.title || 'election').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        downloadCsv(`${slug}-${unusedOnly ? 'reminder' : 'links'}.csv`, rows);
+    };
+
+    details.querySelector('.el-csv-all').onclick = () => exportCsv(false);
+    details.querySelector('.el-csv-unused').onclick = () => exportCsv(true);
+
+    const sendStatus = details.querySelector('.el-send-status');
+    const sendTo = async (filterFn, label) => {
+        const docs = await fetchBallots();
+        const targets = docs.filter(d => filterFn(d.data()));
+        if (!targets.length) { sendStatus.textContent = `No ${label} ballots.`; return; }
+        try {
+            await ensureGmailToken();
+        } catch (e) {
+            sendStatus.textContent = `Gmail: ${e.message}`;
+            return;
+        }
+        const closesStr = closes ? closes.toLocaleString() : '';
+        let sent = 0;
+        const failed = [];
+        sendStatus.textContent = `Sending ${label} 0/${targets.length}…`;
+        for (const d of targets) {
+            const b = d.data();
+            try {
+                await sendBallotEmail(b.email, makeVoteLink(d.id), election, closesStr);
+                await updateDoc(d.ref, { sentAt: serverTimestamp() });
+                sent++;
+                sendStatus.textContent = `Sending ${label} ${sent}/${targets.length}…`;
+                await new Promise(r => setTimeout(r, 250)); // stay under send quota
+            } catch (e) {
+                if (e.status === 401 || e.status === 403) {
+                    gmailToken = null;
+                    try {
+                        await ensureGmailToken();
+                        await sendBallotEmail(b.email, makeVoteLink(d.id), election, closesStr);
+                        await updateDoc(d.ref, { sentAt: serverTimestamp() });
+                        sent++;
+                        continue;
+                    } catch (retryErr) { failed.push(`${b.email} (${retryErr.message})`); continue; }
+                }
+                failed.push(`${b.email} (${e.message})`);
+            }
+        }
+        sendStatus.textContent = `Sent ${sent}/${targets.length} ${label}` +
+            (failed.length ? ` — failed: ${failed.join(', ')}` : '');
+        await loadTurnout();
+    };
+    details.querySelector('.el-send-unsent').onclick = () => sendTo(b => !b.sentAt, 'blast');
+    details.querySelector('.el-send-remind').onclick = () => sendTo(b => b.sentAt && !b.used, 'reminders');
+
+    details.querySelector('.el-generate').onclick = async () => {
+        const genStatus = details.querySelector('.el-gen-status');
+        const emails = [...new Set(
+            details.querySelector('.el-emails').value
+                .split(/[\n,;]+/).map(s => s.trim().toLowerCase()).filter(s => s.includes('@'))
+        )];
+        if (!emails.length) { genStatus.textContent = 'Paste member emails first.'; return; }
+
+        const btn = details.querySelector('.el-generate');
+        btn.disabled = true;
+        genStatus.textContent = 'Generating ballots...';
+        try {
+            const existing = await fetchBallots();
+            const existingEmails = new Set(existing.map(d => (d.data().email || '').toLowerCase()));
+            const fresh = emails.filter(em => !existingEmails.has(em));
+
+            for (let i = 0; i < fresh.length; i += 450) {
+                const batch = writeBatch(db);
+                fresh.slice(i, i + 450).forEach(email => {
+                    batch.set(doc(db, 'ballots', makeBallotToken()), {
+                        electionId: election.id,
+                        email,
+                        used: false,
+                        usedAt: null,
+                        createdAt: serverTimestamp()
+                    });
+                });
+                await batch.commit();
+            }
+
+            genStatus.textContent = `${fresh.length} ballot link${fresh.length === 1 ? '' : 's'} generated` +
+                (emails.length - fresh.length ? ` (${emails.length - fresh.length} already existed)` : '') +
+                ' — export the Links CSV for your email blast.';
+            await loadTurnout();
+        } catch (err) {
+            console.error('Ballot generation failed:', err);
+            genStatus.textContent = 'Could not generate ballots. Check permissions.';
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    details.querySelector('.el-tally').onclick = async () => {
+        const results = details.querySelector('.el-results');
+        results.textContent = 'Counting votes...';
+        try {
+            const docs = await fetchBallots();
+            const positions = election.positions || [];
+            const counts = positions.map(() => ({}));
+            const abstains = positions.map(() => 0);
+            let validVotes = 0;
+            let usedCount = 0;
+
+            for (const d of docs) {
+                if (d.data().used) usedCount++;
+                const hash = await sha256Hex(d.id);
+                const voteSnap = await getDoc(doc(db, 'votes', hash));
+                if (!voteSnap.exists() || voteSnap.data().electionId !== election.id) continue;
+                validVotes++;
+                const sel = voteSnap.data().selections || [];
+                positions.forEach((p, pi) => {
+                    const picks = Array.isArray(sel[pi]) ? sel[pi] : [];
+                    if (!picks.length) abstains[pi]++;
+                    picks.forEach(ci => { counts[pi][ci] = (counts[pi][ci] || 0) + 1; });
+                });
+            }
+
+            let html = `<div style="font-size:0.85rem; opacity:0.8; margin-bottom:0.5rem;">` +
+                `${docs.length} ballots issued · ${usedCount} marked used · ${validVotes} valid votes counted` +
+                (usedCount > validVotes ? ` · ${usedCount - validVotes} spoiled` : '') + `</div>`;
+            positions.forEach((p, pi) => {
+                const entries = (p.candidates || []).map((cand, ci) => ({ cand, n: counts[pi][ci] || 0 }));
+                const top = Math.max(...entries.map(e => e.n), 0);
+                html += `<div style="margin-bottom:0.75rem;"><strong>${escapeHtml(p.title)}</strong>` +
+                    ` <span style="opacity:0.6; font-size:0.8rem;">(${abstains[pi]} abstain)</span><ul style="margin:0.25rem 0 0; padding-left:1.2rem;">` +
+                    entries.map(e => `<li style="${e.n === top && top > 0 ? 'color:#22c55e; font-weight:600;' : ''}">${escapeHtml(e.cand)} — ${e.n}</li>`).join('') +
+                    `</ul></div>`;
+            });
+            results.innerHTML = html;
+        } catch (err) {
+            console.error('Tally failed:', err);
+            results.textContent = 'Could not tally votes.';
+        }
+    };
+
+    details.querySelector('.el-delete').onclick = async () => {
+        if (!confirm(`Delete "${election.title}" and all its ballots and votes? This cannot be undone.`)) return;
+        try {
+            const docs = await fetchBallots();
+            // Ballot + vote deletes are 2 ops per ballot — stay under the
+            // 500-op batch limit for large member lists.
+            for (let i = 0; i < docs.length; i += 200) {
+                const batch = writeBatch(db);
+                for (const d of docs.slice(i, i + 200)) {
+                    batch.delete(d.ref);
+                    batch.delete(doc(db, 'votes', await sha256Hex(d.id)));
+                }
+                if (i + 200 >= docs.length) {
+                    batch.delete(doc(db, 'elections', election.id));
+                }
+                await batch.commit();
+            }
+            if (!docs.length) {
+                await deleteDoc(doc(db, 'elections', election.id));
+            }
+            await loadElections();
+            updateVoteNavLink(true);
+        } catch (err) {
+            console.error('Delete election failed:', err);
+            alert('Could not delete the election.');
+        }
+    };
+
+    list.appendChild(item);
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/**
+ * GMAIL SENDER — OAuth'd gmail.send flow for election blasts.
+ * The admin authorizes their own Gmail via a GIS token client (public OAuth
+ * client ID stored in localStorage — it identifies the app, not a secret).
+ * Emails go out from the authorized Gmail address via the REST API.
+ */
+const GMAIL_CLIENT_ID_KEY = 'bndisc_gmail_client_id';
+const GMAIL_SENDER_KEY = 'bndisc_gmail_sender';
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
+let gmailToken = null;
+let gmailTokenAt = 0;
+let gmailEmail = '';
+let gisLoading = null;
+
+function loadGis() {
+    if (window.google?.accounts?.oauth2) return Promise.resolve();
+    if (!gisLoading) {
+        gisLoading = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://accounts.google.com/gsi/client';
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Could not load Google sign-in library.'));
+            document.head.appendChild(s);
+        });
+    }
+    return gisLoading;
+}
+
+function requestGmailToken() {
+    return new Promise(async (resolve, reject) => {
+        const clientId = localStorage.getItem(GMAIL_CLIENT_ID_KEY) || '';
+        if (!clientId) return reject(new Error('Paste your Gmail OAuth Client ID first.'));
+        try { await loadGis(); } catch (e) { return reject(e); }
+        try {
+            const tc = google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: GMAIL_SCOPE,
+                callback: (resp) => {
+                    if (resp.error) reject(new Error(resp.error_description || resp.error));
+                    else resolve(resp.access_token);
+                }
+            });
+            // Explicit connects always show the account chooser so the admin
+            // can pick the club account rather than a personal one; silent
+            // refreshes reuse the already-authorized account.
+            tc.requestAccessToken({ prompt: gmailToken ? '' : 'consent select_account' });
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
+
+async function ensureGmailToken() {
+    // Access tokens last ~1h; reuse for 50 min then re-request silently.
+    if (gmailToken && Date.now() - gmailTokenAt < 50 * 60 * 1000) return gmailToken;
+    gmailToken = await requestGmailToken();
+    gmailTokenAt = Date.now();
+    try {
+        const prof = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+            headers: { Authorization: `Bearer ${gmailToken}` }
+        }).then(r => r.json());
+        gmailEmail = prof.emailAddress || '';
+    } catch (e) { /* profile fetch is just for display */ }
+
+    // Refuse a token for the wrong account — blasts may only come from the
+    // configured sender (e.g. the club's Gmail).
+    const expected = (localStorage.getItem(GMAIL_SENDER_KEY) || '').toLowerCase();
+    if (expected && gmailEmail && gmailEmail.toLowerCase() !== expected) {
+        const actual = gmailEmail;
+        gmailToken = null;
+        gmailEmail = '';
+        updateGmailStatus();
+        throw new Error(`Connected as ${actual}, but sending is restricted to ${expected}. Connect again with that account.`);
+    }
+    updateGmailStatus();
+    return gmailToken;
+}
+
+function updateGmailStatus() {
+    const status = document.getElementById('gmail-status');
+    const btn = document.getElementById('gmail-connect');
+    if (!status) return;
+    if (gmailToken) {
+        status.textContent = `Connected${gmailEmail ? ` as ${gmailEmail}` : ''} — ready to send.`;
+        if (btn) btn.textContent = 'Reconnect Gmail';
+    } else {
+        const hasId = !!(localStorage.getItem(GMAIL_CLIENT_ID_KEY) || '');
+        status.textContent = hasId
+            ? 'Not connected — click Connect Gmail and authorize your account.'
+            : 'Not connected — create an OAuth client ID (see AGENTS.md) to enable sending.';
+        if (btn) btn.textContent = 'Connect Gmail';
+    }
+}
+
+function rfc822(to, subject, bodyText) {
+    const msg = `To: ${to}\r\nSubject: ${subject}\r\nContent-Type: text/plain; charset="UTF-8"\r\n\r\n${bodyText}`;
+    return btoa(unescape(encodeURIComponent(msg)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function gmailFetch(path, opts = {}) {
+    const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`, {
+        ...opts,
+        headers: { Authorization: `Bearer ${gmailToken}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+    });
+    if (!res.ok) {
+        const err = new Error(`Gmail API ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return res.json();
+}
+
+async function sendBallotEmail(to, link, election, closesStr) {
+    const subject = `Vote now: ${election.title}`;
+    const body = [
+        `Voting is open for ${election.title}.`,
+        ``,
+        `Your unique ballot link (casts one vote, then stops working):`,
+        link,
+        ``,
+        `Ballot closes ${closesStr}.`,
+        `Your vote is anonymous — this link proves eligibility without tying your name to the ballot.`,
+        `Didn't expect this email? You can ignore it.`,
+        ``,
+        `— BNDisc Club`
+    ].join('\n');
+    await gmailFetch('messages/send', {
+        method: 'POST',
+        body: JSON.stringify({ raw: rfc822(to, subject, body) })
+    });
 }
