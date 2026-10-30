@@ -2702,7 +2702,12 @@ async function gmailFetch(path, opts = {}) {
         headers: { Authorization: `Bearer ${gmailToken}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
     });
     if (!res.ok) {
-        const err = new Error(`Gmail API ${res.status}`);
+        let detail = '';
+        try {
+            const body = await res.json();
+            detail = body?.error?.message || '';
+        } catch (e) { /* non-JSON body */ }
+        const err = new Error(`Gmail API ${res.status}${detail ? `: ${detail}` : ''}`);
         err.status = res.status;
         throw err;
     }
