@@ -1,5 +1,16 @@
 # Project Notes
 
+## Deployment & cache busting
+
+- `index.html` has a **build stamp** under the Admin Dashboard heading
+  (e.g. `build v2026.10.30.1`). Bump it on every visible change — it's the
+  quick way to confirm the new HTML actually deployed to GitHub Pages. If
+  the stamp is old, the browser has a stale `index.html`: hard-refresh
+  (Ctrl/Cmd+Shift+R); the `?v=` params on script tags only bust JS cache,
+  not the HTML doc itself.
+- When editing JS files, bump their `?v=` numbers in `index.html` AND in
+  any cross-imports (e.g. theme.js imports admin.js/loginLeague.js/vote.js).
+
 ## Firestore Security Rules — required for "first time setup" login
 
 The League Central and Admin login pages let a user who is already on the
