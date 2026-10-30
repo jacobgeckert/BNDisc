@@ -2747,7 +2747,8 @@ async function sendBallotEmail(to, link, election, closesStr) {
         link,
         ``,
         `Ballot closes ${closesStr}.`,
-        `Your vote is anonymous — this link proves eligibility without tying your name to the ballot.`,
+        `Your vote is anonymous — this link proves eligibility, not identity.`,
+        ``,
         `Didn't expect this email? You can ignore it.`,
         ``,
         `— BNDisc Club`
