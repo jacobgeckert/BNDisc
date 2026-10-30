@@ -87,7 +87,9 @@ elections/{id}      = { title, type ('positions' | 'bylaws' | 'mixed'),
                       // section's existing text, description is the proposal.
 ballots/{token}     = { electionId, email, used, usedAt, createdAt }
                       // token = 128-bit url-safe random; the doc ID is the credential
-votes/{sha256(token)} = { electionId, selections, submittedAt }
+votes/{sha256(token)} = { electionId, selections: [{picks: [int]}], submittedAt }
+                      // NOTE: Firestore forbids nested arrays — selections
+                      // must be an array of maps, never [[int],…].
                       // doc ID is a one-way hash — a vote can't be tied to an email
 ```
 

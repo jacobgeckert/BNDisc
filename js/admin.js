@@ -2635,7 +2635,8 @@ function renderElectionItem(election, list) {
                 validVotes++;
                 const sel = voteSnap.data().selections || [];
                 positions.forEach((p, pi) => {
-                    const picks = Array.isArray(sel[pi]) ? sel[pi] : [];
+                    // {picks:[…]} shape now; bare arrays were pre-fix writes.
+                    const picks = Array.isArray(sel[pi]) ? sel[pi] : (sel[pi]?.picks || []);
                     if (!picks.length) abstains[pi]++;
                     picks.forEach(ci => { counts[pi][ci] = (counts[pi][ci] || 0) + 1; });
                 });

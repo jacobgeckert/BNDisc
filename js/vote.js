@@ -234,7 +234,8 @@ function renderBallotForm(election, electionId, token, status, form, done, showO
         positions.forEach((pos, pi) => {
             const checked = [...container.querySelectorAll(`input[name="vote-pos-${pi}"]:checked`)]
                 .map(i => Number(i.value));
-            selections.push(checked);
+            // Firestore can't nest arrays — each position's picks are a map.
+            selections.push({ picks: checked });
             total += checked.length;
         });
         if (total === 0) {
