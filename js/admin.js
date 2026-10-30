@@ -2331,7 +2331,8 @@ function renderElectionItem(election, list) {
     details.innerHTML = `
         <div class="el-turnout" style="font-size:0.85rem; opacity:0.8; margin-bottom:0.5rem;">Turnout: loading...</div>
         <label style="display:flex; gap:0.5rem; align-items:center; font-size:0.85rem; margin-bottom:0.6rem; cursor:pointer;">
-            <input type="checkbox" class="el-navcheck" ${election.navVisible === false ? '' : 'checked'}> Show Vote link in nav
+            <input type="checkbox" class="el-navcheck" style="width:auto; margin-top:0; flex-shrink:0;" ${election.navVisible === false ? '' : 'checked'}>
+            <span>Show Vote link in nav</span>
         </label>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
             <button type="button" class="btn-primary el-toggle-open" style="flex:1; margin-top:0;">${election.open === false ? 'Re-open Voting' : 'Close Voting'}</button>
@@ -2340,8 +2341,6 @@ function renderElectionItem(election, list) {
         </div>
         <div class="el-send-status" style="font-size:0.85rem; margin-bottom:0.6rem;"></div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
-            <button type="button" class="btn-primary el-csv-all" style="flex:1; margin-top:0; opacity:0.85;">Links CSV</button>
-            <button type="button" class="btn-primary el-csv-unused" style="flex:1; margin-top:0; opacity:0.85;">Reminder CSV</button>
             <button type="button" class="btn-primary el-tally" style="flex:1; margin-top:0;">Tally</button>
             <button type="button" class="btn-primary el-delete" style="flex:1; margin-top:0; background:#d32f2f;">Delete</button>
         </div>
@@ -2406,31 +2405,6 @@ function renderElectionItem(election, list) {
             alert('Could not update the election.');
         }
     };
-
-    const downloadCsv = (filename, rows) => {
-        const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
-    };
-
-    const exportCsv = async (unusedOnly) => {
-        const docs = await fetchBallots();
-        const rows = [['email', 'link']];
-        docs.forEach(d => {
-            const b = d.data();
-            if (unusedOnly && b.used) return;
-            rows.push([b.email, makeVoteLink(d.id)]);
-        });
-        if (rows.length === 1) { alert(unusedOnly ? 'No unused ballots.' : 'No ballots generated yet.'); return; }
-        const slug = (election.title || 'election').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        downloadCsv(`${slug}-${unusedOnly ? 'reminder' : 'links'}.csv`, rows);
-    };
-
-    details.querySelector('.el-csv-all').onclick = () => exportCsv(false);
-    details.querySelector('.el-csv-unused').onclick = () => exportCsv(true);
 
     const sendStatus = details.querySelector('.el-send-status');
     const sendTo = async (filterFn, label) => {
@@ -2508,7 +2482,7 @@ function renderElectionItem(election, list) {
 
             genStatus.textContent = `${fresh.length} ballot link${fresh.length === 1 ? '' : 's'} generated` +
                 (emails.length - fresh.length ? ` (${emails.length - fresh.length} already existed)` : '') +
-                ' — export the Links CSV for your email blast.';
+                ' — use Send Blast to email them.';
             await loadTurnout();
         } catch (err) {
             console.error('Ballot generation failed:', err);
