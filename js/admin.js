@@ -2194,6 +2194,54 @@ function initElections() {
     const newBtn = document.getElementById('election-new-btn');
     const createBox = document.getElementById('election-create');
     const createForm = document.getElementById('election-create-form');
+    // Bylaw amendment type: swap the positions editor for a section picker.
+    const typeSelect = document.getElementById('election-type');
+    const posWrap = document.getElementById('election-positions-wrap');
+    const amWrap = document.getElementById('election-amendments-wrap');
+    const bylawSelect = document.getElementById('election-bylaw-section');
+    const amBox = document.getElementById('election-amendments');
+    const addAmBtn = document.getElementById('election-add-amendment');
+    if (typeSelect && posWrap && amWrap) {
+        typeSelect.onchange = async () => {
+            const bylaws = typeSelect.value === 'bylaws';
+            posWrap.style.display = bylaws ? 'none' : '';
+            amWrap.style.display = bylaws ? '' : 'none';
+            if (bylaws && bylawSelect && !bylawSelect.dataset.loaded) {
+                bylawSelect.dataset.loaded = 'true';
+                bylawSelect.innerHTML = '<option value="">Loading sections…</option>';
+                try {
+                    const secs = await getBylawSections();
+                    bylawSelect.innerHTML = '<option value="">Select a section…</option>' +
+                        secs.map((s, i) => `<option value="${i}">${escapeHtml(s.ref)} — ${escapeHtml(s.title)}</option>`).join('');
+                } catch (e) {
+                    bylawSelect.innerHTML = '<option value="">Could not load bylaws</option>';
+                }
+            }
+        };
+    }
+    if (addAmBtn && bylawSelect && amBox) {
+        addAmBtn.onclick = async () => {
+            let secs;
+            try { secs = await getBylawSections(); } catch (e) { return; }
+            const s = secs[Number(bylawSelect.value)];
+            if (!s || amBox.querySelector(`[data-ref="${CSS.escape(s.ref)}"]`)) return;
+            const row = document.createElement('div');
+            row.className = 'election-position-row am-row';
+            row.dataset.ref = s.ref;
+            row.dataset.currentText = s.text;
+            row.style.cssText = 'border:1px solid var(--glass-border); border-radius:8px; padding:0.6rem; margin-bottom:0.5rem;';
+            row.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                    <strong style="font-size:0.85rem;">${escapeHtml(s.ref)}</strong>
+                    <button type="button" class="ep-remove btn-primary" style="margin-top:0; padding:0.15rem 0.6rem;">✕</button>
+                </div>
+                <div style="font-size:0.8rem; opacity:0.6; margin-bottom:0.4rem;">${escapeHtml(s.text.slice(0, 140))}${s.text.length > 140 ? '…' : ''}</div>
+                <textarea class="am-proposed" rows="2" placeholder="Proposed amendment — what changes and how…" style="width:100%;"></textarea>`;
+            row.querySelector('.ep-remove').onclick = () => row.remove();
+            amBox.appendChild(row);
+        };
+    }
+
     const addPosBtn = document.getElementById('election-add-position');
     const positionsBox = document.getElementById('election-positions');
     if (!newBtn || !createBox || !createForm || !positionsBox) return;
@@ -2288,15 +2336,30 @@ function initElections() {
         const closesRaw = document.getElementById('election-closes-input').value;
         if (!title || !closesRaw) return;
 
-        const positions = [...positionsBox.querySelectorAll('.election-position-row')].map(row => ({
-            title: row.querySelector('.ep-title').value.trim(),
-            maxChoices: Math.max(1, Number(row.querySelector('.ep-max').value) || 1),
-            candidates: row.querySelector('.ep-candidates').value.split('\n').map(s => s.trim()).filter(Boolean)
-        })).filter(p => p.title && p.candidates.length > 0);
-
-        if (!positions.length) {
-            alert('Add at least one position with at least one candidate.');
-            return;
+        const electionType = typeSelect?.value || 'positions';
+        let positions;
+        if (electionType === 'bylaws') {
+            positions = [...(amBox?.querySelectorAll('.am-row') || [])].map(row => ({
+                title: `Amend ${row.dataset.ref}`,
+                currentText: row.dataset.currentText || '',
+                description: row.querySelector('.am-proposed').value.trim(),
+                maxChoices: 1,
+                candidates: ['Yes', 'No']
+            })).filter(p => p.description);
+            if (!positions.length) {
+                alert('Add at least one bylaw section and describe the proposed amendment.');
+                return;
+            }
+        } else {
+            positions = [...positionsBox.querySelectorAll('.election-position-row')].map(row => ({
+                title: row.querySelector('.ep-title').value.trim(),
+                maxChoices: Math.max(1, Number(row.querySelector('.ep-max').value) || 1),
+                candidates: row.querySelector('.ep-candidates').value.split('\n').map(s => s.trim()).filter(Boolean)
+            })).filter(p => p.title && p.candidates.length > 0);
+            if (!positions.length) {
+                alert('Add at least one position with at least one candidate.');
+                return;
+            }
         }
 
         const submitBtn = document.getElementById('election-create-submit');
@@ -2304,6 +2367,7 @@ function initElections() {
         try {
             await addDoc(collection(db, 'elections'), {
                 title,
+                type: electionType,
                 positions,
                 open: true,
                 navVisible: true,
@@ -2313,6 +2377,8 @@ function initElections() {
             });
             createForm.reset();
             positionsBox.innerHTML = '';
+            if (amBox) amBox.innerHTML = '';
+            if (posWrap && amWrap) { posWrap.style.display = ''; amWrap.style.display = 'none'; }
             createBox.style.display = 'none';
             await loadElections();
             updateVoteNavLink(true);
@@ -2360,7 +2426,7 @@ function renderElectionItem(election, list) {
     strong.textContent = election.title || 'Untitled Election';
     const meta = document.createElement('span');
     meta.style.cssText = 'display:block; font-size:0.75rem; opacity:0.6;';
-    meta.textContent = `closes ${closes ? closes.toLocaleString() : '—'}`;
+    meta.textContent = `${election.type === 'bylaws' ? 'Bylaws · ' : ''}closes ${closes ? closes.toLocaleString() : '—'}`;
     const badge = document.createElement('span');
     badge.style.cssText = `color:${stateColor}; font-weight:600;`;
     badge.textContent = ` ● ${stateLabel}`;
@@ -2617,6 +2683,23 @@ function renderElectionItem(election, list) {
 
 function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/**
+ * Bylaw section picker for amendment elections — flattens
+ * governance/bylaws (articles → sections) into selectable refs.
+ */
+let bylawSectionsCache = null;
+async function getBylawSections() {
+    if (bylawSectionsCache) return bylawSectionsCache;
+    const snap = await getDoc(doc(db, 'governance', 'bylaws'));
+    bylawSectionsCache = [];
+    (snap.data()?.articles || []).forEach(a => {
+        (a.sections || []).forEach(s => {
+            bylawSectionsCache.push({ ref: `Art. ${a.id} — ${s.label}`, title: a.title || '', text: s.text || '' });
+        });
+    });
+    return bylawSectionsCache;
 }
 
 /**

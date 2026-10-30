@@ -1505,9 +1505,24 @@
                                         <input type="datetime-local" id="election-closes-input" required style="width: 100%;">
                                     </div>
                                     <div class="form-group">
+                                        <label for="election-type">Election Type</label>
+                                        <select id="election-type" style="width: 100%;">
+                                            <option value="positions">Candidate election</option>
+                                            <option value="bylaws">Bylaw amendment (yes/no)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" id="election-positions-wrap">
                                         <label>Positions & Candidates</label>
                                         <div id="election-positions"></div>
                                         <button type="button" id="election-add-position" class="btn-primary" style="width: 100%; margin-top: 0.5rem; background: transparent; border: 1px solid var(--glass-border); color: var(--text-color);">+ Add Position</button>
+                                    </div>
+                                    <div class="form-group" id="election-amendments-wrap" style="display: none;">
+                                        <label for="election-bylaw-section">Bylaw sections being amended</label>
+                                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                            <select id="election-bylaw-section" style="flex: 1; margin-top: 0;"></select>
+                                            <button type="button" id="election-add-amendment" class="btn-primary" style="margin-top: 0;">Add</button>
+                                        </div>
+                                        <div id="election-amendments"></div>
                                     </div>
                                     <button type="submit" id="election-create-submit" class="btn-primary" style="width: 100%;">Create Election</button>
                                 </form>
@@ -1591,13 +1606,13 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
-    <script type="module" src="js/theme.js?v=181"></script>
+    <script type="module" src="js/theme.js?v=182"></script>
     <script type="module" src="js/firebase-config.js?v=143"></script>
     <script type="module" src="js/firestore.js?v=153"></script>
     <script type="module" src="js/nav.js?v=147"></script>
     <script type="module" src="js/loginAdmin.js?v=151"></script>
-    <script type="module" src="js/admin.js?v=187"></script>
-    <script type="module" src="js/vote.js?v=100"></script>
+    <script type="module" src="js/admin.js?v=188"></script>
+    <script type="module" src="js/vote.js?v=101"></script>
     <script type="module" src="js/roundRater.js?v=29"></script>
     <script type="module" src="js/currentEvents.js?v=160"></script>
     <script type="module" src="js/aces.js?v=143"></script>

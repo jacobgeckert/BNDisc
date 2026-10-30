@@ -77,8 +77,14 @@ Board elections (`#vote` page, "Elections & Voting" admin card) use three
 collections:
 
 ```
-elections/{id}      = { title, positions: [{title, maxChoices, candidates[]}],
+elections/{id}      = { title, type ('positions' | 'bylaws'),
+                        positions: [{title, maxChoices, candidates[],
+                                     currentText?, description?}],
                         open, navVisible, closesAt (Timestamp), createdAt, createdBy }
+                      // 'bylaws' type = amendment vote: each position is one
+                      // amendment picked from governance/bylaws sections,
+                      // candidates are always ['Yes','No'], currentText is the
+                      // section's existing text, description is the proposal.
 ballots/{token}     = { electionId, email, used, usedAt, createdAt }
                       // token = 128-bit url-safe random; the doc ID is the credential
 votes/{sha256(token)} = { electionId, selections, submittedAt }

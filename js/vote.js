@@ -177,6 +177,28 @@ function renderBallotForm(election, electionId, token, status, form, done, showO
         legend.textContent = pos.title + (max > 1 ? ` (pick up to ${max})` : '');
         fieldset.appendChild(legend);
 
+        // Bylaw amendments carry the section's current text and the proposed
+        // change; show both above the Yes/No radios.
+        if (pos.currentText || pos.description) {
+            const ctx = document.createElement('div');
+            ctx.style.cssText = 'font-size:0.85rem; line-height:1.5; margin-bottom:0.6rem;';
+            if (pos.currentText) {
+                const cur = document.createElement('p');
+                cur.style.cssText = 'opacity:0.65; margin:0 0 0.4rem;';
+                cur.appendChild(Object.assign(document.createElement('strong'), { textContent: 'Current: ' }));
+                cur.appendChild(document.createTextNode(pos.currentText));
+                ctx.appendChild(cur);
+            }
+            if (pos.description) {
+                const prop = document.createElement('p');
+                prop.style.cssText = 'margin:0; padding:0.5rem 0.6rem; border:1px solid var(--glass-border); border-radius:6px;';
+                prop.appendChild(Object.assign(document.createElement('strong'), { textContent: 'Proposed: ' }));
+                prop.appendChild(document.createTextNode(pos.description));
+                ctx.appendChild(prop);
+            }
+            fieldset.appendChild(ctx);
+        }
+
         (pos.candidates || []).forEach((cand, ci) => {
             const label = document.createElement('label');
             label.style.cssText = 'display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.25rem; cursor: pointer; border-radius: 6px;';
