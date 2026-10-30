@@ -31,6 +31,30 @@ export function initAdminForm() {
     initFreeRoundsManager();
     initElections();
     initCollapsibleSections();
+    loadDeployInfo();
+}
+
+/**
+ * Shows the latest main-branch commit next to the build stamp so admins can
+ * tell whether the deployed page is current or just cached. GitHub API is
+ * rate-limited unauthenticated — cache the result for the session.
+ */
+async function loadDeployInfo() {
+    const el = document.getElementById('admin-latest-push');
+    if (!el) return;
+    const cached = sessionStorage.getItem('bndisc_latest_push');
+    if (cached) { el.textContent = ` · latest push: ${cached}`; return; }
+    try {
+        const res = await fetch('https://api.github.com/repos/jacobgeckert/BNDisc/commits/main?per_page=1', {
+            headers: { Accept: 'application/vnd.github+json' }
+        });
+        if (!res.ok) return;
+        const [c] = await res.json();
+        if (!c?.sha) return;
+        const text = `${c.sha.slice(0, 7)} (${new Date(c.commit.committer.date).toLocaleString()})`;
+        sessionStorage.setItem('bndisc_latest_push', text);
+        el.textContent = ` · latest push: ${text}`;
+    } catch (e) { /* offline or rate-limited — static stamp still shows */ }
 }
 
 /**

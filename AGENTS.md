@@ -7,7 +7,9 @@
   quick way to confirm the new HTML actually deployed to GitHub Pages. If
   the stamp is old, the browser has a stale `index.html`: hard-refresh
   (Ctrl/Cmd+Shift+R); the `?v=` params on script tags only bust JS cache,
-  not the HTML doc itself.
+  not the HTML doc itself. Next to the stamp, `loadDeployInfo()` shows the
+  latest main commit SHA + date from the GitHub API (session-cached) so you
+  can compare "what's loaded" vs "what's on GitHub".
 - When editing JS files, bump their `?v=` numbers in `index.html` AND in
   any cross-imports (e.g. theme.js imports admin.js/loginLeague.js/vote.js).
 
