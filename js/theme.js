@@ -7,7 +7,7 @@ import { checkAdminAccess } from './loginAdmin.js?v=151';
 import { checkLeagueAccess } from './loginLeague.js?v=156';
 import { loadCurrentEvents } from './currentEvents.js?v=160'; 
 import { initAdminForm } from './admin.js?v=191'; // Ensure this is imported
-import { initVote, updateVoteNavLink } from './vote.js?v=101';
+import { initVote, updateVoteNavLink } from './vote.js?v=102';
 
 // --- 1. Theme Initialization ---
 const initTheme = () => {

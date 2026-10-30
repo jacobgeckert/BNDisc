@@ -244,8 +244,10 @@ function renderBallotForm(election, electionId, token, status, form, done, showO
 
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.5';
-        status.textContent = 'Submitting your ballot...';
+        submitBtn.textContent = 'Submitting…';
+        status.textContent = '';
         try {
+            if (!crypto.subtle) throw new Error('Voting requires a secure (HTTPS) connection.');
             const receipt = await sha256Hex(token);
             const batch = writeBatch(db);
             batch.update(doc(db, 'ballots', token), { used: true, usedAt: serverTimestamp() });
@@ -254,7 +256,10 @@ function renderBallotForm(election, electionId, token, status, form, done, showO
                 selections,
                 submittedAt: serverTimestamp()
             });
-            await batch.commit();
+            await Promise.race([
+                batch.commit(),
+                new Promise((_, rej) => setTimeout(() => rej(new Error('Submit timed out — check your connection.')), 20000))
+            ]);
 
             status.textContent = '';
             done.textContent = '';
@@ -278,9 +283,10 @@ function renderBallotForm(election, electionId, token, status, form, done, showO
             console.error('Ballot submit failed:', e);
             status.textContent = e.code === 'permission-denied'
                 ? 'This ballot has already been used or voting is closed.'
-                : 'Could not submit your ballot. Try again.';
+                : `Could not submit your ballot (${e.code || e.message}). Try again.`;
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
+            submitBtn.textContent = 'Submit Ballot';
         }
     };
 }
