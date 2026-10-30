@@ -2326,6 +2326,7 @@ function renderElectionItem(election, list) {
     manageBtn.textContent = 'Manage';
 
     const details = document.createElement('div');
+    details.className = 'admin-form';
     details.style.cssText = 'display:none; margin-top:0.75rem; border-top:1px solid var(--glass-border); padding-top:0.75rem;';
     details.innerHTML = `
         <div class="el-turnout" style="font-size:0.85rem; opacity:0.8; margin-bottom:0.5rem;">Turnout: loading...</div>
