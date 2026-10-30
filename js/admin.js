@@ -2177,23 +2177,48 @@ function initElections() {
     const clientIdInput = document.getElementById('gmail-client-id');
     if (clientIdInput && !clientIdInput.dataset.bound) {
         clientIdInput.dataset.bound = 'true';
-        clientIdInput.value = localStorage.getItem(GMAIL_CLIENT_ID_KEY) || '';
+        const senderInput = document.getElementById('gmail-sender-email');
+        const saveGmailSettings = () => {
+            // Persist to Firestore so the setup survives across devices and
+            // admins; localStorage mirrors it for the token helpers.
+            setDoc(doc(db, 'settings', GMAIL_SETTINGS_DOC), {
+                clientId: clientIdInput.value.trim(),
+                allowedSender: (senderInput?.value || '').trim()
+            }, { merge: true }).catch(e => console.warn('Could not save Gmail settings:', e));
+        };
         clientIdInput.onchange = () => {
             localStorage.setItem(GMAIL_CLIENT_ID_KEY, clientIdInput.value.trim());
             gmailToken = null;
             gmailEmail = '';
+            saveGmailSettings();
             updateGmailStatus();
         };
-        const senderInput = document.getElementById('gmail-sender-email');
         if (senderInput) {
-            senderInput.value = localStorage.getItem(GMAIL_SENDER_KEY) || '';
             senderInput.onchange = () => {
                 localStorage.setItem(GMAIL_SENDER_KEY, senderInput.value.trim());
                 gmailToken = null;
                 gmailEmail = '';
+                saveGmailSettings();
                 updateGmailStatus();
             };
         }
+
+        // Hydrate from Firestore on first load (falls back to localStorage).
+        clientIdInput.value = localStorage.getItem(GMAIL_CLIENT_ID_KEY) || '';
+        if (senderInput) senderInput.value = localStorage.getItem(GMAIL_SENDER_KEY) || '';
+        getDoc(doc(db, 'settings', GMAIL_SETTINGS_DOC)).then(snap => {
+            if (!snap.exists()) return;
+            const s = snap.data();
+            if (s.clientId) {
+                clientIdInput.value = s.clientId;
+                localStorage.setItem(GMAIL_CLIENT_ID_KEY, s.clientId);
+            }
+            if (s.allowedSender && senderInput) {
+                senderInput.value = s.allowedSender;
+                localStorage.setItem(GMAIL_SENDER_KEY, s.allowedSender);
+            }
+            updateGmailStatus();
+        }).catch(e => console.warn('Could not load Gmail settings:', e));
         const connectBtn = document.getElementById('gmail-connect');
         if (connectBtn) {
             connectBtn.onclick = async () => {
@@ -2578,6 +2603,7 @@ function escapeHtml(s) {
  */
 const GMAIL_CLIENT_ID_KEY = 'bndisc_gmail_client_id';
 const GMAIL_SENDER_KEY = 'bndisc_gmail_sender';
+const GMAIL_SETTINGS_DOC = 'gmail';
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
 let gmailToken = null;
 let gmailTokenAt = 0;

@@ -122,8 +122,11 @@ a club-owned project):
    Authorized JavaScript origins: `https://bndisc.com` (plus
    `http://localhost:8317` or whatever local port you test on).
 4. Paste the client ID (`….apps.googleusercontent.com`) into the Elections
-   card's "Gmail sender setup" box — it's stored in localStorage
-   (`bndisc_gmail_client_id`); it's a public identifier, not a secret.
+   card's "Gmail sender setup" box — it's a public identifier, not a secret.
+   Both setup fields persist to `settings/gmail` in Firestore (admin-only
+   `read, write` rule — included in `firestore.rules`), so they're entered
+   once and shared across devices and admins; localStorage just mirrors
+   them for the current browser.
 
 Notes: access tokens last ~1h (the code re-requests silently; occasionally
 it'll re-prompt). Consumer Gmail caps around ~500 sent emails/day. Ballot
