@@ -2385,7 +2385,6 @@ function renderElectionItem(election, list) {
         </label>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
             <button type="button" class="btn-primary el-toggle-open" style="flex:1; margin-top:0;">${election.open === false ? 'Re-open Voting' : 'Close Voting'}</button>
-            <button type="button" class="btn-primary el-send-unsent" style="flex:1; margin-top:0;">Send Blast (unsent)</button>
             <button type="button" class="btn-primary el-send-remind" style="flex:1; margin-top:0;">Send Reminders (unused)</button>
         </div>
         <div class="el-send-status" style="font-size:0.85rem; margin-bottom:0.6rem;"></div>
@@ -2393,9 +2392,9 @@ function renderElectionItem(election, list) {
             <button type="button" class="btn-primary el-tally" style="flex:1; margin-top:0;">Tally</button>
             <button type="button" class="btn-primary el-delete" style="flex:1; margin-top:0; background:#d32f2f;">Delete</button>
         </div>
-        <label style="font-size:0.85rem; opacity:0.8; display:block; margin-bottom:0.25rem;">Member emails (one per line)</label>
+        <label style="font-size:0.85rem; opacity:0.8; display:block; margin-bottom:0.25rem;">Member emails (one per line) — generates links and emails the blast</label>
         <textarea class="el-emails" rows="4" placeholder="member1@example.com&#10;member2@example.com" style="width:100%; margin-bottom:0.5rem;"></textarea>
-        <button type="button" class="btn-primary el-generate" style="width:100%; margin-top:0;">Generate Ballot Links</button>
+        <button type="button" class="btn-primary el-generate" style="width:100%; margin-top:0;">Generate &amp; Send Links</button>
         <div class="el-gen-status" style="font-size:0.85rem; margin-top:0.4rem;"></div>
         <div class="el-results" style="margin-top:0.75rem;"></div>
     `;
@@ -2496,7 +2495,6 @@ function renderElectionItem(election, list) {
             (failed.length ? ` — failed: ${failed.join(', ')}` : '');
         await loadTurnout();
     };
-    details.querySelector('.el-send-unsent').onclick = () => sendTo(b => !b.sentAt, 'blast');
     details.querySelector('.el-send-remind').onclick = () => sendTo(b => b.sentAt && !b.used, 'reminders');
 
     details.querySelector('.el-generate').onclick = async () => {
@@ -2531,8 +2529,10 @@ function renderElectionItem(election, list) {
 
             genStatus.textContent = `${fresh.length} ballot link${fresh.length === 1 ? '' : 's'} generated` +
                 (emails.length - fresh.length ? ` (${emails.length - fresh.length} already existed)` : '') +
-                ' — use Send Blast to email them.';
+                ' — sending blast…';
             await loadTurnout();
+            // Send to everything still unsent (new links plus earlier failures).
+            await sendTo(b => !b.sentAt, 'blast');
         } catch (err) {
             console.error('Ballot generation failed:', err);
             genStatus.textContent = 'Could not generate ballots. Check permissions.';
