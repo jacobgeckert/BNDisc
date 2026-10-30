@@ -77,7 +77,7 @@ Board elections (`#vote` page, "Elections & Voting" admin card) use three
 collections:
 
 ```
-elections/{id}      = { title, type ('positions' | 'bylaws'),
+elections/{id}      = { title, type ('positions' | 'bylaws' | 'mixed'),
                         positions: [{title, maxChoices, candidates[],
                                      currentText?, description?}],
                         open, navVisible, closesAt (Timestamp), createdAt, createdBy }

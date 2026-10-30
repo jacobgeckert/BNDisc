@@ -2203,10 +2203,10 @@ function initElections() {
     const addAmBtn = document.getElementById('election-add-amendment');
     if (typeSelect && posWrap && amWrap) {
         typeSelect.onchange = async () => {
-            const bylaws = typeSelect.value === 'bylaws';
-            posWrap.style.display = bylaws ? 'none' : '';
-            amWrap.style.display = bylaws ? '' : 'none';
-            if (bylaws && bylawSelect && !bylawSelect.dataset.loaded) {
+            const showAmend = typeSelect.value !== 'positions';
+            posWrap.style.display = typeSelect.value === 'bylaws' ? 'none' : '';
+            amWrap.style.display = showAmend ? '' : 'none';
+            if (showAmend && bylawSelect && !bylawSelect.dataset.loaded) {
                 bylawSelect.dataset.loaded = 'true';
                 bylawSelect.innerHTML = '<option value="">Loading sections…</option>';
                 try {
@@ -2337,29 +2337,26 @@ function initElections() {
         if (!title || !closesRaw) return;
 
         const electionType = typeSelect?.value || 'positions';
-        let positions;
-        if (electionType === 'bylaws') {
-            positions = [...(amBox?.querySelectorAll('.am-row') || [])].map(row => ({
-                title: `Amend ${row.dataset.ref}`,
-                currentText: row.dataset.currentText || '',
-                description: row.querySelector('.am-proposed').value.trim(),
-                maxChoices: 1,
-                candidates: ['Yes', 'No']
-            })).filter(p => p.description);
-            if (!positions.length) {
-                alert('Add at least one bylaw section and describe the proposed amendment.');
-                return;
-            }
-        } else {
-            positions = [...positionsBox.querySelectorAll('.election-position-row')].map(row => ({
-                title: row.querySelector('.ep-title').value.trim(),
-                maxChoices: Math.max(1, Number(row.querySelector('.ep-max').value) || 1),
-                candidates: row.querySelector('.ep-candidates').value.split('\n').map(s => s.trim()).filter(Boolean)
-            })).filter(p => p.title && p.candidates.length > 0);
-            if (!positions.length) {
-                alert('Add at least one position with at least one candidate.');
-                return;
-            }
+        const collectPositions = () => [...positionsBox.querySelectorAll('.election-position-row')].map(row => ({
+            title: row.querySelector('.ep-title').value.trim(),
+            maxChoices: Math.max(1, Number(row.querySelector('.ep-max').value) || 1),
+            candidates: row.querySelector('.ep-candidates').value.split('\n').map(s => s.trim()).filter(Boolean)
+        })).filter(p => p.title && p.candidates.length > 0);
+        const collectAmendments = () => [...(amBox?.querySelectorAll('.am-row') || [])].map(row => ({
+            title: `Amend ${row.dataset.ref}`,
+            currentText: row.dataset.currentText || '',
+            description: row.querySelector('.am-proposed').value.trim(),
+            maxChoices: 1,
+            candidates: ['Yes', 'No']
+        })).filter(p => p.description);
+        const positions = electionType === 'mixed'
+            ? [...collectPositions(), ...collectAmendments()]
+            : electionType === 'bylaws' ? collectAmendments() : collectPositions();
+        if (!positions.length) {
+            alert(electionType === 'positions'
+                ? 'Add at least one position with at least one candidate.'
+                : 'Add at least one bylaw section and describe the proposed amendment.');
+            return;
         }
 
         const submitBtn = document.getElementById('election-create-submit');
@@ -2426,7 +2423,8 @@ function renderElectionItem(election, list) {
     strong.textContent = election.title || 'Untitled Election';
     const meta = document.createElement('span');
     meta.style.cssText = 'display:block; font-size:0.75rem; opacity:0.6;';
-    meta.textContent = `${election.type === 'bylaws' ? 'Bylaws · ' : ''}closes ${closes ? closes.toLocaleString() : '—'}`;
+    const typeTag = { bylaws: 'Bylaws · ', mixed: 'Mixed · ' }[election.type] || '';
+    meta.textContent = `${typeTag}closes ${closes ? closes.toLocaleString() : '—'}`;
     const badge = document.createElement('span');
     badge.style.cssText = `color:${stateColor}; font-weight:600;`;
     badge.textContent = ` ● ${stateLabel}`;
