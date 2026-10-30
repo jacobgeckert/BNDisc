@@ -2302,9 +2302,15 @@ function initElections() {
                 const status = document.getElementById('gmail-status');
                 if (status) status.textContent = 'Connecting…';
                 try {
-                    await ensureGmailToken();
-                } catch (e) {
-                    if (status) status.textContent = `Gmail: ${e.message}`;
+                    // Try fully silent first (hint preselects the club
+                    // account); only pop the chooser if silent fails.
+                    await ensureGmailToken(true);
+                } catch (silentErr) {
+                    try {
+                        await ensureGmailToken();
+                    } catch (e) {
+                        if (status) status.textContent = `Gmail: ${e.message}`;
+                    }
                 }
                 updateGmailStatus();
             };
@@ -2743,14 +2749,14 @@ function requestGmailToken(prompt) {
             const tc = google.accounts.oauth2.initTokenClient({
                 client_id: clientId,
                 scope: GMAIL_SCOPE,
+                // Preselect the configured sender so silent/chooser flows
+                // land on the club account, not a personal one.
+                hint: localStorage.getItem(GMAIL_SENDER_KEY) || undefined,
                 callback: (resp) => {
                     if (resp.error) reject(new Error(resp.error_description || resp.error));
                     else resolve(resp.access_token);
                 }
             });
-            // Explicit connects always show the account chooser so the admin
-            // can pick the club account rather than a personal one; silent
-            // refreshes reuse the already-authorized account via hidden iframe.
             tc.requestAccessToken({ prompt });
         } catch (e) {
             reject(e);
@@ -2762,7 +2768,7 @@ async function ensureGmailToken(silent = false) {
     // Access tokens last ~1h; reuse for 50 min then re-request silently.
     if (gmailToken && Date.now() - gmailTokenAt < 50 * 60 * 1000) return gmailToken;
     gmailToken = await requestGmailToken(
-        silent || gmailToken ? '' : 'consent select_account');
+        silent || gmailToken ? '' : 'select_account');
     gmailTokenAt = Date.now();
     try {
         const prof = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
